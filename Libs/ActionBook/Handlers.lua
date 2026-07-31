@@ -142,7 +142,7 @@ securecall(function() -- mount: mount ID
 	local function mountSync()
 		AB:NotifyObservers("mount")
 	end
-	EV.NEW_MOUNT_ADDED, EV.PLAYER_ENTERING_WORLD, EV.COMPANION_LEARNED = mountSync, mountSync, mountSync
+	EV.PLAYER_ENTERING_WORLD, EV.COMPANION_LEARNED = mountSync, mountSync
 end)
 securecall(function() -- spell: spell ID + mount spell ID
 	local actionMap, spellMap = {}, {}

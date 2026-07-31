@@ -154,8 +154,6 @@ do
 	if type(evie) == "table" then evie.After = safeAfter end
 end
 
-if not GetFileIDFromPath then GetFileIDFromPath = function() return nil end end
-
 if not C_Widget then C_Widget = {} end
 if not C_Widget.IsFrameWidget then
 	C_Widget.IsFrameWidget = function(v)

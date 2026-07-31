@@ -248,7 +248,7 @@ securecall(function() -- combo:count
 	local function syncComboPower()
 		power = defaultPower
 	end
-	EV.PLAYER_SPECIALIZATION_CHANGED, EV.PLAYER_ENTERING_WORLD = syncComboPower, syncComboPower
+	EV.ACTIVE_TALENT_GROUP_CHANGED, EV.PLAYER_ENTERING_WORLD = syncComboPower, syncComboPower
 end)
 securecall(function() -- near:oid/cid
 	local argCache, nearValue, nearGroup, holdGroup, holdExpire = {}
@@ -439,7 +439,7 @@ securecall(function() -- pet:stable id; havepet:stable id
 		return (e == "PLAYER_LOGIN" or e == "PLAYER_REGEN_ENABLED") and "remove"
 	end
 	KR:SetStateConditionalValue("havepet", false)
-	EV.PLAYER_LOGIN, EV.PET_STABLE_UPDATE, EV.PET_INFO_UPDATE, EV.LOCALPLAYER_PET_RENAMED = syncPet, syncPet, syncPet, syncPet
+	EV.PLAYER_LOGIN, EV.PET_STABLE_UPDATE, EV.LOCALPLAYER_PET_RENAMED = syncPet, syncPet, syncPet
 end)
 securecall(function() -- game:wrath
 	KR:SetStateConditionalValue("game", "daze")
@@ -471,9 +471,7 @@ securecall(function() -- imbuedmh, imbuedoh, imbuedrw
 	KR:SetNonSecureConditional("imbuedoh", function()
 		return not not select(5, GetWeaponEnchantInfo())
 	end)
-	KR:SetNonSecureConditional("imbuedrw", function()
-		return not not select(9, GetWeaponEnchantInfo())
-	end)
+	KR:SetStateConditionalValue("imbuedrw", false)
 end)
 securecall(function() -- bar:id (future-aware)
 	local CMD_SWAP, CMD_SET, NUM_PAGES = SLASH_SWAPACTIONBAR1, SLASH_CHANGEACTIONBAR1, NUM_ACTIONBAR_PAGES
@@ -627,7 +625,6 @@ securecall(function() -- uslot:(slot token)
 	EV.PLAYER_REGEN_ENABLED = syncActiveSlotsIfPending
 	EV.PLAYER_EQUIPMENT_CHANGED = cueActiveSlotsSync
 	EV.PLAYER_ENTERING_WORLD = cueActiveSlotsSync
-	EV.PLAYER_EQUIPED_SPELLS_CHANGED = cueActiveSlotsSync
 end)
 securecall(function() -- encount:(e-{id}/token)
 	KR:SetStateConditionalValue("encount", false)

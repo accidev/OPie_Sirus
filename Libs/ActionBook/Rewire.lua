@@ -1012,7 +1012,7 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 				local filterRun, parseConditional, filterFunc, filterType = fi[1], fi[2], fi[3], fi[4]
 				local v, vt = mv[i], nil
 				local ic = filterType == "replaceIconB" and ht[0] >= 3 and ht[3]
-				if filterType == "replaceIconB" and ic and ic ~= 134400 and (type(ic) ~= "string" or GetFileIDFromPath(ic) ~= 134400) then
+				if filterType == "replaceIconB" and ic and ic ~= 134400 and (type(ic) ~= "string" or not ic:lower():find("inv_misc_questionmark", 1, true)) then
 					v = nil
 				elseif parseConditional then
 					v, vt = KR:EvaluateCmdOptions(v, modState)
@@ -1236,15 +1236,16 @@ local function init()
 	local iconAtlasCache = {}
 	local iconReplCache = setmetatable({}, {__index=function(t,k)
 		if not k then return end
-		local v, c, f, a = (tonumber(k))
+		local v, a = (tonumber(k))
 		if not v then
 			if k:match("[/\\]") then
 				v = k
 			elseif k ~= "" then
-				c = "Interface\\Icons\\" .. k
-				f = GetFileIDFromPath(c)
-				v = f and (f > 0 and f or c) or C_Texture.GetAtlasInfo(k) and k or false
-				a = v and not f
+				if C_Texture.GetAtlasInfo(k) then
+					v, a = k, true
+				else
+					v = "Interface\\Icons\\" .. k
+				end
 			end
 		end
 		t[k], iconAtlasCache[k] = v ~= 0 and v, a or v and false

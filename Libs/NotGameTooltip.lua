@@ -41,7 +41,6 @@ do
 		end
 	end
 	addTooltipShims(tip)
-	addTooltipShims(GameTooltip)
 end
 
 do -- Avoid showing both at the same time

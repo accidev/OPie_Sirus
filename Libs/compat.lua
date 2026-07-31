@@ -296,7 +296,7 @@ if not C_Minimap then
 		GetTrackingInfo = function(id)
 			local name, tex, active = GetTrackingInfo(id)
 			if not name then return nil end
-			return {name = name, texture = tex, active = active, type = "", subType = "", spellID = 0}
+			return {name = name, texture = tex, active = active}
 		end,
 		SetTracking = function(id, enable)
 			if SetTracking then SetTracking(enable and id or 0) end

@@ -19,7 +19,7 @@ end
 local function GetTrackingInfo(...)
 	local ti = C_Minimap.GetTrackingInfo(...)
 	if ti then
-		return ti.name, ti.texture, ti.active, ti.type, ti.subType, ti.spellID
+		return ti.name, ti.texture, ti.active
 	end
 end
 

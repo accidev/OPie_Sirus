@@ -17,14 +17,9 @@ do
 		local function have1()
 			return true, false, false, 4
 		end
-		local function crownChemical()
-			local _,_,_,_, _,_,_,imid, _,did = GetInstanceInfo()
-			return imid == 33 and did == 288
-		end
 		include = {
 			[21746]=have1, -- lucky red envelope
 			[33634]=true, [35797]=true, [37888]=true, [37860]=true, [37859]=true, [37815]=true, [46847]=true, [47030]=true, [39213]=true, [42986]=true, [49278]=true,
-			[49351]=crownChemical, [49352]=crownChemical, -- perfume/cologne neutralizers
 			[37586]=have1, -- handful of treats [hallow's end]
 		}
 		filtered = {}
@@ -399,9 +394,6 @@ local function excludeItemID(iid)
 		exclude[iid] = true
 	else
 		exclude[-iid] = nil
-		if exclude[-iid] then
-			exclude[-iid] = false
-		end
 	end
 end
 T.AddSlashSuffix(function(msg)

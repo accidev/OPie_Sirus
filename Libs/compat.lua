@@ -181,22 +181,10 @@ end
 if not AreDangerousScriptsAllowed then AreDangerousScriptsAllowed = function() return true end end
 
 if not C_QuestLog then
-	local completed = {}
-	do
-		local qf = CreateFrame("Frame")
-		qf:RegisterEvent("QUEST_QUERY_COMPLETE")
-		qf:SetScript("OnEvent", function()
-			if GetQuestsCompleted then
-				local t = {}
-				GetQuestsCompleted(t)
-				completed = t
-			end
-		end)
-		if QueryQuestsCompleted then QueryQuestsCompleted() end
-	end
 	C_QuestLog = {
 		IsQuestFlaggedCompleted = IsQuestFlaggedCompleted or function(qid)
-			return completed[tonumber(qid) or qid] == true
+			qid = tonumber(qid)
+			return qid ~= nil and IsQuestCompleted(qid) or false
 		end,
 		IsOnQuest = function(qid)
 			for i = 1, GetNumQuestLogEntries() do
@@ -211,10 +199,6 @@ if not C_QuestLog then
 		end,
 	}
 end
-
-if not C_UnitAuras then C_UnitAuras = {} end
-if not C_UnitAuras.GetAuraSlots                  then C_UnitAuras.GetAuraSlots                  = function() return nil end end
-if not C_UnitAuras.GetAuraDataBySlot             then C_UnitAuras.GetAuraDataBySlot             = function() return nil end end
 
 if not C_PetJournal then C_PetJournal = {} end
 if not C_PetJournal.IsCurrentlySummoned then

@@ -158,12 +158,6 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			sn, sr = GetSpellInfo(id), select(2, GetSpellInfo(id))
 			ar = sn and select(2, GetSpellInfo(sn))
 			local isCastable, castFlag = RW:IsSpellCastable(id, noEscapes)
-			if not isCastable and tk ~= "spellr" then
-				local id2 = select(7,GetSpellInfo(sn))
-				if id2 then
-					id, isCastable, castFlag = id2, RW:IsSpellCastable(id2, noEscapes)
-				end
-			end
 			if isCastable then
 				if castFlag == "forced-id-cast" and (ctype == 1 or ctype == 3) then
 					sn = "spell:" .. id
@@ -342,15 +336,11 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 				if type(n) ~= "string" or not id or id == 0 then
 				elseif st == "SPELL" or st == "FUTURESPELL" then
 					local ao = allowGenericOverwrite and st == "SPELL"
-					local sn, id2 = GetSpellInfo(id), select(7, GetSpellInfo(n))
+					local sn = GetSpellInfo(id)
 					if sn and sn ~= n then
 						addSpell(sn, id, ao)
 					end
-					if id2 and id2 ~= 0 and id2 ~= id then
-						addSpell(n, id2, ao)
-					elseif sn == n then
-						addSpell(n, id, ao)
-					end
+					addSpell(n, id, ao)
 				elseif st == "FLYOUT" then
 					for j=1,select(3,GetFlyoutInfo(id)) do
 						local sid, _, isKnown, sname = GetFlyoutSlotInfo(id, j)

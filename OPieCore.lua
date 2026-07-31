@@ -15,7 +15,6 @@ local defaultConfig = {
 	SelectedSliceBind="", SelectedSliceBind2="",
 	SelectedCloseBind="", SelectedCloseBind2="",
 	CloseRingBind="", CloseRingBind2="",
-	HideStanceBar=false,
 }
 local configRoot, configInstance, activeProfile, PersistentStorageInfo, optionValidators = {CharProfiles={}, ProfileStorage={}, PersistentStorage={}}, nil, nil, {}, {}
 local charId, internalFreeId = ("%s-%s"):format(GetRealmName(), UnitName("player")), 424
@@ -1739,70 +1738,3 @@ for k,v in pairs(api) do
 end
 
 _G.OPie, T.OPieCore = api, private
-
--- TEMPORARY DIAGNOSTIC: /opdiag — prints real API data to chat
--- Remove after diagnosing icons/abilities/panels
-SLASH_OPDIAG1 = "/opdiag"
-SlashCmdList["OPDIAG"] = function()
-	local p = function(...) DEFAULT_CHAT_FRAME:AddMessage(table.concat({...}, " ")) end
-	p("=== OPie Diagnostics ===")
-	-- SpellTab info
-	local tabs = GetNumSpellTabs()
-	p("NumSpellTabs: "..tostring(tabs))
-	local tname,_,tofs,tcnt = GetSpellTabInfo(1)
-	p("Tab1: name="..tostring(tname).." offset="..tostring(tofs).." count="..tostring(tcnt))
-	-- First non-empty slot
-	local firstSlot = tofs and tofs + 1 or 1
-	p("Testing slot "..firstSlot)
-	local st, sid = GetSpellBookItemInfo(firstSlot, "spell")
-	local name1, rank1 = GetSpellBookItemName(firstSlot, "spell")
-	local tex1 = GetSpellTexture(firstSlot, "spell")
-	-- KEY TEST: slot-based GetSpellLink (works for pet spells by slot)
-	local link_slot = GetSpellLink(firstSlot, "spell")
-	p("info: st="..tostring(st).." sid="..tostring(sid))
-	p("name: "..tostring(name1).." tex: "..tostring(tex1))
-	p("GetSpellLink(slot,'spell'): "..tostring(link_slot))
-	local sid2 = link_slot and tonumber(link_slot:match("|Hspell:(%d+)"))
-	p("SID from link: "..tostring(sid2))
-	if sid2 then
-		local n3,_,ico3,_,_,_,s73 = GetSpellInfo(sid2)
-		p("GSI(sid): name="..tostring(n3).." icon="..tostring(ico3).."("..type(ico3)..") s7="..tostring(s73))
-		p("IsPassive: "..tostring(IsPassiveSpell(sid2)))
-	end
-	-- Second slot
-	if tofs then
-		local link2 = GetSpellLink(firstSlot+1, "spell")
-		local tex2 = GetSpellTexture(firstSlot+1, "spell")
-		p("Slot"..(firstSlot+1)..": link="..tostring(link2).." tex="..tostring(tex2))
-	end
-	-- Frames
-	p("AchievementFrame: "..tostring(AchievementFrame ~= nil))
-	-- First ring slice data
-	local firstRing, firstProps = next(OR_Rings)
-	if firstProps then
-		p("Ring: "..tostring(firstProps.name or firstRing))
-		local ri = firstProps.RingOptions or {}
-		local count = 0
-		for k,v in pairs(ri) do
-			if count < 3 and type(v) == "string" then
-				p("  opt["..tostring(k).."]: "..tostring(v))
-				count = count + 1
-			end
-		end
-	end
-	-- Check saved ring actions from SavedVars
-	if OPie_SavedData then
-		local ps = OPie_SavedData.ProfileStorage
-		local prof = ps and next(ps)
-		local pdata = prof and ps[prof]
-		local ro = pdata and pdata.RingOptions
-		local rk = ro and next(ro)
-		if rk then
-			p("SavedRingKey: "..tostring(rk))
-			local rv = ro[rk]
-			local sk = rv and next(rv)
-			if sk then p("  firstOpt: ["..tostring(sk).."]="..tostring(rv[sk])) end
-		end
-	end
-	p("=== End ===")
-end

@@ -1547,7 +1547,7 @@ function RW:SetMacroVarValue(vname, value)
 end
 function RW:ResolveOptionsClauseValue(value, resolveUnit, resolveVars, escapeMode)
 	assert((value == nil or type(value) == "string") and (escapeMode == nil or type(escapeMode) == "number"),
-		'Syntax: Rewire:ResolveOptionsChaluseValue("value", resolveUnit, resolveVars[, escapeMode])')
+		'Syntax: Rewire:ResolveOptionsClauseValue("value", resolveUnit, resolveVars[, escapeMode])')
 	return resolveOptionsClauseValue(value, resolveUnit, resolveVars, escapeMode)
 end
 RW.GetSpeculationID = getSpeculationID

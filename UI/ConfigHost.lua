@@ -129,9 +129,7 @@ do -- config.bind
 		self:UnlockHighlight()
 		self:EnableKeyboard(false)
 		self:EnableMouseWheel(false)
-		if self.EnableGamePadButton then self:EnableGamePadButton(false) end
 		self:SetScript("OnKeyDown", nil)
-		pcall(self.SetScript, self, "OnGamePadButtonDown", nil)
 		self:SetScript("OnHide", nil)
 		captureFrame:Hide()
 		activeCaptureButton = activeCaptureButton ~= self and activeCaptureButton or nil
@@ -187,10 +185,8 @@ do -- config.bind
 		activeCaptureButton = self
 		self:LockHighlight()
 		self:EnableKeyboard(true)
-		if self.EnableGamePadButton then self:EnableGamePadButton(true) end
 		self:EnableMouseWheel(true)
 		self:SetScript("OnKeyDown", SetBind)
-		pcall(self.SetScript, self, "OnGamePadButtonDown", SetBind)
 		self:SetScript("OnHide", Deactivate)
 		config.ui.HideTooltip(self)
 		if parent then

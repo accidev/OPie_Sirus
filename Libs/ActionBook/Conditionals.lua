@@ -101,73 +101,16 @@ end)
 securecall(function() -- instance:arena/bg/ratedbg/lfr/raid/scenario + outland/northrend/...
 	local mapTypes = {
 		party="dungeon", pvp="battleground/bg", ratedbg="ratedbg/rgb", none="world",
-		[1116]="world/draenor", [1464]="world/draenor", [1191]="world/draenor/ashran/worldpvp",
-		[974]="world/darkmoon faire",
-		[870]="world/pandaria", [1064]="world/pandaria",
-		[530]="world/outland", [571]="world/northrend",
-		[1220]="world/broken isles", [1669]="world/argus",
-		[1642]="world/bfa/zandalar", [1643]="world/bfa/kul tiras", [1718]="world/bfa/nazjatar",
-		[2222]="world/shadowlands",
-		[2453]="world/torghast", -- lobby
-		[2162]="torghast", -- towers
-		[2444]="world/dragon isles/df",
-		[2516]="dungeon/nokhud",
-		[2454]="world/zaralek/df",
-		[2548]="world/emerald dream/df",
-		[2552]="world/khaz algar/tww",
-		[2601]="world/khaz algar/tww",
-		[2127]="world/siren isle/tww",
-		[2706]="world/undermine/tww",
-		[2738]="world/karesh/tww",
-		[2662]="dungeon/dawnbreaker",
-		[2769]="raid/undermine",
-		[2827]="hvision", [2828]="hvision", [2212]="hvision", [2213]="hvision",
-		hvision="scenario/hvision",
-		
-		garrison="world/draenor/garrison",
-		[1158]="garrison", [1331]="garrison", [1159]="garrison",
-		[1152]="garrison", [1330]="garrison", [1153]="garrison",
-		
-		[1893]="island", -- The Dread Chain
-		[1814]="island", -- Havenswood (?)
-		[1879]="island", -- Jorundall (?)
-		[1897]="island", -- Molten Cay
-		[1892]="island", -- The Rotting Mire
-		[1898]="island", -- Skittering Hollow
-		[1813]="island", -- Un'gol Ruins
-		[1955]="island", -- Uncharted Island (tutorial)
-		[1882]="island", -- Verdant Wilds
-		[1883]="island", -- Whispering Reef
 	}
-	local mapZoneCheck, zoneChecked = {
-		[2512]="world/gta", [2085e6+2512]="world/dragon isles/df/gta"
-	}, true
-	local function syncInstance(e)
-		local _, itype, did, _, _, _, _, imid = GetInstanceInfo()
-		local stype, itype0 = itype == "raid" and did == 7 and "/lfr", itype
-		if mapZoneCheck[imid] then
-			if e == "PLAYER_ENTERING_WORLD" and zoneChecked then
-				zoneChecked, EV.ZONE_CHANGED_NEW_AREA = false, syncInstance
-			end
-			itype = mapZoneCheck[imid] or mapTypes[imid]
-		elseif mapTypes[imid] then
-			itype = mapTypes[imid]
-		end
+	local function syncInstance()
+		local _, itype, did = GetInstanceInfo()
+		local stype = itype == "raid" and did == 7 and "/lfr"
 		itype = mapTypes[itype] or itype or "daze"
 		itype = stype and (itype .. stype) or itype
 		KR:SetStateConditionalValue("in", itype)
-		if e == "ZONE_CHANGED_NEW_AREA" then
-			zoneChecked = true
-			return "remove"
-		end
 	end
 	EV.PLAYER_ENTERING_WORLD = syncInstance
-	EV.WALK_IN_DATA_UPDATE = syncInstance
-	EV.LEGACY_LOOT_RULES_CHANGED = syncInstance
-	function EV:PLAYER_MAP_CHANGED(_old, _new)
-		-- [11.0.2] Delve airlocks: PEW doesn't fire; GetInstanceInfo() returns stale data during PMC
-		EV.After(0, syncInstance)
-	end
+	EV.ZONE_CHANGED_NEW_AREA = syncInstance
 	KR:SetAliasConditional("instance", "in")
 	KR:SetStateConditionalValue("in", "daze")
 end)
@@ -208,7 +151,7 @@ securecall(function() -- horde/alliance
 end)
 securecall(function() -- moving
 	KR:SetNonSecureConditional("moving", function()
-		return IsPlayerMoving()
+		return GetUnitSpeed("player") > 0
 	end)
 end)
 securecall(function() -- falling
@@ -265,29 +208,23 @@ securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cle
 		ownbuff="HELPFUL PLAYER", owndebuff="HARMFUL PLAYER",
 		buff="HELPFUL", debuff="HARMFUL",
 	}
-	local function countSlots(tk, ...)
-		return select("#", ...), tk, ...
-	end
 	local function checkAura(name, args, target)
 		target = (name == "selfbuff" or name == "selfdebuff") and "player" or target or "target"
 		if not args or args == "" or not UnitExists(target) then
 			return false
 		end
-		local at, query, filter = stringArgCache[args], C_UnitAuras.GetAuraSlots, conditionalFilter[name]
-		local count, ctok, a,b,c,d,e
-		repeat
-			count, ctok, a,b,c,d,e = countSlots(query(target, filter, 5, ctok))
-			for i=1, count do
-				local dat = C_UnitAuras.GetAuraDataBySlot(target, a)
-				local name = dat and dat.name
-				for j=1, name and #at or 0 do
-					if strcmputf8i(name, at[j]) == 0 then
-						return true
-					end
-				end
-				a,b,c,d = b,c,d,e
+		local at, filter = stringArgCache[args], conditionalFilter[name]
+		for i=1, 100 do
+			local an = UnitAura(target, i, filter)
+			if not an then
+				return false
 			end
-		until not ctok
+			for j=1, #at do
+				if strcmputf8i(an, at[j]) == 0 then
+					return true
+				end
+			end
+		end
 		return false
 	end
 	KR:SetNonSecureConditional("selfbuff", checkAura)
@@ -298,7 +235,7 @@ securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cle
 	KR:SetNonSecureConditional("ownbuff", checkAura)
 	KR:SetNonSecureConditional("cleanse", function(_, _, target)
 		target = target or "target"
-		return UnitIsFriend("player", target) and select(2,C_UnitAuras.GetAuraSlots(target, "HARMFUL RAID", 1)) ~= nil
+		return UnitIsFriend("player", target) and UnitAura(target, 1, "HARMFUL RAID") ~= nil
 	end)
 end)
 securecall(function() -- combo:count

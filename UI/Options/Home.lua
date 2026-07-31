@@ -154,8 +154,15 @@ local logView = CreateFrame("Frame", nil, frame) do
 		clipAnchor:SetPoint("TOPRIGHT", 0, nv)
 	end)
 	local anchorTo, anchorX, anchorY = clipAnchor, 0, -4
-	local function syncScrollRange()
-		local ch = clipAnchor:GetTop() - anchorTo:GetBottom()
+	local function syncScrollRange(isRetry)
+		local top, bottom = clipAnchor:GetTop(), anchorTo:GetBottom()
+		if not (top and bottom) then
+			if not isRetry then
+				T.Evie.After(0, function() syncScrollRange(true) end)
+			end
+			return
+		end
+		local ch = top - bottom
 		local vh = math.max(1, clipHost:GetHeight() - 8)
 		clipBar:SetShown(ch > vh)
 		clipBar:SetMinMaxValues(0, math.max(0,ch-vh))

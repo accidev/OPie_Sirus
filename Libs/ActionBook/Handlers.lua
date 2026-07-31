@@ -72,7 +72,7 @@ local function actionHint(slot)
 	local inRange, usable, nomana, hasRange = NormalizeInRange[IsActionInRange(slot)], IsUsableAction(slot)
 	inRange, hasRange = inRange ~= 0, inRange ~= nil
 	local cdUsable, overCount
-	local cdLeft, cdLength, cdEnabled, _cdModRate, cdActive = GetActionCooldown(slot)
+	local cdLeft, cdLength, cdEnabled = GetActionCooldown(slot)
 	local count = GetActionCount(slot)
 	cdLeft, cdLength, cdEnabled = toCooldown(now, cdLeft, cdLength, cdEnabled)
 	cdUsable = cdLeft == 0 or cdEnabled == 0
@@ -118,7 +118,7 @@ securecall(function() -- mount: mount ID
 		local usable = (not (InCombatLockdown() or IsIndoors())) and HasFullControl() and not UnitIsDeadOrGhost("player")
 		local cname, sid, icon, active, usable2 = C_MountJournal.GetMountInfoByID(id)
 		local state, cdUsable = (active and 1 or 0), nil
-		local cdLeft, cdLength, _cdEnabled, _cdModRate, cdActive = GetSpellCooldown(sid)
+		local cdLeft, cdLength = GetSpellCooldown(sid)
 		cdLeft, cdLength = toCooldown(GetTime(), cdLeft, cdLength)
 		cdUsable = cdLeft == 0
 		return usable and cdUsable and usable2, state, icon, cname, 0, cdLeft, cdLength, callMethod.SetMountBySpellID, sid
@@ -187,13 +187,12 @@ securecall(function() -- spell: spell ID + mount spell ID
 	local getSpellIDFromName = function(n)
 		return tonumber(((GetSpellLink(n) or ""):match("spell:(%d+)")))
 	end
-	local RUNE_BASESPELL_CACHE, RUNE_SPELLS = {}, {}
 	local iconOverrideHandlers = {} -- keyed by numeric msid OR lowercased spell name (string)
 	local sbslotCache = {} -- FindSpellBookSlotBySpellID result per spellID; stable per session
 	local function spellHint(n, _modState, target)
 		if not n then return end
-		local sname, _, gicon, _, _, _, sid = GetSpellInfo(n) -- gicon=pos3: icon fallback (Sirus custom spells)
-		if sid == 0 then sid = nil end -- Sirus: pos7 always 0, but 0 is truthy in Lua
+		local sname, _, gicon = GetSpellInfo(n) -- gicon=pos3: icon fallback (Sirus custom spells)
+		local sid = type(n) == "number" and n or nil
 		-- Sirus engine supports SetTexture(fileID) — keep numeric fileIDs as icon fallback.
 		-- Only discard 0 and sub-1 floats (those would be misinterpreted as colour values).
 		if type(gicon) == "number" and gicon < 2 then gicon = nil end
@@ -203,10 +202,10 @@ securecall(function() -- spell: spell ID + mount spell ID
 		local origN = n -- capture numeric ID before transform (for slot-based texture fallback)
 		if type(n) == "number" then n = sname end
 		local state, now, msid = 0, GetTime(), sid or spellMap[lowered[n]]
-		local inRange, usable, nomana, hasRange = NormalizeInRange[IsSpellInRange(sid and RUNE_BASESPELL_CACHE[sid] or (type(n) == "string" and n or sname), target or "target")], IsUsableSpell(n)
+		local inRange, usable, nomana, hasRange = NormalizeInRange[IsSpellInRange(type(n) == "string" and n or sname, target or "target")], IsUsableSpell(n)
 		inRange, hasRange = inRange ~= 0, inRange ~= nil
 		local cdUsable, overCount
-		local cdLeft, cdLength, cdEnabled, _cdMod, cdActive = GetSpellCooldown(n)
+		local cdLeft, cdLength, cdEnabled = GetSpellCooldown(n)
 		local count = GetSpellCount(n)
 		cdLeft, cdLength, cdEnabled = toCooldown(now, cdLeft, cdLength, cdEnabled)
 		cdUsable = cdLeft == 0 or cdEnabled == 0
@@ -322,16 +321,13 @@ securecall(function() -- spell: spell ID + mount spell ID
 		return actionMap[action]
 	end
 	local function describeSpell(q, id, flags)
-		local name2, icon2, rank, name, _, icon, _, _, _, _, icon1 = nil, nil, GetSpellSubtext(id), GetSpellInfo(id)
+		local name2, icon2, rank, name, _, icon = nil, nil, GetSpellSubtext(id), GetSpellInfo(id)
 		local _, castType = RW:IsSpellCastable(id)
 		if castType == "rune-ability-spell" then
 			_, icon2 = GetSpellTexture(id)
 		elseif name and castType ~= "forced-id-cast"  and castType ~= "rewire-escape" then
 			local qRank = (q == "list-query") and rank or nil
 			rank, name2, _, icon2 = GetSpellSubtext(name, rank), GetSpellInfo(name, qRank)
-			if RUNE_SPELLS[id] then
-				icon, name2, icon2 = icon1 or icon, nil, nil
-			end
 		end
 		local srank = rank and rank ~= "" and (rank ~= GetSpellSubtext(name)) and " (" .. rank .. ")" or ""
 		local ts, ns = q == "list-query" and srank or "", q == "list-query" and "" or srank
@@ -340,7 +336,6 @@ securecall(function() -- spell: spell ID + mount spell ID
 	end
 	AB:RegisterActionType("spell", createSpell, describeSpell, 2, true)
 	function EV.SPELLS_CHANGED()
-		wipe(RUNE_BASESPELL_CACHE)
 		wipe(spellMap)
 		AB:NotifyObservers("spell")
 	end
@@ -923,11 +918,10 @@ end)
 securecall(function() -- petspell: spell ID
 	local actionInfo = {
 		stay={"Interface\\Icons\\Spell_Nature_TimeStop", "PET_ACTION_WAIT"},
-		move={"Interface\\Icons\\Ability_Hunter_Pet_Goto", "PET_ACTION_MOVE_TO", 1},
 		follow={"Interface\\Icons\\Ability_Tracking", "PET_ACTION_FOLLOW"},
 		attack={"Interface\\Icons\\Ability_GhoulFrenzy", "PET_ACTION_ATTACK"},
 		defend={"Interface\\Icons\\Ability_Defend", "PET_MODE_DEFENSIVE"},
-		assist={"Interface\\Icons\\Ability_Hunter_Pet_Assist", "PET_MODE_ASSIST"},
+		assist={"Interface/Icons/Ability_Racial_BloodRage", "PET_MODE_AGGRESSIVE"},
 		passive={"Interface\\Icons\\Ability_Seal", "PET_MODE_PASSIVE"},
 		dismiss={CLASS == "WARLOCK" and "Interface\\Icons\\spell_shadow_sacrificialshield" or "Interface\\Icons\\spell_nature_spiritwolf"}
 	}
@@ -937,20 +931,20 @@ securecall(function() -- petspell: spell ID
 	end
 	local petCommandFeedback = function(info)
 		local ico, name, slot = info[1], info[2], info[3]
-		local sname, _icokey, _isToken, isActive, _autoCastAllowed, _autoCastEnabled, _spellID, hasRange, inRange = GetPetActionInfo(slot or 0)
+		local sname, _subtext, _texture, _isToken, isActive = GetPetActionInfo(slot or 0)
 		if sname ~= name then
 			info[3], slot = nil
 			for i=1,10 do
-				sname, _icokey, _isToken, isActive, _autoCastAllowed, _autoCastEnabled, _spellID, hasRange, inRange = GetPetActionInfo(i)
+				sname, _subtext, _texture, _isToken, isActive = GetPetActionInfo(i)
 				if sname == name then
 					info[3], slot = i, i
 					break
 				end
 			end
 		end
-		local flags = slot and ((isActive and 1 or 0) + (hasRange and not inRange and 16 or 0) + (hasRange and 512 or 0)) or 0
+		local flags = slot and (isActive and 1 or 0) or 0
 		-- Behavior tokens (attack/stay/follow etc.) don't need range check;
-		-- usable as long as pet exists. inRange/hasRange from GetPetActionInfo unreliable on Sirus.
+		-- usable as long as pet exists.
 		return not not slot and not not UnitExists("pet"), flags, ico, _G[name] or name, 0, 0, 0, slot and petTip or nil, slot
 	end
 	local function petHint(sid)
@@ -1009,7 +1003,6 @@ securecall(function() -- petspell: spell ID
 		if type(SLASH_PET_DISMISS1) == "string" then
 			actionID.dismiss = AB:CreateActionSlot(petHint, "dismiss", "conditional", cnd, "macrotext", SLASH_PET_DISMISS1)
 		end
-		actionInfo.assist = {"Interface/Icons/Ability_Racial_BloodRage", "PET_MODE_AGGRESSIVE"}
 		addPetCommand(SLASH_PET_AGGRESSIVE1, "assist")
 	end
 end)
@@ -1158,7 +1151,7 @@ securecall(function() -- disenchant: iid
 		local name = (GetItemInfo(ident))
 		local qual = 0
 		local state, cdUsable = 0, nil
-		local cdLeft, cdLength, cdEnabled, _cdMod, cdActive = GetSpellCooldown(DISENCHANT_SID)
+		local cdLeft, cdLength, cdEnabled = GetSpellCooldown(DISENCHANT_SID)
 		cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), cdLeft, cdLength, cdEnabled)
 		cdUsable = cdLeft == 0
 		state = state + qual + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)

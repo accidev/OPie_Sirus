@@ -205,7 +205,7 @@ core:Execute([==[-- Kindred.Init
 						break
 					end
 				elseif name == "bonusbar" and argp == nil then
-					if (GetBonusBarIndex() == 0) == goal then
+					if (GetBonusBarOffset() == 0) == goal then
 						clause = nil
 						break
 					end

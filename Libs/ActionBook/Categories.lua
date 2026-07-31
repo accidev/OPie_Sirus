@@ -68,7 +68,7 @@ do
 			SetCVar("showAllSpellRanks", "1")
 		end
 		for i=1,GetNumSpellTabs()+12 do
-			local tabName, ico, ofs, c, _, otherSpecID = GetSpellTabInfo(i)
+			local tabName, ico, ofs, c = GetSpellTabInfo(i)
 			if not ofs then break end
 			local isSkipped = WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]
 			if not isSkipped then

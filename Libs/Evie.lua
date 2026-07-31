@@ -1,6 +1,14 @@
 local Evie, easy, next, securecall, pcall, _, T = {}, newproxy(true), next, securecall, pcall, ...
 local frame, listeners, locked, easy_mt = CreateFrame("Frame"), {}, {}, getmetatable(easy)
 
+local isCustomEvent do
+	local isValid = C_EventUtils and C_EventUtils.IsEventValid
+	function isCustomEvent(event)
+		if not (isValid and frame.RegisterCustomEvent) then return false end
+		local ok, valid = pcall(isValid, event)
+		return ok and not valid
+	end
+end
 local function Register(event, func, depth)
 	if type(event) ~= "string" or type(func) ~= "function" then
 		error('Syntax: RegisterEvent("event", handlerFunction)', type(depth) == "number" and depth or 2)
@@ -11,7 +19,7 @@ local function Register(event, func, depth)
 	elseif lock then
 		lock[func] = 1
 	else
-		pcall(frame.RegisterEvent, frame, event)
+		pcall(isCustomEvent(event) and frame.RegisterCustomEvent or frame.RegisterEvent, frame, event)
 		listeners[event] = listeners[event] or {}
 		listeners[event][func] = 1
 	end
@@ -22,7 +30,7 @@ local function Unregister(event, func)
 		list[func] = nil
 		if not next(list) then
 			listeners[event] = nil
-			pcall(frame.UnregisterEvent, frame, event)
+			pcall(isCustomEvent(event) and frame.UnregisterCustomEvent or frame.UnregisterEvent, frame, event)
 		end
 	end
 	if lock and lock ~= true then

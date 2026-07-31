@@ -1518,12 +1518,31 @@ end
 function sliceDetail.skipSpecs:GetValue()
 	return self.val:match("^/(.+)/$")
 end
+local specCount, specName do
+	function specCount()
+		local n = GetNumTalentGroups and GetNumTalentGroups() or 1
+		return n and n > 0 and n or 1
+	end
+	function specName(i)
+		return i == 1 and TALENT_SPEC_PRIMARY or i == 2 and TALENT_SPEC_SECONDARY or (TALENTS .. " " .. i)
+	end
+end
 function sliceDetail.skipSpecs:text()
-	self:Disable()
-	return self:SetText(L"All characters")
+	local n, shown = specCount(), {}
+	for i=1, n do
+		if not self.val:find("/" .. i .. "/", 1, true) then
+			shown[#shown+1] = specName(i)
+		end
+	end
+	self:Enable()
+	return self:SetText(#shown == n and L"All characters" or #shown == 0 and L"None" or table.concat(shown, ", "))
 end
 function sliceDetail.skipSpecs:initialize()
-	-- Specialization filter not available in WotLK
+	local info = {func=self.toggle, minWidth=self:GetWidth()-40, isNotRadio=true, keepShownOnClick=true}
+	for i=1, specCount() do
+		info.text, info.checked, info.arg1 = specName(i), not self.val:find("/" .. i .. "/", 1, true), i
+		UIDropDownMenu_AddButton(info)
+	end
 end
 function ringDetail.scope:initialize()
 	local luFaction, lFaction = UnitFactionGroup("player")

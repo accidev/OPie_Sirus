@@ -66,7 +66,7 @@ local function getSpecCharIdent(specIdx)
 	return (tg == 1 and "%s" or "%s-%d"):format(charId, tg)
 end
 local function getNumSpecs()
-	return 2
+	return math.max(2, GetNumTalentGroups and GetNumTalentGroups() or 2)
 end
 local function getProfile(k)
 	k = configRoot.ProfileStorage[k] and k or "default"

@@ -797,9 +797,9 @@ securecall(function() -- equipmentset: equipment sets by name
 	end
 	local function equipmentsetHint(name)
 		local esid = name and C_EquipmentSet.GetEquipmentSetID(name) or -1
-		local _, icon, _, active, total, equipped, available = C_EquipmentSet.GetEquipmentSetInfo(esid)
+		local _, icon = C_EquipmentSet.GetEquipmentSetInfo(esid)
 		if icon then
-			return total == equipped or (available > 0), active and 1 or 0, resolveIcon(icon), name, nil, 0, 0, callMethod.SetEquipmentSet, esid
+			return true, 0, resolveIcon(icon), name, nil, 0, 0, callMethod.SetEquipmentSet, esid
 		end
 	end
 	local function wrapCommandHint(...)

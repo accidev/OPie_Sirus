@@ -6,9 +6,6 @@ do
 	local mt = getmetatable(tx)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx then
-		if not idx.SetColorTexture then
-			idx.SetColorTexture = function(self, r, g, b, a) self:SetTexture(r, g, b, a) end
-		end
 		if idx.SetGradient then
 			local orig = idx.SetGradient
 			idx.SetGradient = function(self, orient, c1, c2, ...)

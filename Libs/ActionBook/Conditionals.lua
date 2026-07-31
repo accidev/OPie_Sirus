@@ -310,13 +310,6 @@ end)
 securecall(function() -- race:token
 	local map, _, raceToken = {
 		Scourge="Scourge/Undead/Forsaken",
-		LightforgedDraenei="LightforgedDraenei/Lightforged",
-		HighmountainTauren="HighmountainTauren/Highmountain",
-		MagharOrc="MagharOrc/Maghar",
-		ZandalariTroll="ZandalariTroll/Zandalari",
-		DarkIronDwarf="DarkIronDwarf/DarkIron",
-		EarthenDwarf="EarthenDwarf/Earthen",
-		Harronir="Harronir/Haranir",
 	}, UnitRace("player")
 	KR:SetStateConditionalValue("race", map[raceToken] or raceToken)
 end)

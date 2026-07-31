@@ -204,7 +204,6 @@ if not C_MountJournal.GetMountIDs           then C_MountJournal.GetMountIDs     
 if not C_MountJournal.GetMountInfoExtraByID then C_MountJournal.GetMountInfoExtraByID = function() return nil end end
 if not C_MountJournal.SummonByID            then C_MountJournal.SummonByID            = function() end end
 -- force nil so mount spells route through the spell handler (GetSpellInfo/GetSpellTexture) instead
-C_MountJournal.GetMountFromSpell = function() return nil end
 
 if not FindSpellBookSlotBySpellID then
 	FindSpellBookSlotBySpellID = function(spellID)

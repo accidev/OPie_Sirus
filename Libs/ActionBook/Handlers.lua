@@ -8,8 +8,7 @@ local KR = T.ActionBook:compatible("Kindred", 1,14)
 local IM = T.ActionBook:compatible("Imp", 1,0)
 assert(EV and AB and RW and KR and IM and 1, "Incompatible library bundle")
 local L = T.ActionBook.L
-local FORCED_MOUNT_SPELLS = {}
-local spellFeedback, itemHint, toyHint, mountHint
+local spellFeedback, itemHint, toyHint
 local GetSpellSubtext = GetSpellSubtext or function(id) return select(2, GetSpellInfo(id)) end
 local NormalizeInRange = {[0]=0, 1, [true]=1, [false]=0}
 local _, CLASS = UnitClass("player")
@@ -32,9 +31,6 @@ local function newWidgetName(prefix)
 		bn, bni = prefix .. bni, bni + 1
 	until GetClickFrame(bn) == nil
 	return bn
-end
-local function getSpellMountID(sid)
-	return sid and (FORCED_MOUNT_SPELLS[sid] or C_MountJournal.GetMountFromSpell(sid)) or false
 end
 local getCachedItemName, peekCachedItemName do
 	local itemNames = {}
@@ -84,66 +80,6 @@ local function actionHint(slot)
 	return usable, state, GetActionTexture(slot), GetActionText(slot) or (at == "spell" and GetSpellInfo(aid)), overCount, cdLeft, cdLength, callMethod.SetAction, slot
 end
 
-securecall(function() -- mount: mount ID
-	local function callSummonMount(mountID)
-		C_MountJournal.SummonByID(mountID)
-	end
-	local function summonAction(mountID)
-		return "func", callSummonMount, mountID
-	end
-	if CLASS == "DRUID" then
-		local actType, clickPrefix do
-			local bn = newWidgetName("AB:M!")
-			local b = CreateFrame("Button", bn, nil)
-			b:SetScript("OnClick", function(_, btn)
-				btn = tonumber(btn)
-				if btn then
-					C_MountJournal.SummonByID(btn)
-				end
-			end)
-			actType, clickPrefix = "macrotext", SLASH_CLICK1 .. " " .. bn .. " "
-		end
-		summonAction = function(mountID)
-			return actType, clickPrefix .. mountID
-		end
-	end
-
-	local function checkUsableMountID(mid)
-		local _1, sid, _3, _4, _5, _6, _7, factionLocked, factionId, hide, have = C_MountJournal.GetMountInfoByID(mid)
-		return (have and sid ~= 0 and not hide
-		        and (not factionLocked or factionId == (UnitFactionGroup("player") == "Horde" and 0 or 1)) and sid ~= 0
-		        and RW:IsSpellCastable(sid, 2)) and mid or nil, sid
-	end
-	function mountHint(id)
-		local usable = (not (InCombatLockdown() or IsIndoors())) and HasFullControl() and not UnitIsDeadOrGhost("player")
-		local cname, sid, icon, active, usable2 = C_MountJournal.GetMountInfoByID(id)
-		local state, cdUsable = (active and 1 or 0), nil
-		local cdLeft, cdLength = GetSpellCooldown(sid)
-		cdLeft, cdLength = toCooldown(GetTime(), cdLeft, cdLength)
-		cdUsable = cdLeft == 0
-		return usable and cdUsable and usable2, state, icon, cname, 0, cdLeft, cdLength, callMethod.SetMountBySpellID, sid
-	end
-	local actionMap = {}
-	local function createMount(id)
-		if type(id) == "number" and not actionMap[id] and checkUsableMountID(id) then
-			actionMap[id] = AB:CreateActionSlot(mountHint, id, summonAction(id))
-		end
-		return actionMap[id]
-	end
-	local function describeMount(id)
-		local name, sid, icon, _4, _5, _6, _7, factionLocked, factionId, _, collected = C_MountJournal.GetMountInfoByID(id)
-		if name and factionLocked then
-			name = name .. (factionId == 0 and "|A:QuestPortraitIcon-Horde-small:14:14:0:-1|a" or "|A:QuestPortraitIcon-Alliance-small:15:13:-1:-1|a")
-		end
-		local actionFlags = collected and not checkUsableMountID(id) and 1 or nil
-		return L"Mount", name, icon, nil, callMethod.SetMountBySpellID, sid, nil, actionFlags
-	end
-	AB:RegisterActionType("mount", createMount, describeMount, 1)
-	local function mountSync()
-		AB:NotifyObservers("mount")
-	end
-	EV.PLAYER_ENTERING_WORLD, EV.COMPANION_LEARNED = mountSync, mountSync
-end)
 securecall(function() -- spell: spell ID + mount spell ID
 	local actionMap, spellMap = {}, {}
 	local function isCurrentForm(q, qsid)
@@ -196,8 +132,6 @@ securecall(function() -- spell: spell ID + mount spell ID
 		-- Sirus engine supports SetTexture(fileID) — keep numeric fileIDs as icon fallback.
 		-- Only discard 0 and sub-1 floats (those would be misinterpreted as colour values).
 		if type(gicon) == "number" and gicon < 2 then gicon = nil end
-		local mjID = sid and getSpellMountID(sid)
-		if mjID then return mountHint(mjID) end
 		if not sname then return end
 		local origN = n -- capture numeric ID before transform (for slot-based texture fallback)
 		if type(n) == "number" then n = sname end
@@ -250,11 +184,6 @@ securecall(function() -- spell: spell ID + mount spell ID
 			return actionMap[name]
 		end
 		if type(id) ~= "number" then return end
-		local mjID = getSpellMountID(id)
-		if mjID then
-			return AB:GetActionSlot("mount", mjID)
-		end
-		
 		local action
 		local castable, rwCastType = RW:IsSpellCastable(id)
 		if not castable then
@@ -331,8 +260,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 		end
 		local srank = rank and rank ~= "" and (rank ~= GetSpellSubtext(name)) and " (" .. rank .. ")" or ""
 		local ts, ns = q == "list-query" and srank or "", q == "list-query" and "" or srank
-		local mjID = getSpellMountID(id)
-		return mjID and L"Mount" or (L"Spell" .. ts), (name2 or name or "?") .. ns, icon2 or icon, nil, SetSpellByExactID, id
+		return L"Spell" .. ts, (name2 or name or "?") .. ns, icon2 or icon, nil, SetSpellByExactID, id
 	end
 	AB:RegisterActionType("spell", createSpell, describeSpell, 2, true)
 	function EV.SPELLS_CHANGED()

@@ -17,7 +17,7 @@ do -- /opie
 			ok, m2 = pcall(L, m)
 			sx = "\n  |cffe82020" .. (ok and m2 or m)
 		end
-		print("|cff0080ffOPie|r |cffffffff" .. (C_AddOns.GetAddOnMetadata(ADDON, "Version") or "??") .. "|r" .. sx)
+		print("|cff0080ffOPie|r |cffffffff" .. (GetAddOnMetadata(ADDON, "Version") or "??") .. "|r" .. sx)
 	end
 	local function showConfigHome()
 		T.ConfigHomePanel:OpenPanel()

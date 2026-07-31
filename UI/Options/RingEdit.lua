@@ -90,15 +90,9 @@ local function CreateButton(parent, width)
 	return btn
 end
 local function setIcon(self, path, ext)
-	local plainTexturePath, atlasName
-	if type(path) == "string" and GetFileIDFromPath(path) == nil and C_Texture.GetAtlasInfo(path) then
-		atlasName = path
-		self:SetAtlas(path)
-	else
-		plainTexturePath = path
-		self:SetTexture(path or "Interface/Icons/Inv_Misc_QuestionMark")
-		self:SetTexCoord(0,1,0,1)
-	end
+	local plainTexturePath = path
+	self:SetTexture(path or "Interface/Icons/Inv_Misc_QuestionMark")
+	self:SetTexCoord(0,1,0,1)
 	if ext then
 		if type(ext.iconR) == "number" and type(ext.iconG) == "number" and type(ext.iconB) == "number" then
 			self:SetVertexColor(ext.iconR, ext.iconG, ext.iconB)
@@ -111,7 +105,7 @@ local function setIcon(self, path, ext)
 			plainTexturePath = nil
 		end
 	end
-	return plainTexturePath, atlasName
+	return plainTexturePath
 end
 
 local ringContainer, ringDetail, sliceDetail, newSlice, newRing, editorHost

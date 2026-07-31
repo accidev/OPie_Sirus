@@ -29,14 +29,13 @@ local navView = CreateFrame("Frame", nil, frame) do
 	actLineAnchor:SetPoint("TOP")
 	actLineAnchor:SetSize(500+32, 30)
 	actLineAnchor:Hide()
-	local b3st = DoesTemplateExist("BigRedThreeSliceButtonTemplate")
 	local oy, t = 0
 	local function makeActButton(id, text, w)
-		t, ta = CreateFrame("Button", nil, navView, b3st and "BigRedThreeSliceButtonTemplate" or "UIPanelButtonTemplate", id), t
+		t, ta = CreateFrame("Button", nil, navView, "UIPanelButtonTemplate", id), t
 		t:SetSize(w or 160, 32)
 		t:SetNormalFontObject(GameFontNormalMed2)
 		t:SetHighlightFontObject(GameFontHighlightMed2)
-		t:SetPushedTextOffset(b3st and 2 or -1, -1)
+		t:SetPushedTextOffset(-1, -1)
 		t:SetText(text)
 		t:SetScript("OnClick", onNavClick)
 		if ta then

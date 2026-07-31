@@ -12,7 +12,6 @@ local IconSelectorProps = {
 	viewIndexOffset=0,
 	firstAsset=nil,
 	firstAssetValue=nil,
-	firstAssetIsAtlas=false,
 	columns=14,
 	rows=7,
 	cellWidth=36,
@@ -37,7 +36,6 @@ function IconSelector:SetFirstAsset(value, overrideAsset)
 	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
 	local asset = overrideAsset or value
 	assert(asset == nil or type(asset) == "number" or type(asset) == "string", 'Syntax: IconSelector:SetFirstAsset(value[, overrideAsset])')
-	d.firstAssetIsAtlas = type(asset) == "string" and not GetFileIDFromPath(asset) and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(asset) and true
 	d.firstAssetValue, d.firstAsset = value, asset
 	internal.RenderView(d, d.viewIndexOffset)
 end
@@ -79,9 +77,9 @@ local GetAllIcons do
 end
 function LookupIconName(fid)
 	LookupIconName = nil
-	if select(5, C_AddOns.GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED"
-	   and not C_AddOns.IsAddOnLoaded("IconFileNames") then
-		C_AddOns.LoadAddOn("IconFileNames")
+	if select(5, GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED"
+	   and not IsAddOnLoaded("IconFileNames") then
+		LoadAddOn("IconFileNames")
 	end
 	ICON_FILE_NAMES = _G.ICON_FILE_NAMES
 	ICON_FILE_NAMES = type(ICON_FILE_NAMES) == "table" and ICON_FILE_NAMES or nil
@@ -167,11 +165,7 @@ function internal.RenderView(d, value, allowSkip)
 		local ico, tex = icons[i].tex, i == 0 and value == 0 and (d.firstAsset or "Interface/Icons/INV_Misc_QuestionMark") or icontex[i+value]
 		icons[i]:SetShown(not not tex)
 		if tex then
-			if i == 0 and value == 0 and d.firstAssetIsAtlas then
-				ico:SetAtlas(tex)
-			else
-				ico:SetTexture(tex)
-			end
+			ico:SetTexture(tex)
 			local check = sel and (tex == sel or ico:GetTexture() == sel)
 			icons[i]:SetChecked(check)
 			selectedButton = check and icons[i] or selectedButton
@@ -205,8 +199,7 @@ function internal:OnShow()
 	d.scrollBar:SetValue(0, true)
 	local p = d.self:GetParent()
 	d.self:SetFrameLevel(math.max(d.self:GetFrameLevel(), p and p:GetFrameLevel()+200))
-	-- WotLK: GetCurrentKeyBoardFocus не существует; используем GetCurrentKeyboardFocus (alternative) или guard
-	local kbf = GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus()
+	local kbf = GetCurrentKeyBoardFocus()
 	if kbf then
 		kbf:ClearFocus()
 	end
@@ -247,9 +240,8 @@ function internal:OnEnterPressed()
 		local fid1 = not fid0 and GetFileIDFromPath("Interface/Icons/" .. text)
 		local path = fid0 and (fid0 < 0 and text or fid0) or
 		             fid1 and (fid1 < 0 and "Interface/Icons/" .. text or fid1) or
-		             (C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(text)) and text or
 		             nt > 0 and nt or
-		             C_Spell.GetSpellTexture(text)
+		             select(3, GetSpellInfo(text))
 		if not path then
 			return self:HighlightText()
 		end

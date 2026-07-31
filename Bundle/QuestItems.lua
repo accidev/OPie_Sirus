@@ -9,8 +9,7 @@ local exclude, questItems = PC:RegisterPVar("AutoQuestExclude", {}), {}
 local IsQuestItem, IsQuestItemF, disItems
 local function getContainerItemQuestInfo(bag, slot)
 	if bag and slot then
-		local iqi = C_Container.GetContainerItemQuestInfo(bag, slot)
-		return iqi.isQuestItem, iqi.questID, iqi.isActive
+		return GetContainerItemQuestInfo(bag, slot)
 	end
 end
 do
@@ -43,7 +42,7 @@ do
 		end
 		local tinc, rcat
 		local inc, ff, isQuest, startQuestId, isQuestActive = include[iid], filtered[iid], getContainerItemQuestInfo(bag, slot)
-		isQuest = iid and ((isQuest and C_Item.GetItemSpell(iid)) or (inc == true) or (startQuestId and not isQuestActive and not C_QuestLog.IsQuestFlaggedCompleted(startQuestId)))
+		isQuest = iid and ((isQuest and GetItemSpell(iid)) or (inc == true) or (startQuestId and not isQuestActive and not C_QuestLog.IsQuestFlaggedCompleted(startQuestId)))
 		if ff then
 			isQuest, startQuestId, isQuestActive, rcat = ff(iid)
 		end
@@ -131,8 +130,8 @@ local function syncRing(_, event, upId)
 	end
 	changed, current = false, (ctok + 1) % 2
 
-	local ns = C_Container.GetContainerNumSlots
-	local giid = C_Container.GetContainerItemID
+	local ns = GetContainerNumSlots
+	local giid = GetContainerItemID
 	for bag=0,4 do
 		for slot=1, ns(bag) or 0 do
 			local iid = giid(bag, slot)
@@ -263,11 +262,11 @@ local edFrame = CreateFrame("Frame") do
 		if not (iid and w) then
 			return w and w:Hide()
 		end
-		local n, _, _iq, _, _, _, _, _, _, ico = C_Item.GetItemInfo(iid or 0)
+		local n, _, _iq, _, _, _, _, _, _, ico = GetItemInfo(iid or 0)
 		if n then
 			w.pendingItemID = nil
 		else
-			w.pendingItemID, n, _, _, _, _, ico = iid, "item:" .. iid, C_Item.GetItemInfoInstant(iid or 0)
+			w.pendingItemID, n, ico = iid, "item:" .. iid, select(10, GetItemInfo(iid or 0))
 		end
 		w.Text:SetText(n)
 		w.Icon:SetTexture(ico)
@@ -318,7 +317,7 @@ local edFrame = CreateFrame("Frame") do
 		local allDone = 1
 		for i=1, numRowsPV do
 			local pid = rows[i].pendingItemID
-			local n = pid and C_Item.GetItemInfo(pid)
+			local n = pid and GetItemInfo(pid)
 			allDone = allDone and (n or not pid)
 			if n then
 				rows[i].pendingItemID = nil
@@ -414,7 +413,7 @@ T.AddSlashSuffix(function(msg)
 	else
 		local flag, _, link
 		flag, args = args:match("^(%-?)(.*)$")
-		_, link = C_Item.GetItemInfo(args:match("|H(item:%d+)") or args)
+		_, link = GetItemInfo(args:match("|H(item:%d+)") or args)
 		local iid = link and link:match("item:(%d+)")
 		if iid then
 			excludeItemID(tonumber(iid) * (flag == "-" and -1 or 1))

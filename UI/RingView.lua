@@ -59,11 +59,6 @@ local CreateQuadTexture do
 	end
 	T.CreateQuadTexture = CreateQuadTexture
 end
-local function FramePool_IteratedReleaseAll(pool)
-	while pool:GetNextActive() do
-		pool:ReleaseAll()
-	end
-end
 local CreateIndicator do
 	local gx do
 		local b = ([[Interface\AddOns\%s\gfx\]]):format(ADDON)
@@ -221,7 +216,6 @@ do -- GhostIndication
 		f:SetSize(1,1)
 		f:SetScale(0.80)
 		f:Hide()
-		f[1] = 1
 		return f
 	end
 	function GhostIndication:ActivateGroup(index, count, incidentAngle, mainRadius)
@@ -808,7 +802,6 @@ function iapi:Show(_, _, fastOpen)
 	setupTransitionAnimation(fastOpen and "fast-in" or "in", OnUpdate_ZoomIn)
 	setIndicationShown(true)
 	-- DeclutterOnOpen (LootAlertSystem) не поддерживается в WotLK
-	EV.SPELL_UPDATE_CHARGES = forceMultiUpdate
 	EV.SPELL_UPDATE_COOLDOWN = forceMultiUpdate
 end
 function iapi:Hide()
@@ -818,7 +811,6 @@ function iapi:Hide()
 		GameTooltip:Hide()
 	end
 	wipeTokenCache()
-	EV.UnregisterEvent("SPELL_UPDATE_CHARGES", forceMultiUpdate)
 	EV.UnregisterEvent("SPELL_UPDATE_COOLDOWN", forceMultiUpdate)
 end
 

@@ -1428,7 +1428,7 @@ function EV:ADDON_LOADED(addon)
 		OR_InitConfigState()
 		sfRingsAll, sfGlobalOptions = true, true
 		OR_PerfomDelayedSync()
-		C_AddOns.DisableAddOn("OPie_Classic")
+		DisableAddOn("OPie_Classic")
 		return "remove"
 	end
 end
@@ -1863,7 +1863,7 @@ function api:GetCurrentProfile()
 	return activeProfile
 end
 function api:GetVersion()
-	return C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?", MAJ, REV
+	return GetAddOnMetadata(ADDON, "Version") or "?", MAJ, REV
 end
 
 -- HIDDEN, UNSUPPORTED METHODS: May vanish at any time.
@@ -1912,12 +1912,12 @@ SlashCmdList["OPDIAG"] = function()
 	-- First non-empty slot
 	local firstSlot = tofs and tofs + 1 or 1
 	p("Testing slot "..firstSlot)
-	local ok, st, sid = pcall(GetSpellBookItemInfo, firstSlot, "spell")
+	local st, sid = GetSpellBookItemInfo(firstSlot, "spell")
 	local name1, rank1 = GetSpellBookItemName(firstSlot, "spell")
 	local tex1 = GetSpellTexture(firstSlot, "spell")
 	-- KEY TEST: slot-based GetSpellLink (works for pet spells by slot)
 	local link_slot = GetSpellLink(firstSlot, "spell")
-	p("info: ok="..tostring(ok).." st="..tostring(st).." sid="..tostring(sid))
+	p("info: st="..tostring(st).." sid="..tostring(sid))
 	p("name: "..tostring(name1).." tex: "..tostring(tex1))
 	p("GetSpellLink(slot,'spell'): "..tostring(link_slot))
 	local sid2 = link_slot and tonumber(link_slot:match("|Hspell:(%d+)"))

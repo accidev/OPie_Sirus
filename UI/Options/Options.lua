@@ -11,7 +11,6 @@ local OPC_Options = {
 		{"twof", tag="OnLeft", caption=L"On left click:", menuOption="NoClose", depOn="InteractionMode", depValue=2, otherwise=DISABLED_TEXT},
 		{"twof", tag="OnRight", caption=L"On right click:"},
 		{"twof", "QuickAction", caption=L"Quick action repeat trigger:", depOn="InteractionMode", depValueSet=REQ_POINTER, otherwise=DISABLED_TEXT},
-		{"twof", "PadSupportMode", caption=L"Controller directional input:", reqFeature="GamePad", depOn="InteractionMode", depValueSet=REQ_POINTER, otherwise=DISABLED_TEXT, globalOnly=true, menu={"freelook", "freelook1", "cursor", "none", freelook=L"Camera analog stick", freelook1=L"Movement analog stick", cursor=L"Virtual mouse cursor", none=L"None"}},
 		{"twof", "SliceBinding", caption=L"Per-slice bindings:", depOn="InteractionMode"},
 		{"bool", "ClickPriority", caption=L"Prevent other UI interactions", captionTop=L"While a ring is open:", depOn="InteractionMode", depValueSet=REQ_POINTER, otherwise=false},
 		{"navi", tag="InRingBindingNav", caption=L"Customize in-ring bindings"},
@@ -334,8 +333,7 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 	beam:SetScript("OnShow", OPC_UpdateViewport)
 end
 do -- customized widgets
-	local _offsetTmpl = DoesTemplateExist("UIDropDownCustomMenuEntryTemplate") and "UIDropDownCustomMenuEntryTemplate" or nil
-	local offsetPanel, offsetControl = CreateFrame("Frame", nil, frame, _offsetTmpl), {"panel", "IndicationOffset"} do
+	local offsetPanel, offsetControl = CreateFrame("Frame", nil, frame, nil), {"panel", "IndicationOffset"} do
 		offsetPanel:Hide()
 		offsetPanel:SetSize(0, 78)
 		local function onOffsetValueChanged(self, nv)
@@ -603,11 +601,6 @@ do -- customized widgets
 			L"At HUD Tooltip position"
 		)
 	end
-	function EV:CVAR_UPDATE(cvar)
-		if cvar == "GamePadEnable" and frame:IsVisible() then
-			OPC_UpdateControlReqs(optionControl.PadSupportMode)
-		end
-	end
 end
 
 local OPC_AppearanceFactory = XU:Create("DropDown", nil, frame)
@@ -631,9 +624,6 @@ function OPC_UpdateControlReqs(v)
 	elseif v.depIndicatorFeature then
 		enabled = T.OPieUI:DoesIndicatorConstructorSupport(PC:GetOption("IndicatorFactory", OR_CurrentOptionsDomain), v.depIndicatorFeature)
 		disabledHint = L"Not supported by selected appearance."
-	end
-	if enabled and v.reqFeature == "GamePad" and not C_GamePad.IsEnabled() then
-		enabled, disabledHint = false, nil
 	end
 	if enabled and outOfScope then
 		scopeEnabled, enabled, disabledHint = enabled, false, HIGHLIGHT_FONT_COLOR_CODE .. L"Not configurable per-ring."
@@ -886,7 +876,7 @@ local function refreshControls()
 			widget:SetChecked(PC:GetOption(option, OR_CurrentOptionsDomain) or nil)
 			control.text:SetText(control.caption)
 		end
-		if control.depOn or control.depIndicatorFeature or control.reqFeature or control.globalOnly then
+		if control.depOn or control.depIndicatorFeature or control.globalOnly then
 			OPC_UpdateControlReqs(control)
 		end
 	end

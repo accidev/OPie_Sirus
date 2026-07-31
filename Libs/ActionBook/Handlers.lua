@@ -11,11 +11,6 @@ local L = T.ActionBook.L
 local FORCED_MOUNT_SPELLS = {}
 local spellFeedback, itemHint, toyHint, mountHint
 local GetSpellSubtext = GetSpellSubtext or function(id) return select(2, GetSpellInfo(id)) end
-local origGSC = GetSpellCharges
-local function getSpellCharges(id, ...)
-	if type(id) ~= "number" or id == 0 then return nil end
-	return origGSC and origGSC(id, ...)
-end
 local NormalizeInRange = {[0]=0, 1, [true]=1, [false]=0}
 local _, CLASS = UnitClass("player")
 local lowered = setmetatable({}, {__index=function(t,k)
@@ -45,13 +40,13 @@ local getCachedItemName, peekCachedItemName do
 	local itemNames = {}
 	function EV:GET_ITEM_INFO_RECEIVED(iid, ok)
 		if itemNames[iid] == false and ok then
-			itemNames[iid] = C_Item.GetItemInfo(iid) or false
+			itemNames[iid] = GetItemInfo(iid) or false
 		end
 	end
 	function getCachedItemName(ident)
 		local iid = tonumber(ident) or tonumber(type(ident) == "string" and ident:match("item:(%d+)"))
 		if iid then
-			local c, f = itemNames[iid], C_Item.GetItemInfo(iid)
+			local c, f = itemNames[iid], GetItemInfo(iid)
 			itemNames[iid] = f or c or false
 			return f or c or nil
 		end
@@ -78,24 +73,14 @@ local function actionHint(slot)
 	inRange, hasRange = inRange ~= 0, inRange ~= nil
 	local cdUsable, overCount
 	local cdLeft, cdLength, cdEnabled, _cdModRate, cdActive = GetActionCooldown(slot)
-	local count, charges, maxCharges, ccdStart, ccdLength
-	local hasUsableCharge, retChargeCooldown
-	count, charges, maxCharges, ccdStart, ccdLength = GetActionCount(slot), GetActionCharges(slot)
+	local count = GetActionCount(slot)
 	cdLeft, cdLength, cdEnabled = toCooldown(now, cdLeft, cdLength, cdEnabled)
-	hasUsableCharge = charges and charges > 0
-	if charges and maxCharges and charges < maxCharges and cdLeft == 0 then
-		retChargeCooldown = 1
-	end
 	cdUsable = cdLeft == 0 or cdEnabled == 0
 	state = state + ((IsCurrentAction(slot) or cdEnabled == 0) and 1 or 0)
-	      + (at == "spell" and IsSpellOverlayed(aid) and 2 or 0)
-	      + (nomana and 8 or 0) + (inRange and 0 or 16) + (hasUsableCharge and 64 or 0) + (hasRange and 512 or 0)
+	      + (nomana and 8 or 0) + (inRange and 0 or 16) + (hasRange and 512 or 0)
 	      + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 	usable = not not (usable and inRange and cdUsable)
-	if retChargeCooldown then
-		cdLeft, cdLength = toCooldown(now, ccdStart, ccdLength, 1)
-	end
-	overCount = overCount or count <= 1 and charges or count
+	overCount = overCount or count
 	return usable, state, GetActionTexture(slot), GetActionText(slot) or (at == "spell" and GetSpellInfo(aid)), overCount, cdLeft, cdLength, callMethod.SetAction, slot
 end
 
@@ -222,22 +207,13 @@ securecall(function() -- spell: spell ID + mount spell ID
 		inRange, hasRange = inRange ~= 0, inRange ~= nil
 		local cdUsable, overCount
 		local cdLeft, cdLength, cdEnabled, _cdMod, cdActive = GetSpellCooldown(n)
-		local count, charges, maxCharges, ccdStart, ccdLength, _ccdMod, _ccdActive
-		local hasUsableCharge, retChargeCooldown
-		count, charges, maxCharges, ccdStart, ccdLength, _ccdMod, _ccdActive = GetSpellCount(n), getSpellCharges(n)
+		local count = GetSpellCount(n)
 		cdLeft, cdLength, cdEnabled = toCooldown(now, cdLeft, cdLength, cdEnabled)
-		hasUsableCharge = charges and charges > 0
-		if charges and maxCharges and charges < maxCharges and cdLeft == 0 then
-			retChargeCooldown = 1
-		end
 		cdUsable = cdLeft == 0 or cdEnabled == 0
 		state = state + ((IsCurrentSpell(n) or isCurrentForm(n, sid) or cdEnabled == 0) and 1 or 0)
-		      + (nomana and 8 or 0) + (inRange and 0 or 16) + (hasUsableCharge and 64 or 0)
+		      + (nomana and 8 or 0) + (inRange and 0 or 16)
 		      + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		usable = not not (usable and inRange and cdUsable)
-		if retChargeCooldown then
-			cdLeft, cdLength = toCooldown(now, ccdStart, ccdLength, 1)
-		end
 		local ih, ico, ohUsable = iconOverrideHandlers[msid] or (type(n)=="string" and iconOverrideHandlers[n:lower()]), nil
 		if ih then
 			ico, ohUsable = ih(msid, n)
@@ -257,7 +233,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 				slotTex = sbslotCache[origN] and GetSpellTexture(sbslotCache[origN], "spell") or nil
 			end
 		end
-		overCount = overCount or (count and count <= 1 and charges or count)
+		overCount = overCount or count
 		return usable, state, ico or slotTex or GetSpellTexture(n) or gicon, sname, overCount, cdLeft, cdLength, sbslot and SetSpellBookItem or msid and SetSpellByID, sbslot or msid
 	end
 	function spellFeedback(sname, target, spellId)
@@ -346,13 +322,13 @@ securecall(function() -- spell: spell ID + mount spell ID
 		return actionMap[action]
 	end
 	local function describeSpell(q, id, flags)
-		local name2, sid2, icon2, rank, name, _, icon, _, _, _, _, icon1 = nil, nil, nil, GetSpellSubtext(id), GetSpellInfo(id)
+		local name2, icon2, rank, name, _, icon, _, _, _, _, icon1 = nil, nil, GetSpellSubtext(id), GetSpellInfo(id)
 		local _, castType = RW:IsSpellCastable(id)
 		if castType == "rune-ability-spell" then
 			_, icon2 = GetSpellTexture(id)
 		elseif name and castType ~= "forced-id-cast"  and castType ~= "rewire-escape" then
 			local qRank = (q == "list-query") and rank or nil
-			rank, name2, _, icon2, _, _, _, sid2 = GetSpellSubtext(name, rank), GetSpellInfo(name, qRank)
+			rank, name2, _, icon2 = GetSpellSubtext(name, rank), GetSpellInfo(name, qRank)
 			if RUNE_SPELLS[id] then
 				icon, name2, icon2 = icon1 or icon, nil, nil
 			end
@@ -393,7 +369,7 @@ securecall(function() -- item: items ID/inventory slot
 		local name2, cb, cs, n = name2 and lowered[name2]
 		for i=1, LAST_EQUIP_SLOT do
 			if GetInventoryItemID("player", i) == iid then
-				n = C_Item.GetItemInfo(GetInventoryItemLink("player", i))
+				n = GetItemInfo(GetInventoryItemLink("player", i))
 				if n == name or n and name2 and lowered[n] == name2 then
 					return nil, i
 				elseif not cs then
@@ -401,11 +377,11 @@ securecall(function() -- item: items ID/inventory slot
 				end
 			end
 		end
-		local ns, giid, gil = C_Container.GetContainerNumSlots, C_Container.GetContainerItemID, C_Container.GetContainerItemLink
+		local ns, giid, gil = GetContainerNumSlots, GetContainerItemID, GetContainerItemLink
 		for i=0,4 do
 			for j=1, ns(i) do
 				if iid == giid(i, j) then
-					n = C_Item.GetItemInfo(gil(i, j))
+					n = GetItemInfo(gil(i, j))
 					if n == name or n and name2 and lowered[n] == name2 then
 						return i, j
 					elseif not cs then
@@ -421,21 +397,21 @@ securecall(function() -- item: items ID/inventory slot
 		if type(ident) == "number" and ident <= LAST_EQUIP_SLOT then
 			local invid = GetInventoryItemID("player", ident)
 			if invid == nil then return end
-			bag, slot, name, link = nil, invid, C_Item.GetItemInfo(GetInventoryItemLink("player", ident) or invid)
+			bag, slot, name, link = nil, invid, GetItemInfo(GetInventoryItemLink("player", ident) or invid)
 			icon = GetInventoryItemTexture and GetInventoryItemTexture("player", ident) or nil
 			ident = name or ident
 		elseif ident then
-			name, link, _, _, _, _, _, _, _, icon = C_Item.GetItemInfo(ident)
+			name, link, _, _, _, _, _, _, _, icon = GetItemInfo(ident)
 		else
 			return
 		end
 		local iid, cdLeft, cdLength, cdEnabled = (link and tonumber(link:match("item:([x%x]+)"))) or itemIdMap[ident]
 		if iid then
-			cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), C_Container.GetItemCooldown(iid))
+			cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), GetItemCooldown(iid))
 		end
 		target = target or "target"
 		local canRange = not (InCombatLockdown() and (UnitIsFriend("player", target) or not UnitExists(target))) or nil
-		local inRange, hasRange = canRange and NormalizeInRange[C_Item.IsItemInRange(ident, target)]
+		local inRange, hasRange = canRange and NormalizeInRange[IsItemInRange(ident, target)]
 		inRange, hasRange = inRange ~= 0, inRange ~= nil
 		if ibag and islot then
 			bag, slot = ibag, islot
@@ -449,12 +425,12 @@ securecall(function() -- item: items ID/inventory slot
 		elseif iid then
 			tip, tipArg = callMethod.SetItemByID, iid
 		end
-		local nCharge = C_Item.GetItemCount(ident, false, true) or 0
-		local usable = nCharge > 0 and (C_Item.GetItemSpell(ident) == nil or C_Item.IsUsableItem(ident))
+		local nCharge = GetItemCount(ident, false, true) or 0
+		local usable = nCharge > 0 and (GetItemSpell(ident) == nil or IsUsableItem(ident))
 		local qual = 0
-		local state = (C_Item.IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and C_Item.IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0) + qual
+		local state = (IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0) + qual
 		usable = not not (usable and inRange and cdLeft == 0)
-		icon = icon or C_Item.GetItemIconByID(ident)
+		icon = icon or select(10, GetItemInfo(ident))
 		local oh = countOverrideHandlers[iid]
 		if oh then
 			local ohCharge, ohUsable = oh(iid, nCharge)
@@ -472,22 +448,22 @@ securecall(function() -- item: items ID/inventory slot
 			byName, forceShow, onlyEquipped = flags % 4 >= 2, flags % 2 >= 1, flags % 8 >= 4
 		end
 		local name = id <= LAST_EQUIP_SLOT and id or (byName and getCachedItemName(id) or ("item:" .. id))
-		if not forceShow and onlyEquipped and not ((id > LAST_EQUIP_SLOT and C_Item.IsEquippedItem(name)) or (id <= LAST_EQUIP_SLOT and GetInventoryItemLink("player", id))) then return end
-		if not forceShow and C_Item.GetItemCount(name) == 0 then return end
+		if not forceShow and onlyEquipped and not ((id > LAST_EQUIP_SLOT and IsEquippedItem(name)) or (id <= LAST_EQUIP_SLOT and GetInventoryItemLink("player", id))) then return end
+		if not forceShow and GetItemCount(name) == 0 then return end
 		if not actionMap[name] then
 			actionMap[name], itemIdMap[name] = AB:CreateActionSlot(itemHint, name, "attribute", "type","item", "item",name, "checkselfcast",true, "checkfocuscast",true), id
 		end
 		return actionMap[name]
 	end
 	local function describeItem(id, _flags)
-		return L"Item", C_Item.GetItemNameByID(id) or peekCachedItemName(id), C_Item.GetItemIconByID(id), nil, callMethod.SetItemByID, tonumber(id)
+		return L"Item", (GetItemInfo(id)) or peekCachedItemName(id), select(10, GetItemInfo(id)), nil, callMethod.SetItemByID, tonumber(id)
 	end
 	AB:RegisterActionType("item", createItem, describeItem, 2)
 	function EV.BAG_UPDATE()
 		AB:NotifyObservers("item")
 	end
 	RW:SetCommandHint(SLASH_EQUIP1, 70, function(_, _, clause, target)
-		if clause and clause ~= "" and C_Item.GetItemNameByID(clause) then
+		if clause and clause ~= "" and (GetItemInfo(clause)) then
 			return true, itemHint(clause, nil, target, "equip")
 		end
 	end)
@@ -573,7 +549,7 @@ securecall(function() -- macrotext
 	RW:SetCommandHint("/use", 100, function(_, _, clause, target, _, _, msg)
 		if not clause or clause == "" then return end
 		local isItemReturn, link, bag, slot = false, SecureCmdItemParse(clause)
-		if (bag and slot) or (link and C_Item.GetItemInfoInstant(link)) then
+		if (bag and slot) or (link and tonumber(link)) then
 			if msg == "castrandom-fallback" or canUseViaSCUI(clause) then
 				isItemReturn = true
 			end
@@ -594,7 +570,7 @@ securecall(function() -- macrotext
 			return checkReturn(true, spellFeedback(sid or clause, target))
 		else
 			local link, bag, slot = SecureCmdItemParse(clause)
-			if ((bag and slot) or (link and C_Item.GetItemInfoInstant(link))) and
+			if ((bag and slot) or (link and tonumber(link))) and
 			   (msg == "castrandom-fallback" or canUseViaSCUI(clause)) then
 				return checkCountReturn(90, itemHint(link, nil, target, nil, bag, slot))
 			end
@@ -673,7 +649,7 @@ securecall(function() -- macrotext
 			local v, vt = getNextCast("crState", clause, target)
 			if v then
 				local nextN = tonumber(v)
-				if nextN and nextN > 20 and C_Item.GetItemNameByID(nextN) then
+				if nextN and nextN > 20 and (GetItemInfo(nextN)) then
 					v = "item:" .. v
 				end
 				return RW:GetCommandAction("/use", v, vt or target, nil, "castrandom-fallback")
@@ -1076,8 +1052,7 @@ securecall(function() -- petspell: spell ID
 			local name, _, icon = GetSpellInfo(id)
 			return L"Pet Ability", name, icon, nil, callMethod.SetSpellByID, id
 		elseif actionID[id] then
-			local st, _, _, icon, name, _, _, _, tipf, tipa = nil, petHint(id)
-			_, st = tipa and tipa > 0 and GetSpellBookItemName(tipa, "pet") or nil
+			local _, _, icon, name, _, _, _, tipf, tipa = petHint(id)
 			return L"Pet Ability", name, icon, nil, tipf, tipa
 		end
 	end
@@ -1135,9 +1110,9 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 	function toyHint(iid, _modState, target)
 		local state, count, hasUsableCharge, now = 0, 0, false, GetTime()
 		local _, name, icon = C_ToyBox.GetToyInfo(iid)
-		local cdLeft, cdLength, cdEnabled = toCooldown(now, C_Container.GetItemCooldown(iid))
+		local cdLeft, cdLength, cdEnabled = toCooldown(now, GetItemCooldown(iid))
 		local ignUse, usable = IGNORE_TOY_USABILITY[iid]
-		local _, sid = C_Item.GetItemSpell(iid)
+		local _, sid = GetItemSpell(iid)
 		if not playerHasToy(iid) then
 			usable = false
 		elseif ignUse == nil then
@@ -1147,20 +1122,10 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		end
 		target = target or "target"
 		local canRange = not (InCombatLockdown() and (UnitIsFriend("player", target) or not UnitExists(target))) or nil
-		local inRange, hasRange = canRange and NormalizeInRange[C_Item.IsItemInRange(iid, target)]
+		local inRange, hasRange = canRange and NormalizeInRange[IsItemInRange(iid, target)]
 		inRange, hasRange = inRange ~= 0, inRange ~= nil
 		state = state + (inRange and 0 or 16) + (hasRange and 512 or 0) + (cdEnabled == 0 and 2048 or 0)
-		if sid then
-			local charges, maxCharges, ccdStart, ccdLength, _ccdMod, _ccdActive = GetSpellCharges(sid)
-			-- BUG[11.0.2/2409]: GetSpellCharges[The Innkeeper's Daughter] returns the unified hearthstone state,
-			-- but the *item cooldown* is actually enforced (longer + no second charge for Humans).
-			count = charges and charges > 0 and cdLength == 0 and charges or count
-			if charges and maxCharges and charges < maxCharges and cdLength == 0 then
-				hasUsableCharge, cdLeft, cdLength = charges > 0, toCooldown(now, ccdStart, ccdLength, 1)
-				state = state + (hasUsableCharge and 64 or 0)
-			end
-		end
-		icon = icon or C_Item.GetItemIconByID(iid)
+		icon = icon or select(10, GetItemInfo(iid))
 		usable = name and (hasUsableCharge or cdLeft == 0) and inRange and usable or false
 		return usable, state, icon, name, count, cdLeft, cdLength, callMethod.SetItemByID, iid
 	end
@@ -1195,7 +1160,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		local isUsable, mid = ignUse or C_ToyBox.IsToyUsable(id), map[qid]
 		if isUsable == nil then
 			isUsable, uq[id] = lastUsability[id], 1
-			C_Item.GetItemInfo(id)
+			GetItemInfo(id)
 		elseif not ignUse then
 			lastUsability[id] = isUsable
 		end
@@ -1212,13 +1177,13 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		local ignUse, haveToy, _, name, tex = IGNORE_TOY_USABILITY[id], playerHasToy(id), C_ToyBox.GetToyInfo(id)
 		local canUse = haveToy and (type(ignUse) ~= "string" or KR:EvaluateCmdOptions(ignUse)) and (ignUse or C_ToyBox.IsToyUsable(id))
 		local actionFlags = haveToy and not canUse and 1 or nil
-		return L"Toy", name, tex or C_Item.GetItemIconByID(id), nil, callMethod.SetItemByID, id, nil, actionFlags
+		return L"Toy", name, tex or select(10, GetItemInfo(id)), nil, callMethod.SetItemByID, id, nil, actionFlags
 	end
 	AB:RegisterActionType("toy", createToy, describeToy, 2)
 	if type(SLASH_USE_TOY1) == "string" then
 		RW:SetCommandHint(SLASH_USE_TOY1, 60, function(_, _, clause, target)
 			if clause and clause ~= "" then
-				local iid = C_Item.GetItemIDForItemInfo(clause)
+				local iid = tonumber(clause)
 				if iid then
 					return true, toyHint(iid, nil, target)
 				end
@@ -1235,7 +1200,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 end)
 securecall(function() -- disenchant: iid
 	local map, DISENCHANT_SID = {}, 13262
-	local DISENCHANT_SN = C_Spell.GetSpellName(DISENCHANT_SID)
+	local DISENCHANT_SN = (GetSpellInfo(DISENCHANT_SID))
 	local ICON_PREFIX = "|TInterface/Buttons/UI-GroupLoot-DE-Up:0:0|t "
 	local SLASH_SPELL_TARGET_ITEM1 = '/spelltargetitem' do
 		local wn = newWidgetName("AB:I!")
@@ -1262,21 +1227,21 @@ securecall(function() -- disenchant: iid
 		self:Show()
 	end
 	local function disenchantHint(ident)
-		local count = C_Item.GetItemCount(ident, false, false, false)
+		local count = GetItemCount(ident, false, false, false)
 		local usable = IsPlayerSpell(DISENCHANT_SID) and count > 0
-		local name = C_Item.GetItemNameByID(ident)
+		local name = (GetItemInfo(ident))
 		local qual = 0
 		local state, cdUsable = 0, nil
 		local cdLeft, cdLength, cdEnabled, _cdMod, cdActive = GetSpellCooldown(DISENCHANT_SID)
 		cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), cdLeft, cdLength, cdEnabled)
 		cdUsable = cdLeft == 0
-		state = state + qual + 131072 + (C_Item.IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
+		state = state + qual + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		local disName = ICON_PREFIX .. (name or ("item:" .. ident))
-		return not not (usable and cdUsable), state, C_Item.GetItemIconByID(ident), disName, count,
+		return not not (usable and cdUsable), state, select(10, GetItemInfo(ident)), disName, count,
 			cdLeft or 0, cdLength or 0, disenchantTip, ident
 	end
 	local function createDisenchant(iid)
-		if not (IsPlayerSpell(DISENCHANT_SID) and type(iid) == "number" and C_Item.GetItemCount(iid) > 0) then
+		if not (IsPlayerSpell(DISENCHANT_SID) and type(iid) == "number" and GetItemCount(iid) > 0) then
 			return
 		end
 		local mid = map[iid]
@@ -1289,7 +1254,7 @@ securecall(function() -- disenchant: iid
 	end
 	local function describeDisenchant(iid)
 		if type(iid) ~= "number" then return end
-		local icon, name = C_Item.GetItemIconByID(iid), C_Item.GetItemNameByID(iid)
+		local icon, name = select(10, GetItemInfo(iid)), (GetItemInfo(iid))
 		return DISENCHANT_SN, name or ("item:" .. iid), icon, nil, disenchantTip, iid
 	end
 	AB:RegisterActionType("disenchant", createDisenchant, describeDisenchant, 1)
@@ -1530,170 +1495,4 @@ securecall(function() -- uipanel: token
 		return L"Interface Panel"
 	end
 	AB:RegisterActionType("uipanel", createPanel, describePanel, 1)
-end)
-securecall(function() -- outfit: id (retail-only, skipped in WotLK)
-	if not false then return end
-	local CTO_SID, UTO_SID = 1247917, 1247613
-	local SF_PICKUP_FID, SF_DROP_FID, SF_OPICKUP_FID = 567489, 567524, 567565
-	local CTO_NAME, CTO_ICON = C_Spell.GetSpellName(CTO_SID), C_Spell.GetSpellTexture(CTO_SID)
-	local CLOBBER_SLOT = (CLASS == "DRUID" and 120 or 108) + 10
-	local unlockedOutfits = {[0]=true}
-	local outfitAction, outfitName, outfitIcon = {}, {}, {}
-	local SLASH_USEOUTFIT = "/ab:useoutfit" do
-		local outfitButton = CreateFrame("Button", nil, nil, "SecureActionButtonTemplate")
-		outfitButton:SetAttribute("action", CLOBBER_SLOT)
-		outfitButton:SetAttribute("useOnKeyDown", false)
-		SecureHandlerWrapScript(outfitButton, "OnClick", outfitButton, 'return "RightButton"');
-		outfitButton:SetAttribute("RunSlashCmd", [=[--AB:Outfit_RunSlash
-			local _cmd, v = ...
-			return nil, "notified-click", tonumber(v)
-		]=])
-		outfitButton:SetAttribute("RunSlashCmd-PreClick", [=[--AB:Outfit_PreClick
-			local _cmd, v = ...
-			self:SetAttribute("type", nil)
-			self:SetAttribute("outfit-id", v)
-		]=])
-		local function IsCursorOutfit(oid, ct, id, _, id2)
-			return ct == "outfit" and id == oid or oid == 0 and ct == "spell" and CTO_SID == id2
-		end
-		local function IsActionOutfit(oid, at, id)
-			return at == "outfit" and id == oid or oid == 0 and at == "spell" and CTO_SID == id
-		end
-		local DuckCursorSounds do
-			local s
-			local function RestoreCursorSounds(_)
-				if s then
-					_ = (s % 2 > 0) and UnmuteSoundFile(SF_PICKUP_FID)
-					_ = (s % 4 > 1) and UnmuteSoundFile(SF_DROP_FID)
-					_ = (s % 8 > 3) and UnmuteSoundFile(SF_OPICKUP_FID)
-					s = nil
-				end
-			end
-			function DuckCursorSounds(_)
-				if s ~= nil then
-					EV.After(0, RestoreCursorSounds)
-					return
-				end
-				local wp1, h1 = PlaySoundFile(SF_PICKUP_FID)
-				local wp2, h2 = PlaySoundFile(SF_DROP_FID)
-				local wp3, h3 = PlaySoundFile(SF_OPICKUP_FID)
-				if not (wp1 or wp2 or wp3) then
-					return
-				end
-				s = (wp1 and 1 or 0) + (wp2 and 2 or 0) + (wp3 and 4 or 0)
-				_ = wp1 and StopSound(h1) and nil or wp2 and StopSound(h2) and nil or wp3 and StopSound(h3)
-				_ = wp1 and MuteSoundFile(SF_PICKUP_FID) and nil
-				 or wp2 and MuteSoundFile(SF_DROP_FID) and nil
-				 or wp3 and MuteSoundFile(SF_OPICKUP_FID)
-				EV.After(0, RestoreCursorSounds)
-			end
-		end
-		local csEmpty
-		outfitButton:SetScript("PreClick", function()
-			local oid = outfitButton:GetAttribute("outfit-id")
-			if InCombatLockdown() or not oid then
-				return oid and UIErrorsFrame:AddExternalErrorMessage(ERR_NOT_IN_COMBAT) and nil
-			end
-			DuckCursorSounds()
-			ClearCursor() -- going to happen anyway
-			C_TransmogOutfitInfo.PickupOutfit(oid)
-			if IsCursorOutfit(oid, GetCursorInfo()) then
-				csEmpty = nil == GetActionInfo(CLOBBER_SLOT)
-				PlaceAction(CLOBBER_SLOT)
-				if IsActionOutfit(oid, GetActionInfo(CLOBBER_SLOT)) then
-					outfitButton:SetAttribute("type", "action")
-				end
-			else
-				ClearCursor()
-			end
-		end)
-		outfitButton:SetScript("PostClick", function()
-			if InCombatLockdown() or csEmpty == nil then
-				return
-			end
-			if csEmpty == true then
-				ClearCursor()
-				PickupAction(CLOBBER_SLOT)
-				ClearCursor()
-			elseif csEmpty == false then
-				PlaceAction(CLOBBER_SLOT)
-				ClearCursor()
-			end
-			outfitButton:SetAttribute("type", nil)
-			csEmpty = nil
-		end)
-		RW:RegisterCommandEx(SLASH_USEOUTFIT, 3 + 2^5*2 + 2^8*5, outfitButton)
-	end
-	local function getOutfitName(id)
-		if id == 0 then
-			outfitName[id], outfitIcon[id] = CTO_NAME, CTO_ICON
-			return CTO_NAME
-		end
-		local info, name = C_TransmogOutfitInfo.GetOutfitInfo(id)
-		if info then
-			name = info.name
-			name = name == TRANSMOG_OUTFIT_NAME_DEFAULT and (name .. " #" .. id) or name
-			outfitName[id], outfitIcon[id] = name, info.icon
-			return name
-		end
-	end
-	local function setOutfitTooltip(tip, id)
-		local name = id == 0 and CTO_NAME or outfitName[id] or getOutfitName(id)
-		tip:SetText(HIGHLIGHT_FONT_COLOR_CODE .. (name or ""))
-		tip:AddLine(HIGHLIGHT_FONT_COLOR_CODE .. SPELL_CAST_TIME_INSTANT)
-		local dt = C_Spell.GetSpellDescription(id == 0 and CTO_SID or UTO_SID)
-		dt = dt and dt:match("^[^\r\n]+")
-		if dt then
-			tip:AddLine(dt, nil, nil, nil, true)
-		end
-		local ncs = "|r\n" .. NORMAL_FONT_COLOR_CODE
-		if C_TransmogOutfitInfo.GetActiveOutfitID() ~= id then
-			-- No extra hint
-		elseif C_TransmogOutfitInfo.IsLockedOutfit(id) then
-			tip:AddLine("\n|cffffffff" .. L"Appearance locked" .. ncs .. L"Use again to allow this apperance to be replaced by a Situation.", nil,nil,nil,1)
-		else
-			tip:AddLine("\n|cffffffff" .. L"Appearance unlocked" .. ncs .. L"Use again to prevent this apperance from being replaced by a Situation.", nil,nil,nil,1)
-		end
-	end
-	local function hintOutfit(id)
-		local cdsid, now = id == 0 and CTO_SID or UTO_SID, GetTime()
-		local name = outfitName[id] or getOutfitName(id)
-		local icon = outfitIcon[id]
-		local usable = not InCombatLockdown()
-		local state = C_TransmogOutfitInfo.GetActiveOutfitID() == id and 1 or 0
-		local cdLeft, cdLength, cdEnabled, _cdMod, _cdActive = GetSpellCooldown(cdsid)
-		if issecretvalue(cdLeft) then
-			cdLeft, cdEnabled = nil
-			state, cdLength = state + 524288, spellPHS + cdsid
-		else
-			cdLeft, cdLength, cdEnabled = toCooldown(now, cdLeft, cdLength, cdEnabled)
-			usable = usable and cdLeft == 0
-		end
-		return usable, state, icon, name, 0, cdLeft, cdLength, setOutfitTooltip, id
-	end
-	local function createOutfit(id)
-		if not (unlockedOutfits[id] or type(id) == "number" and C_TransmogOutfitInfo.GetOutfitInfo(id)) then
-			return
-		end
-		local aid = outfitAction[id] or AB:CreateActionSlot(hintOutfit, id, "retext",SLASH_USEOUTFIT .. " " .. id)
-		outfitAction[id], unlockedOutfits[id] = aid, true
-		return aid
-	end
-	local function describeOutfit(id)
-		if type(id) ~= "number" or id < 0 or id % 1 > 0 then return end
-		local name = outfitName[id] or getOutfitName(id)
-		local icon = outfitIcon[id]
-		return L"Outfit", name ~= "" and name or ("#" .. id), icon
-	end
-	AB:RegisterActionType("outfit", createOutfit, describeOutfit, 1)
-	function EV:TRANSMOG_OUTFITS_CHANGED(newID)
-		if next(outfitName) then
-			wipe(outfitName)
-			wipe(outfitIcon)
-		end
-		if newID then
-			unlockedOutfits[newID] = true
-		end
-		AB:NotifyObservers("outfit")
-	end
 end)

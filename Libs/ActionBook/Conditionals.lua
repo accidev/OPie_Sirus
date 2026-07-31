@@ -49,7 +49,7 @@ securecall(function() -- me:Player Name/Class
 	KR:SetStateConditionalValue("me", UnitName("player") .. "/" .. playerClassLocal .. "/" .. playerClass)
 end)
 securecall(function() -- form:token
-	local GetSpellName = C_Spell.GetSpellName
+	local GetSpellName = GetSpellInfo
 	local map, curCnd, pending =
 		playerClass == "DRUID" and {
 			[GetSpellName(40120) or 1]="/flight",
@@ -76,7 +76,7 @@ securecall(function() -- form:token
 	if map then
 		KR:SetAliasConditional("stance", "form")
 		local function syncForm()
-			local GetSpellName, s = C_Spell.GetSpellName, ""
+			local GetSpellName, s = GetSpellInfo, ""
 			for i=1,10 do
 				local _, _, _, fsid = GetShapeshiftFormInfo(i)
 				local name = fsid and GetSpellName(fsid)
@@ -149,17 +149,9 @@ securecall(function() -- instance:arena/bg/ratedbg/lfr/raid/scenario + outland/n
 			if e == "PLAYER_ENTERING_WORLD" and zoneChecked then
 				zoneChecked, EV.ZONE_CHANGED_NEW_AREA = false, syncInstance
 			end
-			local bm = C_Map.GetBestMapForUnit("player")
-			itype = mapZoneCheck[bm and bm*1e6 + imid or nil] or mapZoneCheck[imid] or mapTypes[imid]
+			itype = mapZoneCheck[imid] or mapTypes[imid]
 		elseif mapTypes[imid] then
 			itype = mapTypes[imid]
-		elseif itype == "pvp" and C_PvP and C_PvP.IsRatedBattleground() then
-			itype = "ratedbg"
-		elseif itype == "scenario" and C_DelvesUI and C_DelvesUI.HasActiveDelve(imid) then
-			itype = "scenario/delve"
-		end
-		if C_Loot.IsLegacyLootModeEnabled() then
-			stype = (stype or "") .. "/legacy"
 		end
 		itype = mapTypes[itype] or itype or "daze"
 		itype = stype and (itype .. stype) or itype
@@ -237,10 +229,10 @@ securecall(function() -- ready:spell name/spell id/item name/item id
 			local rc = at[i]
 			local cdS, cdL, _cdA = GetSpellCooldown(rc)
 			if cdL == nil then
-				local _, iid = C_Item.GetItemInfo(rc)
+				local _, iid = GetItemInfo(rc)
 				iid = tonumber((iid or rc):match("item:(%d+)"))
 				if iid then
-					cdS, cdL, _cdA = C_Container.GetItemCooldown(iid)
+					cdS, cdL, _cdA = GetItemCooldown(iid)
 				end
 			end
 			if cdL == 0 or (cdS and cdL and (cdS + cdL) <= gcE) then
@@ -257,7 +249,7 @@ securecall(function() -- have:item name/id
 			return false
 		end
 		
-		local at, GetItemCount = stringArgCache[args], C_Item.GetItemCount
+		local at, GetItemCount = stringArgCache[args], GetItemCount
 		for i=1,#at do
 			if (GetItemCount(at[i]) or 0) > 0 then
 				return true
@@ -393,7 +385,7 @@ securecall(function() -- race:token
 end)
 securecall(function() -- professions
 	local ct, ot, syncProfInner = {}, {}
-	local GetSpellName = C_Spell.GetSpellName
+	local GetSpellName = GetSpellInfo
 	local map = {
 		[GetSpellName(3908) or ""]="tail",
 		[GetSpellName(2108) or ""]="lw",
@@ -666,7 +658,7 @@ securecall(function() -- uslot:(slot token)
 		if InCombatLockdown() then
 			return
 		end
-		local GetItemSpell, o = C_Item.GetItemSpell
+		local GetItemSpell, o = GetItemSpell
 		for token, i in next, slots do
 			local link, _, sid = token and (GetInventoryItemLink("player", i) or GetInventoryItemID("player", i))
 			if link then
@@ -711,7 +703,7 @@ securecall(function() -- encount:(e-{id}/token)
 	local function setEncounterState(newstate)
 		state = newstate
 		KR:SetStateConditionalValue("encount", state)
-		C_CVar.SetCVar(CV_ENCOUNT_STATE, state or "")
+		SetCVar(CV_ENCOUNT_STATE, state or "")
 	end
 	function EV:ENCOUNTER_START(eid)
 		if eid and not InCombatLockdown() then
@@ -724,11 +716,11 @@ securecall(function() -- encount:(e-{id}/token)
 		end
 	end
 	function EV:PLAYER_ENTERING_WORLD(_, isReload)
-		local s2 = isReload and C_CVar.GetCVar(CV_ENCOUNT_STATE) or ""
+		local s2 = isReload and GetCVar(CV_ENCOUNT_STATE) or ""
 		if not InCombatLockdown() and s2 ~= "" and not state then
 			setEncounterState(s2)
 		else
-			C_CVar.RegisterCVar(CV_ENCOUNT_STATE, "")
+			RegisterCVar(CV_ENCOUNT_STATE, "")
 		end
 		return "remove"
 	end

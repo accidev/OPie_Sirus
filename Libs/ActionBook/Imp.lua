@@ -337,18 +337,12 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		end
 		local function addSpellBookTab(ofs, c, allowGenericOverwrite)
 			for j=ofs+1,ofs+c do
-				local n, nrank = GetSpellBookItemName(j, "spell")
+				local n = GetSpellBookItemName(j, "spell")
 				local st, id = GetSpellBookItemInfo(j, "spell")
-				if (not id or id == 0) and n then
-					local link = GetSpellLink(n, nrank)
-					local rid = tonumber(link and link:gsub("|", "||"):match("spell:(%d+)"))
-					if rid and rid > 0 then id = rid end
-				end
 				if type(n) ~= "string" or not id or id == 0 then
 				elseif st == "SPELL" or st == "FUTURESPELL" then
 					local ao = allowGenericOverwrite and st == "SPELL"
 					local sn, id2 = GetSpellInfo(id), select(7, GetSpellInfo(n))
-					-- sn может быть nil если GetSpellInfo(id) упал; id2=0 на Sirus (позиция 7 ≠ spell ID)
 					if sn and sn ~= n then
 						addSpell(sn, id, ao)
 					end
@@ -684,8 +678,8 @@ do -- Editor UI
 				end
 			end
 			if isItemLink then
-				prefix = isOnEmptyLineStart and (C_Item.GetItemSpell(link) and SLASH_USE1 or SLASH_EQUIP1)
-				atext = C_Item.GetItemNameByID(link)
+				prefix = isOnEmptyLineStart and (GetItemSpell(link) and SLASH_USE1 or SLASH_EQUIP1)
+				atext = (GetItemInfo(link))
 			else
 				prefix = isOnEmptyLineStart and SLASH_CAST1
 				if canTokenize then

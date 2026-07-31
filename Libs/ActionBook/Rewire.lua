@@ -1259,7 +1259,7 @@ local function init()
 	RW:SetMetaHintFilter("iconb", "replaceIconB", true, iconBC)
 	RW:SetMetaHintFilter("iconc", "replaceIconB", true, iconBC)
 	RW:SetMetaHintFilter("count", "replaceCount", true, function(_meta, value, _target)
-		local c = value == "none" and 0 or (value and C_Item.GetItemCount(value))
+		local c = value == "none" and 0 or (value and GetItemCount(value))
 		return not not c, c
 	end)
 	RW:SetMetaHintFilter("label", "replaceLabel", true, function(_meta, value, _target)
@@ -1505,7 +1505,7 @@ function RW:IsSpellCastable(id, castContext, laxRank)
 		cc, re, defer = ccf(id, castContext, laxRank)
 	end
 
-	local name, _, name2, sid2 = (cc == nil or defer) and GetSpellInfo(id), nil
+	local name = (cc == nil or defer) and GetSpellInfo(id)
 	if name and (caEscapeCache[name] or caAliasCache[name]) then
 		local disallowRewireEscapes = castContext == true or castContext and type(castContext) == "number" and castContext % 2 < 1
 		if disallowRewireEscapes ~= true or (disallowRewireEscapes == true and not caIsOptional[name:lower()]) then

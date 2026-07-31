@@ -11,6 +11,11 @@ local mark = {}
 local function icmp(a,b)
 	return strcmputf8i(a,b) < 0
 end
+local function getContainerItemLootState(bag, slot)
+	local name, _, _, _, readable, lootable = GetContainerItemInfo(bag, slot)
+	if not name then return nil end
+	return {isReadable = readable, hasLoot = lootable}
+end
 local function isItemInteresting(tf, testIdx, bag, slot, iid)
 	if testIdx == 2 then
 		local r = tf(bag, slot)
@@ -19,7 +24,7 @@ local function isItemInteresting(tf, testIdx, bag, slot, iid)
 	return tf(iid)
 end
 
-do -- spellbook
+do
 	local function procSpellBookEntry(add, at, knownFilter, sourceKnown, _ok, st, sid)
 		if (st == "SPELL" or st == "FUTURESPELL") and not IsPassiveSpell(sid) and not mark[sid] then
 			if (not knownFilter) == (st == "FUTURESPELL" or not sourceKnown) then
@@ -45,7 +50,6 @@ do -- spellbook
 			end
 		end
 	end
-	-- вкладки без заклинаний — у них свои категории в OPie
 	local WRATH_SKIP_TABS = {
 		["Общие"]                 = true,
 		["Гильдейские бонусы"]    = true,
@@ -57,7 +61,6 @@ do -- spellbook
 		["Коллекция: Игрушки"]    = true,
 		["Коллекция: Наследие"]   = true,
 	}
-	-- Sirus добавляет заголовки специализаций как спеллы: "ИмяКласса - Специализация"
 	local WRATH_CLASS_PREFIX = (UnitClass("player")) .. " - "
 	local function addSpells(add, knownFilter)
 		local asv = GetCVar("showAllSpellRanks")
@@ -67,18 +70,14 @@ do -- spellbook
 		for i=1,GetNumSpellTabs()+12 do
 			local tabName, ico, ofs, c, _, otherSpecID = GetSpellTabInfo(i)
 			if not ofs then break end
-			local isNotOffspec = true
 			local isSkipped = WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]
 			if not isSkipped then
-				for j=ofs+1,(isNotOffspec or not knownFilter) and (ofs+c) or 0 do
-					-- Sirus: GetSpellBookItemInfo/Name не работают; используем GetSpellLink/GetSpellTexture
+				for j=ofs+1, ofs+c do
 					local tex = GetSpellTexture(j, "spell")
 					if tex and type(tex) == "string" then
-						local link = GetSpellLink(j, "spell")
-						local sid = link and tonumber(link:match("|Hspell:(%d+)"))
+						local _, sid = GetSpellBookItemInfo(j, "spell")
 						if sid and sid > 0 and not mark[sid] and not IsPassiveSpell(sid) then
 							local name = GetSpellInfo(sid)
-							-- Skip spec header spells: "ClassName - SpecName"
 							local isSpecHeader = WRATH_CLASS_PREFIX and name and name:sub(1, #WRATH_CLASS_PREFIX) == WRATH_CLASS_PREFIX
 							if not isSpecHeader then
 								mark[sid] = 1
@@ -93,7 +92,7 @@ do -- spellbook
 					end
 			end
 		end
-		end -- for i
+		end
 		if asv and asv ~= "1" then
 			SetCVar("showAllSpellRanks", asv)
 		end
@@ -109,12 +108,8 @@ do -- spellbook
 		wipe(mark)
 		for i=1,HasPetSpells() or 0 do
 			local spellType, id = GetSpellBookItemInfo(i, "pet")
-			if spellType == nil then
-				-- Sirus: GetSpellBookItemInfo broken; GetSpellLink(i,"pet") works
-				local link = GetSpellLink(i, "pet")
-				id = link and tonumber(link:match("|Hspell:(%d+)"))
-			elseif spellType == "PETACTION" then
-				id = nil -- behavior token, handled below as string
+			if spellType == "PETACTION" then
+				id = nil
 			elseif not id or id == 0 then
 				local name, rank = GetSpellBookItemName(i, "pet")
 				if name then
@@ -127,7 +122,6 @@ do -- spellbook
 				add("petspell", id)
 			end
 		end
-		-- pet stance/behavior tokens (dismiss excluded: no icon in WotLK actionInfo)
 		for s in ("attack stay follow assist defend passive"):gmatch("%S+") do
 			add("petspell", s)
 		end
@@ -137,9 +131,9 @@ do -- spellbook
 end
 AB:AugmentCategory(L"Items", function(_, add)
 	wipe(mark)
-	local ns, giid = C_Container.GetContainerNumSlots, C_Container.GetContainerItemID
+	local ns, giid = GetContainerNumSlots, GetContainerItemID
 	for t=0,2 do
-		local tf = t == 0 and C_Item.GetItemSpell or t == 1 and C_Item.IsEquippableItem or C_Container.GetContainerItemInfo
+		local tf = t == 0 and GetItemSpell or t == 1 and IsEquippableItem or getContainerItemLootState
 		for bag=0,4 do
 			for slot=1, ns(bag) do
 				local iid = giid(bag, slot)
@@ -163,8 +157,6 @@ AB:AugmentCategory(L"Equipped", function(_, add)
 		add("peq", w)
 	end
 end)
--- Sirus: GetSpellInfo pos3 возвращает fileID для кастомных маунтов/питомцев → белый квадрат в кольцах.
--- GetCompanionInfo поз4 всегда строка — используем её. Регистрируем через COMPANION_UPDATE.
 local function registerCompanionIconOverrides()
 	for i = 1, GetNumCompanions("MOUNT") do
 		local _, _, sid, icon = GetCompanionInfo("MOUNT", i)
@@ -185,10 +177,10 @@ do
 	local f = CreateFrame("Frame")
 	f:RegisterEvent("COMPANION_UPDATE")
 	f:SetScript("OnEvent", registerCompanionIconOverrides)
-	pcall(registerCompanionIconOverrides) -- try immediately; safe if data not ready yet
+	pcall(registerCompanionIconOverrides)
 end
 
-do -- Companions (WotLK: GetNumCompanions CRITTER)
+do
 	AB:AugmentCategory(COMPANIONS, function(_, add)
 		local seen = {}
 		for i=1, GetNumCompanions("CRITTER") do
@@ -204,7 +196,7 @@ do -- Companions (WotLK: GetNumCompanions CRITTER)
 		end
 	end)
 end
-do -- Mounts (WotLK: GetNumCompanions MOUNT)
+do
 	AB:AugmentCategory(L"Mounts", function(_, add)
 		local n2name, n2icon, sids = {}, {}, {}
 		for i=1, GetNumCompanions("MOUNT") do
@@ -226,7 +218,7 @@ do -- Mounts (WotLK: GetNumCompanions MOUNT)
 			add("spell", sid)
 		end
 	end)
-end -- Mounts
+end
 AB:AugmentCategory(L"Macros", function(_, add)
 	add("imptext", "")
 	local n, ni = {}, 1
@@ -240,7 +232,6 @@ AB:AugmentCategory(L"Macros", function(_, add)
 end)
 do
 	local profCatName = TRADE_SKILLS or "Professions"
-	-- вторичные заклинания профессий (Sirus RU): открывашка + утилити-спеллы
 	local PROF_SECONDARY = {
 		["Горное дело"]    = {"Выплавка металлов"},
 		["Ювелирное дело"] = {"Просеивание"},
@@ -283,7 +274,6 @@ do
 					local tex = spellName and GetSpellTexture(j, "spell")
 					local texStr = type(tex) == "string" and tex or nil
 					if isTradeLink and spellName and not profSpells[spellName] then
-						-- ВСЕ |Htrade: ссылки — опенеры профессий персонажа
 						profSpells[spellName] = sid
 						profIcons[spellName] = texStr
 					elseif spellName and profSkills[spellName] and not profSpells[spellName] then
@@ -316,7 +306,7 @@ do
 		end
 	end)
 end
-do -- equipmentset (WotLK 3.x+)
+do
 	AB:AugmentCategory(L"Equipment sets", function(_, add)
 		for _,id in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
 			add("equipmentset", (C_EquipmentSet.GetEquipmentSetInfo(id)))
@@ -328,7 +318,6 @@ AB:AugmentCategory(L"Raid markers", function(_, add)
 		add("raidmark", i)
 	end
 end)
--- Sirus: кастомный ToyBox с пагинацией; у каждой кнопки есть .spellID
 AB:AugmentCategory(L"Toys", function(_, add)
 	if not ToyBox or not ToyBox.PagingFrame then return end
 	local maxPages = ToyBox.PagingFrame:GetMaxPages()
@@ -349,24 +338,21 @@ AB:AugmentCategory(L"Toys", function(_, add)
 	end
 	if not wasShown then ToyBox:Hide() end
 end)
-do -- misc
+do
 	AB:AddActionToCategory(L"Miscellaneous", "imptext", "")
 end
-do -- aliases
+do
 	AB:AddCategoryAlias("Miscellaneous", L"Miscellaneous")
 end
--- регистрируем иконки заклинаний сразу при входе — так кастомные кольца показывают иконки без открытия редактора
 do
 	local function registerSpellIcons()
-		-- Sirus: GetSpellBookItemInfo/Name не работают; используем GetSpellLink + GetSpellTexture
 		for i = 1, GetNumSpellTabs() do
 			local _, _, ofs, c = GetSpellTabInfo(i)
 			if not ofs then break end
 			for j = ofs + 1, ofs + c do
 				local tex = GetSpellTexture(j, "spell")
 				if tex and type(tex) == "string" then
-					local link = GetSpellLink(j, "spell")
-					local sid = link and tonumber(link:match("|Hspell:(%d+)"))
+					local _, sid = GetSpellBookItemInfo(j, "spell")
 					if sid and sid > 0 then
 						local t2, name = tex, GetSpellInfo(sid)
 						AB:SetSpellIconOverride(sid, function() return t2 end)
@@ -376,12 +362,10 @@ do
 				end
 			end
 		end
-		-- pet spellbook (hunter/warlock)
 		for i = 1, HasPetSpells() or 0 do
 			local tex = GetSpellTexture(i, "pet")
 			if tex and type(tex) == "string" then
-				local link = GetSpellLink(i, "pet")
-				local sid = link and tonumber(link:match("|Hspell:(%d+)"))
+				local _, sid = GetSpellBookItemInfo(i, "pet")
 				if sid and sid > 0 then
 					local t2, name = tex, GetSpellInfo(sid)
 					AB:SetSpellIconOverride(sid, function() return t2 end)

@@ -3,6 +3,15 @@ local XU, type = T.exUI, type
 local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
 local HOLD_HOVER_HINT_DURATION, ICON_FILE_NAMES, LookupIconName = 0.2, nil
+local resolveTexturePath do
+	local host
+	function resolveTexturePath(path)
+		host = host or CreateFrame("Frame")
+		local t = host:CreateTexture()
+		t:SetTexture(path)
+		return t:GetTexture() == path and path or nil
+	end
+end
 local IconSelector, IconSelectorData, internal = {}, {}, {}
 local IconSelectorProps = {
 	api=IconSelector,
@@ -232,11 +241,11 @@ function internal:OnEnterPressed()
 		return internal.FilterIcons(d, text, self)
 	end
 	if text:match("%S") then
-		local fid0, nt = GetFileIDFromPath(text), tonumber(text) or 0
-		local fid1 = not fid0 and GetFileIDFromPath("Interface/Icons/" .. text)
-		local path = fid0 and (fid0 < 0 and text or fid0) or
-		             fid1 and (fid1 < 0 and "Interface/Icons/" .. text or fid1) or
-		             nt > 0 and nt or
+		local nt = tonumber(text) or 0
+		local path = resolveTexturePath(text) or
+		             resolveTexturePath("Interface\\Icons\\" .. text) or
+		             (C_Texture.GetAtlasInfo(text) and text) or
+		             (nt > 0 and nt) or
 		             select(3, GetSpellInfo(text))
 		if not path then
 			return self:HighlightText()

@@ -378,8 +378,8 @@ function Indicator:SetQualityOverlay(_qualID, qualAtlas)
 	end
 	s:SetShown(qualAtlas ~= nil)
 end
-function Indicator:SetCooldownDuration()
-	return Indicator.SetCooldown(self, 0, 0)
+function Indicator:SetCooldownDuration(duration)
+	return Indicator.SetCooldown(self, duration, duration)
 end
 
 local function CreateIndicator(name, parent, size, nested, gx)

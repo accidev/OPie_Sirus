@@ -1,11 +1,9 @@
-local MAJ, REV, COMPAT, _, T = 1, 16, select(4,GetBuildInfo()), ...
+local MAJ, REV, _, T = 1, 16, ...
 if T.SkipLocalActionBook then return end
 local _GG = _G
-if T.TenEnv then T.TenEnv() end
 
 local EV, AB, RW = T.Evie, T.ActionBook:compatible(2,34), T.ActionBook:compatible("Rewire", 1,27)
 assert(EV and AB and RW and 1, "Incompatible library bundle")
-local CF_WRATH, CI_ERA = COMPAT < 10e4 and COMPAT >= 3e4, COMPAT < 2e4
 local IM, L, XU = {}, T.ActionBook.L, T.exUI
 
 local function assert(condition, text, level, ...)
@@ -337,7 +335,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 				end
 			end
 		end
-		local function addSpellBookTab(ofs, c, allowGenericOverwrite, isRuneBook)
+		local function addSpellBookTab(ofs, c, allowGenericOverwrite)
 			for j=ofs+1,ofs+c do
 				local n, nrank = GetSpellBookItemName(j, "spell")
 				local st, id = GetSpellBookItemInfo(j, "spell")
@@ -348,7 +346,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 				end
 				if type(n) ~= "string" or not id or id == 0 then
 				elseif st == "SPELL" or st == "FUTURESPELL" then
-					local ao = allowGenericOverwrite and st == "SPELL" and not isRuneBook
+					local ao = allowGenericOverwrite and st == "SPELL"
 					local sn, id2 = GetSpellInfo(id), select(7, GetSpellInfo(n))
 					-- sn может быть nil если GetSpellInfo(id) упал; id2=0 на Sirus (позиция 7 ≠ spell ID)
 					if sn and sn ~= n then
@@ -356,7 +354,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 					end
 					if id2 and id2 ~= 0 and id2 ~= id then
 						addSpell(n, id2, ao)
-					elseif sn == n and not isRuneBook then
+					elseif sn == n then
 						addSpell(n, id, ao)
 					end
 				elseif st == "FLYOUT" then
@@ -379,22 +377,20 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 					spells[sn:lower()] = OTHER_SPELL_IDS[i]
 				end
 			end
-			do -- CF_WRATH
-				addMountSpells()
-				for i=1,GetNumCompanions("CRITTER") do
-					local _, _, sid = GetCompanionInfo("CRITTER", i)
-					local sn = GetSpellInfo(sid)
-					if sn then
-						addSpell(sn, sid)
-					end
+			addMountSpells()
+			for i=1,GetNumCompanions("CRITTER") do
+				local _, _, sid = GetCompanionInfo("CRITTER", i)
+				local sn = GetSpellInfo(sid)
+				if sn then
+					addSpell(sn, sid)
 				end
 			end
 			for curSpec=0,1 do
 				for i=GetNumSpellTabs()+12,1,-1 do
-					local _, ico, ofs, c, _, sid = GetSpellTabInfo(i)
+					local _, _, ofs, c, _, sid = GetSpellTabInfo(i)
 					if not ofs then -- WotLK: out-of-bounds tabs return nil
 					elseif ((curSpec == 0) == (sid == 0)) then
-						addSpellBookTab(ofs, c, true, CI_ERA and ico == 134419)
+						addSpellBookTab(ofs, c, true)
 					end
 				end
 			end
@@ -653,7 +649,7 @@ do -- Editor UI
 	local function insertLinkHook(link)
 		if not eb:HasFocus() then return end
 		local isItemLink = link:match("%f[|]|Hitem:")
-		local sid = not isItemLink and link:match("%f[|]|Hspell:(%d+)") or link:match("%f[|]|Htrade:[^:]+:(%d+)") or (CI_ERA and select(7,GetSpellInfo(link)))
+		local sid = not isItemLink and link:match("%f[|]|Hspell:(%d+)") or link:match("%f[|]|Htrade:[^:]+:(%d+)")
 		local isCastableLink = sid and not IsPassiveSpell(sid+0)
 		local prefix, atext, skipPrefixSpace
 		if isItemLink or isCastableLink then

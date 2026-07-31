@@ -1,8 +1,6 @@
-local COMPAT, _, T = select(4,GetBuildInfo()), ...
+local _, T = ...
 if T.SkipLocalActionBook then return end
-if T.TenEnv then T.TenEnv() end
 
-local CF_WRATH = COMPAT < 10e4 and COMPAT >= 3e4
 local AB = T.ActionBook:compatible(2,21)
 local RW = T.ActionBook:compatible("Rewire", 1,27)
 local IM = T.ActionBook:compatible("Imp", 1,8)
@@ -48,7 +46,7 @@ do -- spellbook
 		end
 	end
 	-- вкладки без заклинаний — у них свои категории в OPie
-	local WRATH_SKIP_TABS = CF_WRATH and {
+	local WRATH_SKIP_TABS = {
 		["Общие"]                 = true,
 		["Гильдейские бонусы"]    = true,
 		["Спутники"]              = true,
@@ -58,9 +56,9 @@ do -- spellbook
 		["Питомцы"]               = true,
 		["Коллекция: Игрушки"]    = true,
 		["Коллекция: Наследие"]   = true,
-	} or nil
+	}
 	-- Sirus добавляет заголовки специализаций как спеллы: "ИмяКласса - Специализация"
-	local WRATH_CLASS_PREFIX = CF_WRATH and ((UnitClass("player")) .. " - ") or nil
+	local WRATH_CLASS_PREFIX = (UnitClass("player")) .. " - "
 	local function addSpells(add, knownFilter)
 		local asv = GetCVar("showAllSpellRanks")
 		if asv and asv ~= "1" then
@@ -73,7 +71,6 @@ do -- spellbook
 			local isSkipped = WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]
 			if not isSkipped then
 				for j=ofs+1,(isNotOffspec or not knownFilter) and (ofs+c) or 0 do
-				if CF_WRATH then
 					-- Sirus: GetSpellBookItemInfo/Name не работают; используем GetSpellLink/GetSpellTexture
 					local tex = GetSpellTexture(j, "spell")
 					if tex and type(tex) == "string" then
@@ -94,11 +91,6 @@ do -- spellbook
 							end
 						end
 					end
-				else
-					if not isSkipped then
-						procSpellBookEntry(add, "spell", knownFilter, isNotOffspec, pcall(GetSpellBookItemInfo, j, "spell"))
-					end
-				end
 			end
 		end
 		end -- for i
@@ -364,7 +356,7 @@ do -- aliases
 	AB:AddCategoryAlias("Miscellaneous", L"Miscellaneous")
 end
 -- регистрируем иконки заклинаний сразу при входе — так кастомные кольца показывают иконки без открытия редактора
-if CF_WRATH then
+do
 	local function registerSpellIcons()
 		-- Sirus: GetSpellBookItemInfo/Name не работают; используем GetSpellLink + GetSpellTexture
 		for i = 1, GetNumSpellTabs() do

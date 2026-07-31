@@ -1,5 +1,4 @@
-local _, T = ...
-if T.TenEnv then T.TenEnv() end
+local ADDON, T = ...
 
 local AB, ORI, EV, L, PC, XU, config, KR = T.ActionBook, OPie.UI, T.Evie, T.L, T.OPieCore, T.exUI, T.config, nil
 AB, KR = AB and AB:compatible(2, 14), AB and AB:compatible("Kindred", 1, 34)
@@ -7,7 +6,7 @@ assert(ORI and EV and L and PC and XU and config and AB and KR, "Incompatible li
 local GameTooltip = T.NotGameTooltip or GameTooltip
 
 local exclude, questItems = PC:RegisterPVar("AutoQuestExclude", {}), {}
-local IsQuestItem, IsQuestItemF, disItems, PrepQuestItemScan
+local IsQuestItem, IsQuestItemF, disItems
 local function getContainerItemQuestInfo(bag, slot)
 	if bag and slot then
 		local iqi = C_Container.GetContainerItemQuestInfo(bag, slot)
@@ -15,184 +14,27 @@ local function getContainerItemQuestInfo(bag, slot)
 	end
 end
 do
-	questItems[30148] = {72986, 72985}
 	local include, filtered do
-		local PREY_STATE
-		local function isInPrimalistFutureScenario()
-			return C_TaskQuest.IsActive(74378) and C_Scenario.IsInScenario() and select(8, GetInstanceInfo()) == 2512
-		end
-		local function isOnKeysOfLoyalty()
-			local q = C_QuestLog.IsOnQuest
-			return q(66805) or q(66133)
-		end
 		local function have1()
 			return true, false, false, 4
-		end
-		local function have3(iid)
-			return C_Item.GetItemCount(iid) > 2, false, false, 4
-		end
-		local function have10(iid)
-			return C_Item.GetItemCount(iid) > 9, false, false, 4
-		end
-		local function have100(iid)
-			return C_Item.GetItemCount(iid) > 99, false, false, 4
-		end
-		local function have1_lv80()
-			if (UnitLevel("player") or 0) >= 80 then
-				return true, false, false, 4
-			end
-		end
-		local function c1()
-			return true, false, false, 3
-		end
-		local function c100_lv80(iid)
-			return C_Item.GetItemCount(iid) > 99 and (UnitLevel("player") or 0) >= 80, false, false, 3
-		end
-		local function haveInterestingNotes()
-			return C_Item.GetItemCount(227406) > 0, false, false, 3
-		end
-		local function ebIsNotRockReviver()
-			local at, sid = GetActionInfo(GetExtraBarIndex()*12-11)
-			return at ~= "spell" or sid ~= 463623, false, false, nil
-		end
-		local function ebIsNotGoPack()
-			local at, sid = GetActionInfo(GetExtraBarIndex()*12-11)
-			return at ~= "spell" or (sid ~= 467294 and sid ~= 469807), false, false, nil
 		end
 		local function crownChemical()
 			local _,_,_,_, _,_,_,imid, _,did = GetInstanceInfo()
 			return imid == 33 and did == 288
 		end
-		local function onPreyHunt()
-			if PREY_STATE then
-				return true, false, false, 1
-			end
-		end
-		function PrepQuestItemScan()
-			PREY_STATE = KR:EvaluateCmdOptions("[prey] 1") ~= nil
-		end
-		local mapMarker = c1
 		include = {
 			[21746]=have1, -- lucky red envelope
 			[33634]=true, [35797]=true, [37888]=true, [37860]=true, [37859]=true, [37815]=true, [46847]=true, [47030]=true, [39213]=true, [42986]=true, [49278]=true,
-			[86425]={31332, 31333, 31334, 31335, 31336, 31337}, [90006]=true, [86536]=true, [86534]=true,
 			[49351]=crownChemical, [49352]=crownChemical, -- perfume/cologne neutralizers
 			[37586]=have1, -- handful of treats [hallow's end]
-			[180008]=-60609, [180009]=-60609, [180170]=-60649,
-			[174464]=true, [168035]=true,
-			[191251]=isOnKeysOfLoyalty, [202096]=isInPrimalistFutureScenario, [203478]=isInPrimalistFutureScenario,
-			[194540]=mapMarker, [198843]=mapMarker, [198852]=mapMarker, [198854]=mapMarker, [199061]=mapMarker, [199062]=mapMarker, [199065]=mapMarker,
-			[199066]=mapMarker, [199067]=mapMarker, [199068]=mapMarker, [199069]=mapMarker, [200738]=mapMarker, [202667]=mapMarker, [202668]=mapMarker,
-			[202669]=mapMarker, [202670]=mapMarker,
-			[204911]=have1,
-			[205254]=c1, -- Honorary Explorer's Compass
-			[199192]=have1, [204359]=have1, [205226]=have1, [210549]=have1, [227450]=have1,  -- racer's purse
-			-- TWW quest
-			[224292]=-81691, [224913]=-81691, -- radiant fuel shard/cache
-			[228988]=ebIsNotRockReviver, -- siren isle rock reviver
-			[230795]=ebIsNotGoPack, -- experimental go-pack, intro quest
-			[227405]=haveInterestingNotes, -- siren isle research journal
-			-- TWW inscription treatises [weekly]
-			[222546]=83725, [222547]=83735, [222548]=83730, [222549]=83732, [222550]=83727, [222551]=83731,
-			[222552]=83729, [222553]=83733, [222554]=83726, [222621]=83728, [222649]=83734,
-			-- TWW caches
-			[228741]=have1, -- lamplighter supply
-			[217011]=have1, [217012]=have1, [217013]=have1, -- actor's chest
-			[235151]=have1, -- distinguished actor's chest
-			[227792]=have1, -- everyday cache
-			[227713]=have1, -- art consortium payout
-			[229899]=c100_lv80, [236096]=c100_lv80, [245653]=c100_lv80, -- coffer key shard [seasonal]
-			[224784]=have1_lv80, [239118]=have1_lv80, [244865]=have1_lv80, -- pinnacle cache [seasonal]
-			[226263]=have1, [239128]=have1, [250763]=have1, -- theater troupe's trove [seasonal]
-			[226264]=have1, [239126]=have1, [250766]=have1, -- radiant cache [seasonal]
-			[226273]=have1, [239121]=have1, [250765]=have1, -- awakened mechanical cache [seasonal]
-			[225571]=have1, [239125]=have1, [250769]=have1, -- weaver weekly [seasonal]
-			[225572]=have1, [239122]=have1, [250767]=have1, -- general weekly [seasonal]
-			[225573]=have1, [239124]=have1, [250768]=have1, -- vizier weekly [seasonal]
-			[238207]=have1, [238208]=have1, [250764]=have1, -- surge dividends [seasonal]
-			[229129]=have1, [229130]=have1, -- delver's spoils [seasonal]
-			[228361]=have1_lv80, [239120]=have1_lv80, [235610]=have1_lv80, [235639]=have1_lv80, -- seasoned adventurer's cache
-			[245280]=have1_lv80, [244883]=have1, -- ditto, s3
-			-- TWW rep overflow
-			[226103]=have1, [226045]=have1, [226100]=have1,
-			[225247]=have1, [225246]=have1, [225239]=have1, [225245]=have1, [232463]=have1,
-			[239489]=have1, [230032]=have1,
-			[229354]=have1, -- algari adventurer's cache
-			[169219]=c1, -- brewfest sampler
-			[225249]=c1, -- bag o' gold
-			[235548]=have1, [232372]=have1, [234816]=c1, -- siren isle cache, bygone riches, bag of iron
-			[236756]=c1, [236757]=c1, [236758]=c1, -- undermine tip chests
-			[220152]=c1, -- cursed ghoulfish
-			[237743]=have1, [237759]=have1, [237760]=have1, -- nightfall participation coffers
-			[239004]=have1, [239546]=have1, -- nightfall quest/scenario completion
-			[244696]=have1, -- overcharged chest
-			[245589]=have1, -- hellcaller chest
-			[244842]=have1, -- fabled veteran's cache
-			[245611]=have1, -- wriggling pinnacale cache [11.2]
-			[255676]=have1, -- phase diver's cache [11.2]
-			[247820]=have1, -- cache of k'areshi treasures [11.2 sign of the warrior]
-			-- Legion Remix
-			[242617]=c1, -- curious simulacrum
-			[237812]=have1, [239303]=have1, [245553]=have1, [256763]=have1, -- cache of infinite treasure/heroic/armory
-			[248247]=have1, [251821]=have1, -- cache of infinite power
-			[253224]=have10, -- mote of a broken time
-			[254267]=have100, -- fragmented memento
-			[246812]=c1, [246815]=c1, [246814]=c1, [246813]=c1, -- minor/lesser//greater bronze cache
-			[245925]=c1, [249891]=c1, -- artifactium sand
-			[246936]=c1, [246937]=c1, -- epoch memento
-			[152102]=have1, [152103]=have1, [152104]=have1, [152105]=have1,
-			[152106]=have1, [152107]=have1, [152108]=have1, -- paragon boxes
-			-- Midnight
-			[255825]=onPreyHunt, -- disarmed trap
-			[268297]=c1, -- bag o' gold
-			[264274]=have1, -- fabled adventurer's
-			[268545]=have1, [257023]=have1, [257026]=have1, [262346]=have1, -- preyseeker's
-			[265995]=have1, -- quel'thalas adventurer's
-			[246585]=have1, -- consortium payout
-			[250116]=have1, -- quel'thalas treasures [sign weekly]
-			[269702]=have1, -- abundant [rare]
-			[269703]=have1, -- avid learner's [rare]
-			[269701]=have1, -- surplus party270244 favors [rare]
-			[270244]=have1, -- field pouch
-			[264914]=have1, -- ranger's cache
-			-- Midnight Apex [S1]
-			[254677]=have1, -- apex cache
-			[263465]=have1, -- saltheril's soiree
-			[260940]=have1, -- stormarion pinnacle
-			[263466]=have1, -- abundant
-			[263467]=have1, -- avid learner's
-			[260193]=have1, -- fabled veteran's
-			-- Midnight inscription treatises [weekly]
-			[245755]=95127, [245756]=95137, [245757]=95131, [245758]=95134, [245759]=95129, [245760]=95133,
-			[245761]=95130, [245762]=95135, [245763]=95128, [245809]=95138, [245828]=95136,
 		}
-		filtered = {
-			[224292]=have3, -- radiant fuel shard
-		}
+		filtered = {}
 		for i in ("33634 35797 37888 37860 37859 37815 46847 47030 39213 42986 49278"):gmatch("%d+") do
 			include[i+0] = true
 		end
 	end
-	local GetSpellName = (C_Spell and C_Spell.GetSpellName) or function(id) return (GetSpellInfo(id)) end
-	local includeSpell = {
-		[GetSpellName(375806) or 0]=3,
-		[GetSpellName(411602) or 0]=3,
-		[GetSpellName(409074) or 0]=3,
-		[GetSpellName(409490) or 0]=3,
-		[GetSpellName(409643) or 0]=3,
-	}
-	includeSpell[0] = nil
-	disItems = {
-		[198798]=3, [198800]=3, [201359]=3, [198675]=3, [198694]=3, [198689]=3, [198799]=3, [201358]=3,
-		[201356]=3, [201357]=3, [201360]=3, [204990]=3, [205001]=3, [204999]=3,
-		[200939]=3, [200940]=3, [200941]=3, [200942]=3, [200943]=3, [200945]=3, [200946]=3, [200947]=3,
-		[210231]=3, [210228]=3, [210234]=3,
-	}
-	setmetatable(exclude, {__index={
-		[204561]=1,
-		[232466]=1, -- leave the storm, siren isle
-		[246808]=1, -- heroic tier instructions, legion remix
-	}})
+	disItems = {}
+	setmetatable(exclude, {__index={}})
 	function IsQuestItem(iid, bag, slot)
 		if exclude[iid] or not iid then
 			return false
@@ -219,12 +61,6 @@ do
 				end
 			end
 		end
-		if inc == nil and not isQuest then
-			local isn, isid = C_Item.GetItemSpell(iid)
-			if isid and includeSpell[isn] and IsUsableSpell(isid) then
-				isQuest, startQuestId, rcat = true, false, includeSpell[isn]
-			end
-		end
 		return isQuest, startQuestId and not isQuestActive, rcat
 	end
 	function IsQuestItemF(iid)
@@ -232,14 +68,6 @@ do
 		return ff == nil or ff(iid)
 	end
 end
-local GetQuestLogTitle = GetQuestLogTitle or function(i)
-	local q = C_QuestLog.GetInfo(i)
-	if q then
-		local qid = q.questID
-		return nil, nil, nil, q.isHeader, q.isCollapsed, C_QuestLog.IsComplete(qid), nil, qid
-	end
-end
-
 local colId, current, changed, pendingChanges
 local collection, inring, tokItemID, ctok = {__embed=true}, {}, {}, 0
 local addSlice, sortQICollection do
@@ -283,7 +111,7 @@ local addSlice, sortQICollection do
 end
 local function scanQuests(i)
 	for i=i or 1, GetNumQuestLogEntries() do
-		local _, _, _, isHeader, isCollapsed, isComplete, _, qid = GetQuestLogTitle(i)
+		local _, _, _, _, isHeader, isCollapsed, isComplete, _, qid = GetQuestLogTitle(i)
 		if isHeader and isCollapsed then
 			ExpandQuestHeader(i)
 			return scanQuests(i+1), CollapseQuestHeader(i)
@@ -300,8 +128,6 @@ end
 local function syncRing(_, event, upId)
 	if event ~= "internal.collection.preopen" or upId ~= colId then
 		return
-	elseif PrepQuestItemScan then
-		PrepQuestItemScan()
 	end
 	changed, current = false, (ctok + 1) % 2
 
@@ -357,7 +183,7 @@ local function createQI(name)
 end
 local function describeQI(name)
 	if name == 1 then
-		return L"Quest Items", L"Quest Items", [[Interface\AddOns\OPie\gfx\opie_ring_icon]], nil, nil, nil, "collection"
+		return L"Quest Items", L"Quest Items", ([[Interface\AddOns\%s\gfx\opie_ring_icon]]):format(ADDON), nil, nil, nil, "collection"
 	end
 end
 AB:RegisterActionType("opie.autoquest", createQI, describeQI, 1)

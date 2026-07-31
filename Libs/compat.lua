@@ -247,7 +247,12 @@ if not C_Item.IsItemInRange            then C_Item.IsItemInRange            = Is
 if not C_Item.IsUsableItem             then C_Item.IsUsableItem             = IsUsableItem end
 if not C_Item.IsCurrentItem            then C_Item.IsCurrentItem            = IsCurrentItem end
 if not C_Item.IsEquippedItem           then C_Item.IsEquippedItem           = IsEquippedItem end
-if not C_Item.GetItemInfoInstant       then C_Item.GetItemInfoInstant       = function(id) return GetItemInfo(id) end end
+if not C_Item.GetItemInfoInstant then
+	C_Item.GetItemInfoInstant = function(id)
+		local _, _, _, _, _, class, subclass, _, equipSlot, texture = GetItemInfo(id)
+		return tonumber(id), class, subclass, equipSlot, texture
+	end
+end
 if not C_Item.GetItemNameByID          then C_Item.GetItemNameByID          = function(id) return (GetItemInfo(id)) end end
 if not C_Item.GetItemIconByID          then C_Item.GetItemIconByID          = function(id) return select(10, GetItemInfo(id)) end end
 if not C_Item.GetItemIDForItemInfo     then C_Item.GetItemIDForItemInfo     = function(id) return tonumber(id) or select(2, GetItemInfo(id) and id or "") end end
@@ -259,16 +264,31 @@ if not C_Item.GetDetailedItemLevelInfo then
 end
 
 if not C_QuestLog then
+	local completed = {}
+	do
+		local qf = CreateFrame("Frame")
+		qf:RegisterEvent("QUEST_QUERY_COMPLETE")
+		qf:SetScript("OnEvent", function()
+			if GetQuestsCompleted then
+				local t = {}
+				GetQuestsCompleted(t)
+				completed = t
+			end
+		end)
+		if QueryQuestsCompleted then QueryQuestsCompleted() end
+	end
 	C_QuestLog = {
-		IsQuestFlaggedCompleted = IsQuestFlaggedCompleted or function() return false end,
+		IsQuestFlaggedCompleted = IsQuestFlaggedCompleted or function(qid)
+			return completed[tonumber(qid) or qid] == true
+		end,
 		IsOnQuest = function(qid)
 			for i = 1, GetNumQuestLogEntries() do
-				if select(8, GetQuestLogTitle(i)) == qid then return true end
+				if select(9, GetQuestLogTitle(i)) == qid then return true end
 			end
 		end,
 		IsComplete = function(qid)
 			for i = 1, GetNumQuestLogEntries() do
-				local _, _, _, _, _, isComplete, _, id = GetQuestLogTitle(i)
+				local _, _, _, _, _, _, isComplete, _, id = GetQuestLogTitle(i)
 				if id == qid then return isComplete end
 			end
 		end,

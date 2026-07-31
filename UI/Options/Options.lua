@@ -1,4 +1,4 @@
-local COMPAT, _, T = select(4,GetBuildInfo()), ...
+local _, T = ...
 local L, EV, TS, XU, PC, config, frame = T.L, T.Evie, T.TenSettings, T.exUI, T.OPieCore, T.config, nil
 local GameTooltip = T.NotGameTooltip or GameTooltip
 
@@ -449,11 +449,6 @@ do -- customized widgets
 		info.text, info.arg1, info.checked = L"Close ring", "Close", reOpen == 2
 		UIDropDownMenu_AddButton(info)
 
-		if COMPAT >= 10e4 then
-			UIDropDownMenu_AddSeparator()
-			info.customFrame, info.func, info.text, info.arg1 = offsetPanel
-			UIDropDownMenu_AddButton(info)
-		end
 		offsetControl:refresh()
 	end
 	function optionControl.OnPrimaryPress:refresh()

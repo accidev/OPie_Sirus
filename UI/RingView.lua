@@ -1,4 +1,4 @@
-local COMPAT, ADDON, T = select(4, GetBuildInfo()), ...
+local ADDON, T = ...
 local GetPhysicalScreenSize = GetPhysicalScreenSize or function()
 	local w, h = string.match((({GetScreenResolutions()})[GetCurrentResolution()] or ""), "(%d+).-(%d+)")
 	return tonumber(w) or 1024, tonumber(h) or 768
@@ -85,7 +85,7 @@ local CreateIndicator do
 end
 
 local gfxBase = ([[Interface\AddOns\%s\gfx\]]):format((...))
-local JUMP_ICON = COMPAT >= 10e4 and 188515 or (gfxBase .. "opie_ring_icon")
+local JUMP_ICON = gfxBase .. "opie_ring_icon"
 local mainAnchor, proxyAnchor = CreateFrame("Frame"), CreateFrame("Frame")
 	for i=1,2 do
 		i = i == 1 and mainAnchor or proxyAnchor
@@ -407,7 +407,6 @@ end
 
 local getSliceColor, setIconColorOverride do
 	local overR, overG, overB = {}, {}, {}
-	local ici, pal = T.Niji._tex, T.Niji._pal
 	function getSliceColor(token, icon, token2)
 		if tokenR[token] then
 			return tokenR[token], tokenG[token], tokenB[token]
@@ -416,8 +415,7 @@ local getSliceColor, setIconColorOverride do
 		elseif overR[icon] then
 			return overR[icon], overG[icon], overB[icon]
 		end
-		local li = ici[icon] or -3
-		return pal[li] or 0.7, pal[li+1] or 1, pal[li+2] or 0.6
+		return 0.7, 1, 0.6
 	end
 	function setIconColorOverride(icon, r,g,b)
 		overR[icon], overG[icon], overB[icon] = r,g,b

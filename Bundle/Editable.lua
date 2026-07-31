@@ -41,7 +41,3 @@ R:AddDefaultRing("OPieAutoQuest", {
 	{"opie.autoquest", 1, _u="AC"},
 	name=L"Quest Items", hotkey="ALT-Q", _u="OPbQI", v=4
 })
--- WorldMarkers (MODERN/CF_CATA only), DruidShift, DruidUtility, DruidFeral,
--- HunterPets, HunterAspects, MageCombat, MageTools, MagePolymorph, MageTravel,
--- ExtraPortals, PaladinTools, WarlockLTS, WarlockCombat, WarlockDemons,
--- DKCombat, CommonHearth, SpecMenu -- только для MODERN (retail), удалены.

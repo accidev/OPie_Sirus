@@ -1,6 +1,5 @@
-﻿local COMPAT, _, T = select(4, GetBuildInfo()), ...
+﻿local _, T = ...
 if T.SkipLocalActionBook then return end
-if T.TenEnv then T.TenEnv() end
 
 local EV, WR = T.Evie, T.Ware
 local AB = T.ActionBook:compatible(2, 31)
@@ -557,7 +556,7 @@ securecall(function() -- bar:id (future-aware)
 	re.argCache = WR.newtable
 	re.CMD_SWAP, re.NUM_PAGES = CMD_SWAP, NUM_PAGES
 	re.RW, re.KR = RW:seclib(), KR:seclib()
-	f:SetAttribute("RunSlashCmd", [=[-- AB_bar_runslash 
+	f:SetAttribute("RunSlashCmd", [=[-- AB_bar_runslash
 		local setTo, cmd, v = nil, ...
 		if cmd == CMD_SWAP then
 			local a, b = v:match("(%d+)%s+(%d+)")
@@ -576,12 +575,12 @@ securecall(function() -- bar:id (future-aware)
 			return cmd .. " " .. v, "notified-click", setTo
 		end
 	]=])
-	f:SetAttribute("RunSlashCmd-PreClick", [[-- AB_bar_runslash_pre 
+	f:SetAttribute("RunSlashCmd-PreClick", [[-- AB_bar_runslash_pre
 		local cmd, v = ...
 		pendingValue, pendingRunID = nil
 		self:SetAttribute("action", v)
 	]])
-	f:SetAttribute("EvaluateMacroConditional", [=[-- AB_bar_evalmc 
+	f:SetAttribute("EvaluateMacroConditional", [=[-- AB_bar_evalmc
 		local name, cv, target, _mark, futureID = ...
 		if name ~= "bar" or not cv or cv == "" then return end
 		if futureID == "driver-construct" then
@@ -744,11 +743,11 @@ end)
 securecall(function() -- Managed role units
 	local mh = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
 	SecureHandlerSetFrameRef(mh, "KR", KR:seclib())
-	SecureHandlerExecute(mh, [=[-- MRU_Init_Manager 
+	SecureHandlerExecute(mh, [=[-- MRU_Init_Manager
 		KR, uf, ul, spare = self:GetFrameRef("KR"), newtable(), newtable(), newtable()
 		self:SetAttribute("frameref-KR", nil)
 	]=])
-	local syncUnits = [==[-- MRU_Sync 
+	local syncUnits = [==[-- MRU_Sync
 		local nl, key, nj, fa = spare, %q, 1
 		ul[key], spare, fa = nl, ul[key], uf[key]
 		for i=1,40 do
@@ -782,7 +781,7 @@ securecall(function() -- Managed role units
 			SecureHandlerSetFrameRef(mh, "u" .. i, c)
 			KR:SetAliasUnit(key .. i, "raid42")
 		end
-		SecureHandlerExecute(mh, ([[-- MRU_SpawnHeader_Init 
+		SecureHandlerExecute(mh, ([[-- MRU_SpawnHeader_Init
 			local a, k = newtable(), %q
 			for i=1,40 do
 				a[i] = self:GetFrameRef("u" .. i)
@@ -809,7 +808,7 @@ securecall(function() -- Managed role units
 	local ph = CreateFrame("Frame", nil, nil, "SecureGroupHeaderTemplate") do
 		local c = CreateFrame("Frame", nil, ph, "SecureFrameTemplate")
 		ph:SetAttribute("child1", c)
-		SecureHandlerWrapScript(c, "OnAttributeChanged", mh, [=[-- MRU_Player_Change 
+		SecureHandlerWrapScript(c, "OnAttributeChanged", mh, [=[-- MRU_Player_Change
 			if name ~= "unit" or value == playerUnit then return end
 			playerUnit = value
 			for key, v in pairs(ul) do

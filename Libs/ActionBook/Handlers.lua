@@ -1,8 +1,6 @@
-local COMPAT, _, T = select(4,GetBuildInfo()), ...
+local _, T = ...
 if T.SkipLocalActionBook then return end
-if T.TenEnv then T.TenEnv() end
 
-local CF_WRATH = true
 local EV = T.Evie
 local AB = T.ActionBook:compatible(2,43)
 local RW = T.ActionBook:compatible("Rewire", 1,27)
@@ -288,31 +286,29 @@ securecall(function() -- spell: spell ID + mount spell ID
 			-- Sirus custom spells (companions, mounts) fail double-GSI name lookup.
 			-- GetSpellInfo(numericID) works; GetSpellInfo(name, rank) may return nil on Sirus.
 			-- Use the spell NAME from 1-arg GetSpellInfo: 1-arg works, button casts by name.
-			if CF_WRATH then
-				-- Sirus: RW:IsSpellCastable returns false for ALL spells because
-				-- GetSpellInfo(name, rank) (2-arg) is not supported. We cannot rely on
-				-- IsSpellCastable to filter anything. Create action slot for all
-				-- non-passive spells with valid names — cross-class filtering happens
-				-- at cast time, and the categories only add player's own spellbook spells.
-				local n0 = GetSpellInfo(id)
-				if n0 and not IsPassiveSpell(id) then
+			-- Sirus: RW:IsSpellCastable returns false for ALL spells because
+			-- GetSpellInfo(name, rank) (2-arg) is not supported. We cannot rely on
+			-- IsSpellCastable to filter anything. Create action slot for all
+			-- non-passive spells with valid names — cross-class filtering happens
+			-- at cast time, and the categories only add player's own spellbook spells.
+			local n0 = GetSpellInfo(id)
+			if n0 and not IsPassiveSpell(id) then
+				if not actionMap[n0] then
+					actionMap[n0] = AB:CreateActionSlot(spellHint, id, "attribute", "type","spell", "spell",n0, "checkselfcast",true, "checkfocuscast",true)
+				end
+				spellMap[lowered[n0]] = id
+				return actionMap[n0]
+			elseif n0 then
+				-- Passive spell = profession opener (Алхимия, Наложение чар и т.д.).
+				-- CastSpellByName находит не тот спелл на Sirus; нужен CastSpell(slot,"spell").
+				local sbslot = FindSpellBookSlotBySpellID(id)
+				if sbslot then
+					local mac = "/run local s=FindSpellBookSlotBySpellID(" .. id .. ");if s then CastSpell(s,'spell') end"
 					if not actionMap[n0] then
-						actionMap[n0] = AB:CreateActionSlot(spellHint, id, "attribute", "type","spell", "spell",n0, "checkselfcast",true, "checkfocuscast",true)
+						actionMap[n0] = AB:CreateActionSlot(spellHint, id, "attribute", "type","macro", "macrotext",mac)
 					end
 					spellMap[lowered[n0]] = id
 					return actionMap[n0]
-				elseif n0 then
-					-- Passive spell = profession opener (Алхимия, Наложение чар и т.д.).
-					-- CastSpellByName находит не тот спелл на Sirus; нужен CastSpell(slot,"spell").
-					local sbslot = FindSpellBookSlotBySpellID(id)
-					if sbslot then
-						local mac = "/run local s=FindSpellBookSlotBySpellID(" .. id .. ");if s then CastSpell(s,'spell') end"
-						if not actionMap[n0] then
-							actionMap[n0] = AB:CreateActionSlot(spellHint, id, "attribute", "type","macro", "macrotext",mac)
-						end
-						spellMap[lowered[n0]] = id
-						return actionMap[n0]
-					end
 				end
 			end
 			return
@@ -328,7 +324,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 				-- Sirus: GetSpellInfo(name, rank) 2-arg form not supported (returns nil).
 				-- In the castable=true path (RW:IsSpellCastable confirmed), trust it
 				-- and cast by spell name.
-				if CF_WRATH and s0 and not IsPassiveSpell(id) then
+				if s0 and not IsPassiveSpell(id) then
 					action = s0
 				else
 					return
@@ -616,12 +612,12 @@ securecall(function() -- macrotext
 		local f = CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
 		f:SetFrameRef("RW", RW:seclib())
 		f:SetFrameRef("KR", KR:seclib())
-		f:Execute([[-- AB_userandom_init 
+		f:Execute([[-- AB_userandom_init
 			seed, crState, qsState = math.random(2^30), newtable(), newtable()
 			RW = self:GetFrameRef('RW'), self:SetAttribute('frameref-RW', nil)
 			KR = self:GetFrameRef('KR'), self:SetAttribute('frameref-KR', nil)
 		]])
-		f:SetAttribute("RunSlashCmd", [=[-- AB_userandom 
+		f:SetAttribute("RunSlashCmd", [=[-- AB_userandom
 			local cmd, v, target, s, q = ...
 			local isRand = cmd ~= "/qsequence"
 			local tv, i, vt, _ = (isRand and crState or qsState)[v]
@@ -1251,7 +1247,7 @@ securecall(function() -- disenchant: iid
 		local function escape(s)
 			return ("%q"):format(s):gsub('[{u}]', er):sub(2,-2)
 		end
-		w:SetAttribute("RunSlashCmd", ([[-- AB_SPELLTARGET_ITEM_RUN 
+		w:SetAttribute("RunSlashCmd", ([[-- AB_SPELLTARGET_ITEM_RUN
 			local cmd, v = ...
 			if cmd == "%s" and v then
 				self:SetAttribute("target-item", v)
@@ -1548,11 +1544,11 @@ securecall(function() -- outfit: id (retail-only, skipped in WotLK)
 		outfitButton:SetAttribute("action", CLOBBER_SLOT)
 		outfitButton:SetAttribute("useOnKeyDown", false)
 		SecureHandlerWrapScript(outfitButton, "OnClick", outfitButton, 'return "RightButton"');
-		outfitButton:SetAttribute("RunSlashCmd", [=[--AB:Outfit_RunSlash 
+		outfitButton:SetAttribute("RunSlashCmd", [=[--AB:Outfit_RunSlash
 			local _cmd, v = ...
 			return nil, "notified-click", tonumber(v)
 		]=])
-		outfitButton:SetAttribute("RunSlashCmd-PreClick", [=[--AB:Outfit_PreClick 
+		outfitButton:SetAttribute("RunSlashCmd-PreClick", [=[--AB:Outfit_PreClick
 			local _cmd, v = ...
 			self:SetAttribute("type", nil)
 			self:SetAttribute("outfit-id", v)

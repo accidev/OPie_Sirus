@@ -1,21 +1,11 @@
 local _, T = ...
 
-local L, EV, PC, AB, KR = T.L, T.Evie, T.OPieCore, T.ActionBook
+local L, PC, AB, KR = T.L, T.OPieCore, T.ActionBook
 AB, KR = AB and AB:compatible(2, 45), AB and AB:compatible("Kindred", 1, 33)
-assert(EV and PC and AB and KR and 1, "Incompatible library bundle")
-if T.TenEnv then T.TenEnv() end
+assert(PC and AB and KR and 1, "Incompatible library bundle")
 
-KR:SetStateConditionalValue("dupeab", false) do
-	local DUP_SPELL_ID = {
-		[1257665]=1, [1250255]=1, -- Exit K'aresh Phasedive
-	}
-	local function syncDupEAB()
-		local at, sid = GetActionInfo(GetExtraBarIndex()*12-11)
-		KR:SetStateConditionalValue("dupeab", not not (at == "spell" and DUP_SPELL_ID[sid]))
-	end
-	EV.UPDATE_EXTRA_ACTIONBAR = syncDupEAB
-end
-do -- action handler (xact = zone context actions; MODERN-only, not used on WotLK)
+KR:SetStateConditionalValue("dupeab", false)
+do
 	local function createXact(_kind)
 		return nil
 	end

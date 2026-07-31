@@ -35,9 +35,6 @@ if playerClass == "DEATHKNIGHT" then
 end
 R:AddDefaultRing("CommonTrades", commonTrades)
 R:AddDefaultRing("OPieAutoQuest", {
-	{"extrabutton", 1, _u="EB", show="[nodupeab]", fastClick=true},
-	{"opie.ext", "xact", _u="CX"},
-	{"zoneability", 0, _u="ZA"},
 	{"opie.autoquest", 1, _u="AC"},
-	name=L"Quest Items", hotkey="ALT-Q", _u="OPbQI", v=4
+	name=L"Quest Items", hotkey="ALT-Q", _u="OPbQI", v=5
 })

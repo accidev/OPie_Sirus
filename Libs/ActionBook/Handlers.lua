@@ -920,80 +920,6 @@ securecall(function() -- action
 	end
 	AB:RegisterActionType("action", createAction, describeAction, 2)
 end)
-securecall(function() -- extrabutton
-	local slot = nil
-	local function extrabuttonHint()
-		if not HasExtraActionBar() then
-			return false, 0, "Interface/Icons/temp", "", 0, 0, 0
-		end
-		return actionHint(slot)
-	end
-	local aid = slot and AB:CreateActionSlot(extrabuttonHint, nil, "conditional", "[extrabar]", "attribute", "type","action", "action",slot)
-	local aid2 = slot and AB:CreateActionSlot(extrabuttonHint, nil, "attribute", "type","action", "action",slot)
-	local function createExtraButton(id, flags)
-		local forceShow = flags == 1
-		return id == 1 and (forceShow and aid2 or aid) or nil
-	end
-	local function describeExtraButton(_id)
-		local name, tex = L"Extra Action Button", "Interface/Icons/Spell_Shadow_Teleport"
-		if slot and HasExtraActionBar() then
-			local at, aid = GetActionInfo(slot)
-			name, tex = GetActionText(slot) or (at == "spell" and GetSpellInfo(aid)) or name, GetActionTexture(slot) or tex
-		end
-		return L"Extra Action Button", name, tex
-	end
-	AB:RegisterActionType("extrabutton", createExtraButton, describeExtraButton, 2)
-	if slot then
-		RW:SetClickHint("ExtraActionButton1", 95, function()
-			if HasExtraActionBar() then
-				return true, extrabuttonHint()
-			end
-		end)
-	end
-end)
-securecall(function() -- zoneability auto-collection
-	local skipZoneAbilities = {
-		[436521]=1, [436524]=1, -- Pandaria remix: Extract Gem + Unraveling Sands
-	}
-	local col, tpos, colId = nil, {}
-	local function createZoneAbility(id)
-		return id == 0 and colId or nil
-	end
-	local function describeZoneAbility(id)
-		if id == 0 then
-			return L"Zone Abilities", L"Zone Abilities", "Interface/Icons/Spell_Shadow_Teleport", nil, nil, nil, "collection"
-		end
-	end
-	local function onZoneCollectionOpen(_, event, cid)
-		if event ~= "internal.collection.preopen" or cid ~= colId then return end
-		local changed, ni, za = nil, 1, C_ZoneAbility and C_ZoneAbility.GetActiveAbilities()
-		for i=1, za and #za or 0 do
-			local asid = za[i].spellID
-			if asid and not (skipZoneAbilities[asid] or IsPassiveSpell(asid)) then
-				local tk, aid = "INTZAs" .. asid, AB:GetActionSlot("spell", asid)
-				if aid and not ((tpos[tk] or ni) < ni and col[tpos[tk]] == tk) then
-					changed = changed or col[ni] ~= tk or col[tk] ~= aid
-					col[ni], col[tk], tpos[tk], ni = tk, aid, ni, ni + 1
-				end
-			end
-		end
-		for i=ni, #col do
-			local tk = col[i]
-			changed, col[i], col[tpos[tk] == i and tk or i] = 1, nil, nil
-		end
-		if changed then
-			AB:UpdateActionSlot(colId, col)
-		end
-	end
-	colId = col and AB:CreateActionSlot(nil,nil, "collection",col)
-	AB:RegisterActionType("zoneability", createZoneAbility, describeZoneAbility, 1)
-	if col then
-		AB:AddObserver("internal.collection.preopen", onZoneCollectionOpen)
-		function EV:PLAYER_REGEN_DISABLED()
-			onZoneCollectionOpen(nil, "internal.collection.preopen", colId)
-		end
-	end
-end)
 securecall(function() -- petspell: spell ID
 	local actionInfo = {
 		stay={"Interface\\Icons\\Spell_Nature_TimeStop", "PET_ACTION_WAIT"},
@@ -1022,7 +948,7 @@ securecall(function() -- petspell: spell ID
 				end
 			end
 		end
-		local flags = slot and (isActive and 1 or 0 + (hasRange and not inRange and 16 or 0) + (hasRange and 512 or 0)) or 0
+		local flags = slot and ((isActive and 1 or 0) + (hasRange and not inRange and 16 or 0) + (hasRange and 512 or 0)) or 0
 		-- Behavior tokens (attack/stay/follow etc.) don't need range check;
 		-- usable as long as pet exists. inRange/hasRange from GetPetActionInfo unreliable on Sirus.
 		return not not slot and not not UnitExists("pet"), flags, ico, _G[name] or name, 0, 0, 0, slot and petTip or nil, slot
@@ -1228,7 +1154,7 @@ securecall(function() -- disenchant: iid
 	end
 	local function disenchantHint(ident)
 		local count = GetItemCount(ident, false, false, false)
-		local usable = IsPlayerSpell(DISENCHANT_SID) and count > 0
+		local usable = IsSpellKnown(DISENCHANT_SID) and count > 0
 		local name = (GetItemInfo(ident))
 		local qual = 0
 		local state, cdUsable = 0, nil
@@ -1241,7 +1167,7 @@ securecall(function() -- disenchant: iid
 			cdLeft or 0, cdLength or 0, disenchantTip, ident
 	end
 	local function createDisenchant(iid)
-		if not (IsPlayerSpell(DISENCHANT_SID) and type(iid) == "number" and GetItemCount(iid) > 0) then
+		if not (IsSpellKnown(DISENCHANT_SID) and type(iid) == "number" and GetItemCount(iid) > 0) then
 			return
 		end
 		local mid = map[iid]

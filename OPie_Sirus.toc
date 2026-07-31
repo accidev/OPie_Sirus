@@ -1,4 +1,4 @@
-## Interface: 30300
+﻿## Interface: 30300
 ## Title: |cFF00FF00OPie_Sirus|r
 ## Version: 8.3.3
 ## Author: foxlit
@@ -30,9 +30,6 @@ UI\Options\RingEdit.lua
 Meta\StanceBar.lua
 Meta\DataBroker.lua
 Meta\EQSet2.lua
-Meta\PSConfig.lua
 Bundle\QuestItems.lua
-Bundle\ExtraActions.lua
-Bundle\Mythport.lua
 Bundle\Tracking.lua
 Bundle\Editable.lua

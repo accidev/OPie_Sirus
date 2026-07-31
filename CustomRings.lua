@@ -248,7 +248,7 @@ local function updateSliceAction_Z3(slice)
 	if at == "item" then
 		v = (slice.forceShow and 1 or 0) + (slice.byName and 2 or 0) + (slice.onlyEquipped and 4 or 0)
 		slice.byName, slice.forceShow, slice.onlyEquipped = nil
-	elseif at == "macro" or at == "extrabutton" or at == "toy" then
+	elseif at == "macro" or at == "toy" then
 		v = (slice.forceShow and 1 or 0)
 		slice.forceShow = nil
 	elseif at == "opie.databroker.launcher" then

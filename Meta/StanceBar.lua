@@ -1,5 +1,5 @@
 local _, T = ...
-local EV, frame, pendingValue = T.Evie, StanceBarFrame or StanceBar, nil
+local EV, frame, pendingValue = T.Evie, ShapeshiftBarFrame, nil
 if not frame then return end
 local keeper, parent = CreateFrame("Frame"), frame:GetParent()
 keeper:Hide()

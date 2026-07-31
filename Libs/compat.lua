@@ -156,9 +156,6 @@ end
 
 if not GetFileIDFromPath then GetFileIDFromPath = function() return nil end end
 
-if not C_Texture then C_Texture = {} end
-if not C_Texture.GetAtlasElementID then C_Texture.GetAtlasElementID = function() return nil end end
-
 if not C_Widget then C_Widget = {} end
 if not C_Widget.IsFrameWidget then
 	C_Widget.IsFrameWidget = function(v)
@@ -219,15 +216,18 @@ if not C_UnitAuras then C_UnitAuras = {} end
 if not C_UnitAuras.GetAuraSlots                  then C_UnitAuras.GetAuraSlots                  = function() return nil end end
 if not C_UnitAuras.GetAuraDataBySlot             then C_UnitAuras.GetAuraDataBySlot             = function() return nil end end
 
-if not C_GamePad then
-	C_GamePad = {IsEnabled = function() return false end, GetDeviceMappedState = function() return nil end}
-end
-if not IsGamePadFreelookEnabled then IsGamePadFreelookEnabled = function() return false end end
-
 if not C_PetJournal then C_PetJournal = {} end
-if not C_PetJournal.IsCurrentlySummoned      then C_PetJournal.IsCurrentlySummoned      = function() return false end end
-if not C_PetJournal.DismissSummonedPet       then C_PetJournal.DismissSummonedPet       = function() end end
-if not C_PetJournal.SummonPetByGUID          then C_PetJournal.SummonPetByGUID          = function() end end
+if not C_PetJournal.IsCurrentlySummoned then
+	C_PetJournal.IsCurrentlySummoned = C_PetJournal.GetSummonedPetID and function(guid)
+		return guid ~= nil and C_PetJournal.GetSummonedPetID() == guid
+	end or function() return false end
+end
+if not C_PetJournal.DismissSummonedPet then
+	C_PetJournal.DismissSummonedPet = DismissCompanion and function()
+		DismissCompanion("CRITTER")
+	end or function() end
+end
+if not C_PetJournal.SummonPetByGUID          then C_PetJournal.SummonPetByGUID          = C_PetJournal.SummonPetByPetID or function() end end
 if not C_PetJournal.GetPetCooldownByGUID     then C_PetJournal.GetPetCooldownByGUID     = function() return 0, 0, 1 end end
 if not C_PetJournal.GetPetInfoBySpeciesID    then C_PetJournal.GetPetInfoBySpeciesID    = function() return nil end end
 if not C_PetJournal.FindPetIDByName          then C_PetJournal.FindPetIDByName          = function() return nil end end
@@ -306,7 +306,6 @@ end
 
 if not C_KeyBindings then C_KeyBindings = {GetBindingByKey = GetBindingByKey or function() return nil end} end
 
-if not DoesTemplateExist then DoesTemplateExist = function() return false end end
 if not IsMetaKeyDown     then IsMetaKeyDown     = function() return false end end
 
 if not C_CurveUtil then

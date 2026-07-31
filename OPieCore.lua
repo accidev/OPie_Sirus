@@ -15,10 +15,8 @@ local defaultConfig = {
 	SelectedSliceBind="", SelectedSliceBind2="",
 	SelectedCloseBind="", SelectedCloseBind2="",
 	CloseRingBind="", CloseRingBind2="",
-	PadSupportMode="none", PSOpenSwitchMode=1, PSRestoreOnClose=true, PSThawHold=0.75, PSThawDuration=4,
 	HideStanceBar=false,
 }
-local PADSUPPORT_MODE_MAP = {freelook1="freelook"}
 local configRoot, configInstance, activeProfile, PersistentStorageInfo, optionValidators = {CharProfiles={}, ProfileStorage={}, PersistentStorage={}}, nil, nil, {}, {}
 local charId, internalFreeId = ("%s-%s"):format(GetRealmName(), UnitName("player")), 424
 local TB_THRESH
@@ -118,7 +116,6 @@ local OR_OpenProxy = CreateFrame("Button", "ORLOpen", nil, "SecureActionButtonTe
 local SLICE_BIND_PATTERN = "^CLICK " .. coreName:gsub("[-.*+()%[%]?%%]", "%%%0") .. ":slice(%d+)b?$"
 local OR_ActiveRingName, OR_ActiveCollectionID, OR_ActiveSliceCount, activeProfileRE
 local sfDelQueue, sfGlobalOptions, sfRingsAll, sfRingsOne, sfBindsAll, sfBindsOne
-local OR_PadRestoreState = {}
 OR_SecCore:SetSize(2^15, 2^15)
 OR_SecCore:SetFrameStrata("FULLSCREEN_DIALOG")
 OR_SecCore:RegisterForClicks("AnyUp", "AnyDown")
@@ -507,30 +504,6 @@ local OR_RingBindingProxy do -- + Click dispatcher
 		]==]
 		ORL_GetCursorSlice = [[-- ORL_GetCursorSlice
 			if not openCollection[1] or AI_NoPointer then return nil end
-			local psm = IsGamePadEnabled and IsGamePadEnabled() and ORL_GlobalOptions.PadSupportMode
-			if psm == "freelook" then
-				local msx, msy = SCREEN:GetMousePosition()
-				if msx ~= 0.5 and (msx-0.5)*(msx-0.5) > 1e-14 or
-				   (msy-CENTERED_CURSOR_YPOS)*(msy-CENTERED_CURSOR_YPOS) > 1e-14 then
-					psm = nil
-				end
-			end
-			if psm == "freelook" then
-				local ms = GetGamePadState()
-				local st = ms and ms.sticks
-				st = st and st[ORL_GlobalOptions.PSStickIndex]
-				if st then
-					local radius, angle = 10000*st.len, math.deg(math.atan2(st.y, st.x))
-					if radius > 2500 then
-						local segAngle = 360/#openCollection
-						return floor(((90 - angle + segAngle/2 - activeRing.ofsDeg) % 360) / segAngle) + 1, false
-					elseif fastClickCA and radius < 100 then
-						return fastClick, true
-					else
-						return nil, false
-					end
-				end
-			end
 			if AI_MotionArmedFC then
 				return fastClick, true
 			end
@@ -999,7 +972,6 @@ local function OR_DeleteRing(name, data)
 	end
 end
 local function OR_SyncGlobalOptionsRE()
-	local psm = OR_GetEffectiveGlobalOption("PadSupportMode")
 	local up1, up2 = OR_GetEffectiveGlobalOption("ScrollNestedRingUpButton"), OR_GetEffectiveGlobalOption("ScrollNestedRingUpButton2")
 	local down1, down2 = OR_GetEffectiveGlobalOption("ScrollNestedRingDownButton"), OR_GetEffectiveGlobalOption("ScrollNestedRingDownButton2")
 	local p = "[mM][oO][uU][sS][eE][wW][hH][eE][eE][lL]"
@@ -1009,7 +981,6 @@ local function OR_SyncGlobalOptionsRE()
 	r.ScrollNestedRingUpBinding, r.ScrollNestedRingDownBinding = up1, down1
 	r.OpenNestedRingBinding2 = OR_GetEffectiveGlobalOption("OpenNestedRingButton2")
 	r.ScrollNestedRingUpBinding2, r.ScrollNestedRingDownBinding2 = up2, down2
-	r.PadSupportMode, r.PSStickIndex = PADSUPPORT_MODE_MAP[psm] or psm or "none", psm == "freelook1" and 1 or 2
 	OR_SecCore:EnableMouseWheel(not not hasWheelScroll)
 	sfGlobalOptions = nil
 end
@@ -1069,105 +1040,6 @@ local OR_FindFinalAction do
 		end
 	end
 end
-local OR_PadStickCapture = {} do
-	local hasStoredState, sinkStick, waitingStickLock, storedYaw, storedPitch = false, nil
-	local isThawing, sinkFrame, ouFrame, thawEnd, thawL, thawH = false, CreateFrame("Frame"), CreateFrame("Frame")
-	ouFrame:Hide()
-	sinkFrame:Hide()
-	pcall(sinkFrame.SetScript, sinkFrame, "OnGamePadStick", function() end)
-	local function StickThaw_OnUpdate(s, e)
-		local t = GetTime()
-		if t >= thawEnd or not isThawing then
-			if isThawing then
-				if hasStoredState then
-					SetCVar("GamePadCameraYawSpeed", storedYaw)
-					SetCVar("GamePadCameraPitchSpeed", storedPitch)
-				end
-				isThawing, hasStoredState, sinkStick = false, false, nil
-				sinkFrame:Hide()
-			end
-			s:Hide()
-			return
-		end
-		local ms = C_GamePad.GetDeviceMappedState()
-		local st = ms and ms.sticks
-		st = st and st[hasStoredState and 2 or sinkStick]
-		if st and st.len == 0 then
-			thawEnd = t-1
-			return StickThaw_OnUpdate(s, e)
-		elseif not hasStoredState then
-			return
-		end
-		local r = (thawEnd-t)/thawL
-		local p = r >= thawH and 0 or (1-r/(1-thawH))
-		p = p < 0 and 0 or p > 1 and 1 or p
-		if p > 0 then
-			local s = p*p
-			SetCVar("GamePadCameraYawSpeed", storedYaw*s)
-			SetCVar("GamePadCameraPitchSpeed", storedPitch*s)
-		end
-	end
-	local function FreelookWait_OnUpdate(s)
-		if not waitingStickLock then
-			s:Hide()
-		elseif IsGamePadFreelookEnabled() then
-			OR_PadStickCapture:Lock(waitingStickLock)
-		end
-	end
-	function OR_PadStickCapture:Lock(stick)
-		if stick == 2 then
-			if not hasStoredState then
-				hasStoredState, storedYaw, storedPitch = true, GetCVar("GamePadCameraYawSpeed"), GetCVar("GamePadCameraPitchSpeed")
-			end
-			SetCVar("GamePadCameraYawSpeed", 0)
-			SetCVar("GamePadCameraPitchSpeed", 0)
-		elseif stick then
-			sinkStick = stick
-			sinkFrame:Show()
-		end
-		isThawing, waitingStickLock = false
-		ouFrame:Hide()
-	end
-	function OR_PadStickCapture:WaitForFreelook(stick)
-		local wasThawing = isThawing
-		waitingStickLock, isThawing, sinkStick = stick, false, nil
-		if wasThawing then
-			StickThaw_OnUpdate(ouFrame, 0)
-		end
-		ouFrame:SetScript("OnUpdate", FreelookWait_OnUpdate)
-		ouFrame:Show()
-	end
-	function OR_PadStickCapture:Release()
-		if (hasStoredState or sinkStick) and not isThawing then
-			isThawing, thawL, thawH = true, OR_GetEffectiveGlobalOption("PSThawDuration"), OR_GetEffectiveGlobalOption("PSThawHold")
-			thawEnd = thawL + GetTime()
-			ouFrame:SetScript("OnUpdate", StickThaw_OnUpdate)
-			ouFrame:Show()
-		end
-		waitingStickLock = nil
-	end
-	function EV:GAME_PAD_ACTIVE_CHANGED(isActive)
-		if sinkStick and not (isActive or isThawing) then
-			sinkFrame:Hide()
-			OR_PadStickCapture:WaitForFreelook(sinkStick)
-		end
-	end
-	function EV:PLAYER_LOGOUT()
-		if hasStoredState then
-			SetCVar("GamePadCameraYawSpeed", storedYaw)
-			SetCVar("GamePadCameraPitchSpeed", storedPitch)
-		end
-	end
-end
-function OR_PadRestoreState:SaveAndSet(freelook, cursor)
-	if not self.saved then
-		self.InFreeLook = IsGamePadFreelookEnabled()
-		self.InCursorControl = IsGamePadCursorControlEnabled()
-		self.saved = true
-	end
-	SetGamePadFreeLook(freelook)
-	SetGamePadCursorControl(cursor)
-end
 function OR_SecCore:CheckCVars()
 	local ccy = tonumber(not InCombatLockdown() and GetCVar("CursorCenteredYPos"))
 	if ccy and ccy ~= coreEnvW.CENTERED_CURSOR_YPOS then
@@ -1186,21 +1058,6 @@ function OR_SecCore:NotifyState(state, _ringName, collection, ...)
 			return
 		end
 		MouselookStop()
-		local psm = C_GamePad.IsEnabled() and coreEnvW.ORL_GlobalOptions.PadSupportMode
-		local switchOnOpen = psm and OR_GetEffectiveGlobalOption("PSOpenSwitchMode") or 0
-		switchOnOpen = switchOnOpen == 2 or switchOnOpen ~= 0 and (coreEnvW.AIP_Key or ""):match("GAMEPAD")
-		if psm == "freelook" then
-			if switchOnOpen then
-				OR_PadRestoreState:SaveAndSet(true, false)
-				OR_PadStickCapture:Lock(coreEnvW.ORL_GlobalOptions.PSStickIndex)
-			else
-				OR_PadStickCapture:WaitForFreelook(coreEnvW.ORL_GlobalOptions.PSStickIndex)
-			end
-		elseif psm == "cursor" then
-			if switchOnOpen then
-				OR_PadRestoreState:SaveAndSet(false, true)
-			end
-		end
 		self:CheckCVars()
 	elseif state == "switch" then
 		OR_ActiveCollectionID, OR_ActiveSliceCount = collection, #coreEnvW.openCollection
@@ -1213,12 +1070,6 @@ function OR_SecCore:NotifyState(state, _ringName, collection, ...)
 			securecall(ORI.Hide, ORI, ...)
 		end
 		OR_ActiveSliceCount, OR_ActiveCollectionID, OR_ActiveRingName = 0
-		OR_PadStickCapture:Release()
-		if OR_PadRestoreState.saved and OR_GetEffectiveGlobalOption("PSRestoreOnClose") then
-			SetGamePadFreeLook(OR_PadRestoreState.InFreeLook)
-			SetGamePadCursorControl(OR_PadRestoreState.InCursorControl)
-		end
-		OR_PadRestoreState.saved = nil
 	end
 end
 
@@ -1775,16 +1626,7 @@ function private:GetCurrentInputs()
 	local radius2 = dx*dx+dy*dy
 	local isActiveRadius, isCenterRadius = radius2 >= 1600, radius2 <= 400
 
-	local go, stl = coreEnvW.ORL_GlobalOptions, 0
-	if go.PadSupportMode == "freelook" and C_GamePad.IsEnabled() and IsGamePadFreelookEnabled() and not IsGamePadCursorControlEnabled() then
-		local ms = C_GamePad.GetDeviceMappedState()
-		local st = ms and ms.sticks
-		st = st and st[go.PSStickIndex]
-		if st then
-			dx, dy, stl = st.x, st.y, st.len
-			imode, isActiveRadius, isCenterRadius = "stick", stl > 0.25, stl < 0.01
-		end
-	end
+	local stl = 0
 
 	local aidx, qidx = coreEnvW.fastClick, nil
 	if aidx then

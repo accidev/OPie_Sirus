@@ -801,7 +801,6 @@ function iapi:Show(_, _, fastOpen)
 	end
 	setupTransitionAnimation(fastOpen and "fast-in" or "in", OnUpdate_ZoomIn)
 	setIndicationShown(true)
-	-- DeclutterOnOpen (LootAlertSystem) не поддерживается в WotLK
 	EV.SPELL_UPDATE_COOLDOWN = forceMultiUpdate
 end
 function iapi:Hide()
@@ -875,7 +874,6 @@ for k,v in pairs({IndicatorFactory="_",
 	MIScale=true, MISpinOnHide=true, GhostMIRings=true,
 	XTPointerSnap=false, XTAnimation=true, XTRotationPeriod=4,
 	MIReserveSize=54, MIMinRadius=110, GhostShowDelay=0.25,
-	DeclutterOnOpen=true,
 }) do
 	PC:RegisterOption(k,v)
 end

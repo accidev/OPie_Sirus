@@ -21,10 +21,6 @@ local IconSelectorProps = {
 }
 AddObjectMethods({"IconSelector"}, IconSelectorProps)
 
-function IconSelector:SetSelectedAsset()
-	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
-	return d.selectedAsset
-end
 function IconSelector:SetSelectedAsset(asset)
 	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
 	assert(asset == nil or type(asset) == "string" or type(asset) == "number", 'Syntax: IconSelector:SetSelectedAsset(asset)')

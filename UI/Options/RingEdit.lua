@@ -1038,7 +1038,6 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 	TS:EscapeCallback(newSlice.close, function() api.closeActionPicker() end)
 
 	local b = newSlice.close:CreateTexture(nil, "BACKGROUND")
-	-- WotLK: atlas "UI-Frame-TopCornerRight" недоступен, используем стандартную рамку
 	b:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Corner")
 	b:SetTexCoord(0, 0.5, 0, 0.5)
 	b:SetPoint("TOPLEFT", 4, -5) b:SetPoint("BOTTOMRIGHT", -5, 4)

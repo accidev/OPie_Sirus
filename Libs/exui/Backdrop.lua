@@ -22,7 +22,6 @@ local function setBackdrop(d, info)
 		local tileH, tileV = not not (info.tileH == nil and info.tile or info.tileH), not not (info.tileV == nil and info.tile or info.tileV)
 		bg:SetDrawLayer("BACKGROUND", info.bgSubLevel or info.subLevel or -7)
 		bg:SetTexture(info.bgFile, tileH, tileV)
-		-- WotLK: SetHorizTile/SetVertTile не существуют; тайлинг уже задан через SetTexture args выше
 		bg:SetPoint("TOPLEFT", (insets and insets.left or 0), -(insets and insets.top or 0))
 		bg:SetPoint("BOTTOMRIGHT", -(insets and insets.right or 0), (insets and insets.bottom or 0))
 		bg:SetVertexColor(unpackColor(info.bgColor or 0xffffff))

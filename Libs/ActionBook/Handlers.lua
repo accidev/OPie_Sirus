@@ -187,14 +187,8 @@ securecall(function() -- spell: spell ID + mount spell ID
 		local action
 		local castable, rwCastType = RW:IsSpellCastable(id)
 		if not castable then
-			-- Sirus custom spells (companions, mounts) fail double-GSI name lookup.
-			-- GetSpellInfo(numericID) works; GetSpellInfo(name, rank) may return nil on Sirus.
-			-- Use the spell NAME from 1-arg GetSpellInfo: 1-arg works, button casts by name.
-			-- Sirus: RW:IsSpellCastable returns false for ALL spells because
-			-- GetSpellInfo(name, rank) (2-arg) is not supported. We cannot rely on
-			-- IsSpellCastable to filter anything. Create action slot for all
-			-- non-passive spells with valid names — cross-class filtering happens
-			-- at cast time, and the categories only add player's own spellbook spells.
+			-- Create an action slot for any non-passive spell with a valid name;
+			-- the button casts by name, and categories only add the player's own spells.
 			local n0 = GetSpellInfo(id)
 			if n0 and not IsPassiveSpell(id) then
 				if not actionMap[n0] then
@@ -225,9 +219,6 @@ securecall(function() -- spell: spell ID + mount spell ID
 			local s0, r0 = GetSpellInfo(id), GetSpellSubtext(id)
 			local o, s = pcall(GetSpellInfo, s0, r0)
 			if not (o and s and s0) then
-				-- Sirus: GetSpellInfo(name, rank) 2-arg form not supported (returns nil).
-				-- In the castable=true path (RW:IsSpellCastable confirmed), trust it
-				-- and cast by spell name.
 				if s0 and not IsPassiveSpell(id) then
 					action = s0
 				else

@@ -543,16 +543,22 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 	sliceDetail.desc:SetPoint("TOPLEFT", 7, -9)
 	sliceDetail.desc:SetPoint("TOPRIGHT", -7, -7)
 	sliceDetail.desc:SetJustifyH("LEFT")
-	sliceDetail.desc:SetScript("OnEnter", function(self)
-		if self.tooltipText then
+	sliceDetail.descHover = CreateFrame("Frame", nil, sliceDetail)
+	sliceDetail.descHover:SetPoint("TOPLEFT", 7, -9)
+	sliceDetail.descHover:SetPoint("TOPRIGHT", -7, -7)
+	sliceDetail.descHover:SetHeight(1)
+	sliceDetail.descHover:EnableMouse(true)
+	sliceDetail.descHover:SetScript("OnEnter", function()
+		local tip = sliceDetail.desc.tooltipText
+		if tip then
 			GameTooltip:SetOwner(sliceDetail, "ANCHOR_NONE")
 			GameTooltip:ClearAllPoints()
-			GameTooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", -2, 2)
-			GameTooltip:SetText(self.tooltipText)
+			GameTooltip:SetPoint("BOTTOMLEFT", sliceDetail.desc, "TOPLEFT", -2, 2)
+			GameTooltip:SetText(tip)
 			GameTooltip:Show()
 		end
 	end)
-	sliceDetail.desc:SetScript("OnLeave", function()
+	sliceDetail.descHover:SetScript("OnLeave", function()
 		if GameTooltip:IsOwned(sliceDetail) then
 			GameTooltip:Hide()
 		end
@@ -1696,6 +1702,7 @@ function api.updateSliceDisplay(_id, desc)
 	end
 	sliceDetail.desc.tooltipText = warnNotUsable and "|cffff4444!! |r" .. L"Your character currently cannot use this." or nil
 	sliceDetail.desc:SetText(labelText)
+	sliceDetail.descHover:SetHeight(math.max(1, sliceDetail.desc:GetHeight()))
 	local skipSpecs, showConditional = (desc.show or ""):match("^%[spec:([%d/]+)%] hide;(.*)")
 	sliceDetail.iconSelector:Hide()
 	sliceDetail.icon:SetIcon(sicon, desc.icon, icoext)

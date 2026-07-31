@@ -567,7 +567,7 @@ end)
 securecall(function() -- anyflyable
 	KR:SetStateConditionalValue("blockedflyable", false)
 	KR:SetStateConditionalValue("superflyable", false)
-	KR:SetStateConditionalDriver("anyflyable", ("[superflyable] *; [blockedflyable]; [flyable] %s;"):format("*"), false)
+	KR:SetStateConditionalDriver("anyflyable", "[flyable] *;", false)
 end)
 KR:SetStateConditionalValue("holiday", false)
 securecall(function() -- uslot:(slot token)
@@ -652,6 +652,7 @@ securecall(function() -- encount:(e-{id}/token)
 		return "remove"
 	end
 end)
+
 securecall(function() -- myth:token
 	KR:SetStateConditionalValue("myth", false)
 end)

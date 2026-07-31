@@ -1202,49 +1202,40 @@ securecall(function() -- uipanel: token
 			return r, reg and widgetClickCommand(reg, r)
 		end
 	end
-	local ShowVaultTip
-	local function openPanelFallback(panel)
-		return not InCombatLockdown() and ShowUIPanel(panel)
-	end
 	local panelMap, panels = {}, {
-		character={CHARACTER, icon="Interface/Icons/Achievement_General", gw=PaperDollFrame, tw=CharacterFrameTab1},
+		character={CHARACTER, icon="Interface/Icons/inv_helmet_25", gw=CharacterFrame, tw=CharacterFrameTab1},
 		reputation={REPUTATION, icon="Interface/Icons/Achievement_Reputation_01", gw=ReputationFrame, tw=CharacterFrameTab3},
-		currency={CURRENCY, icon="Interface/Icons/INV_Misc_Coin_17", gw=TokenFrame, tw=CharacterFrameTab5},
+		currency={CURRENCY, icon="Interface/Icons/INV_Misc_Coin_17", gw=TokenFrame, tw=CharacterFrameTab5, req=function() return GetCurrencyListSize() > 0 end},
 		spellbook={SPELLBOOK, icon="Interface/Icons/INV_Misc_Book_09", gw=SpellBookFrame, tmt="/click SpellbookMicroButton\n/click SpellBookFrameCloseButton", cw=SpellBookFrameCloseButton},
 		talents={TALENTS_BUTTON, icon="Interface/Icons/Ability_Marksmanship", gn="PlayerTalentFrame", tw=TalentMicroButton, req=function() return (UnitLevel("player") or 0) >= 10 end},
 		achievements={ACHIEVEMENTS, icon="Interface/Icons/Achievement_General", gn="AchievementFrame", tw=AchievementMicroButton, tcr=1},
 		quests={QUESTLOG_BUTTON, icon="Interface/Icons/INV_Misc_Book_08", gw=QuestLogFrame, tw=QuestLogMicroButton},
-		groupfinder={DUNGEONS_BUTTON, icon="Interface/Icons/INV_Misc_GroupLooking", gw=PVEFrame, tw=LFDMicroButton},
-		collections=nil,
-		adventureguide=nil,
+		groupfinder={DUNGEONS_BUTTON, icon="Interface/Icons/INV_Misc_GroupLooking", gw=LFDParentFrame, tw=LFDMicroButton},
 		guild={title=GUILD, icon="Interface/Icons/INV_Shirt_GuildTabard_01", gw=GuildFrame, ow=FriendsFrameTab3, cw=FriendsFrameCloseButton, req=IsInGuild},
-		map={WORLD_MAP, icon="Interface/Icons/Inv_Misc_Map08", gw=WorldMapFrame, tw=MiniMapWorldMapButton or WorldMapMicroButton},
-		social={SOCIAL_BUTTON, icon="Interface/Icons/INV_Scroll_03", gw=FriendsFrame, tw=FriendsMicroButton},
+		map={WORLD_MAP, icon="Interface/Icons/Inv_Misc_Map08", gw=WorldMapFrame, tw=MiniMapWorldMapButton},
+		social={SOCIAL_BUTTON, icon="Interface/Icons/INV_Letter_18", gw=FriendsFrame, tw=SocialsMicroButton},
 		calendar={L"Calendar", icon="Interface/Icons/Spell_Holy_BorrowedTime", gn="CalendarFrame", tw=GameTimeFrame},
-		options={OPTIONS, icon="Interface/Icons/INV_Misc_Wrench_01", gw=SettingsPanel, noduck=1, open=function() Settings.OpenToCategory(nil) end},
+		options={OPTIONS, icon="Interface/Icons/INV_Misc_Wrench_01", gw=InterfaceOptionsFrame, open=function() InterfaceOptionsFrame_Show() end},
 		macro={MACROS, icon="Interface/Icons/INV_Misc_Note_06", gn="MacroFrame", tmt=SLASH_MACRO1, cw=closeButton(MacroFrame), postmt=pyCLICK .. "csp 1\n" .. pyCLICK .. "cgm 1"},
-		profs=nil,
 		gamemenu={L"Game Menu", icon="Interface/Icons/INV_Misc_Wrench_01", gw=GameMenuFrame, noduck=1, pre=function() return not GameMenuFrame:IsShown() or nil end, post=function() RatingMenuFrame:Show() RatingMenuFrame:Hide() PlaySound(SOUNDKIT.IG_MAINMENU_OPEN) end},
-		vault=nil,
-		csp={gw=SettingsPanel, cpreamble=true, cw=closeButton(SettingsPanel, "csp")},
+		csp={gw=InterfaceOptionsFrame, cpreamble=true, cw=closeButton(InterfaceOptionsFrame, "csp")},
 		cgm={gw=GameMenuFrame, cpreamble=true, cw=closeButton(GameMenuFrame, "cgm")},
-		csf={pre=function() return StoreFrame_IsShown and StoreFrame_SetShown and StoreFrame_IsShown() and StoreFrame_SetShown(false) end, cpreamble=true},
 	}
 	do
 		local exName = newWidgetName("AB:PX!")
 		local clickEx = CLICK .. " " .. exName .. " "
-		local cmdPrefix = clickEx .. "csf 1\n" .. clickEx
+		local cmdPrefix = clickEx
 		local cmdDuckPrefix = cmdPrefix .. "csp 1\n" .. clickEx .. "cgm 1\n" .. clickEx
 		local ex = CreateFrame("Button", exName, nil, "SecureActionButtonTemplate")
 		ex:SetAttribute("type", "macro")
 		ex:SetAttribute("pressAndHoldAction", 1)
 		local function prerun(k)
 			local i, r = panels[k], 0
-			local tw, gw, cw, cw2, ow, ofun, scs = i.tw, i.gw, i.cw, i.cw2, i.ow, i.open, i.skipCloseSound
+			local tw, gw, cw, cw2, ow, ofun = i.tw, i.gw, i.cw, i.cw2, i.ow, i.open
 			if tw and not tw:IsEnabled() then
 				r = i.tcr and r + 1 or r; tw:Enable()
 			end
-			if cw or ow or scs or ofun then
+			if cw or ow or ofun then
 				local gh, cd, od = not (gw and gw:IsShown()), not (cw and cw:IsEnabled()), not (ow and ow:IsEnabled())
 				if cw and gh ~= cd then
 					r = r + (gh and 6 or 2); cw:SetEnabled(not gh)
@@ -1254,12 +1245,6 @@ securecall(function() -- uipanel: token
 				end
 				if ow and gh == od then
 					r = r + (gh and 8 or 24); ow:SetEnabled(gh)
-				end
-				if scs and not gh then
-					local ok, sh = PlaySound(scs)
-					if ok and sh then
-						r, i.stopSoundHandle = r + 32, sh
-					end
 				end
 				if ofun and gh == od then
 					securecall(ofun, gw, k)
@@ -1273,8 +1258,6 @@ securecall(function() -- uipanel: token
 			if m3 >= 2 then i.cw:SetEnabled(m3 > 2) end
 			if m >= 64 then i.cw2:SetEnabled(true) end
 			if m1 >= 1 then i.tw:Disable() end
-			local ssh = i.stopSoundHandle
-			i.stopSoundHandle = ssh and StopSound(ssh) and nil
 		end
 		ex:SetScript("PreClick", function(_, b)
 			local i = panels[b]
@@ -1304,11 +1287,8 @@ securecall(function() -- uipanel: token
 					tmt = tmt .. widgetClickCommand(k, v.cw2)
 				end
 			end
-			if v.tw or v.cw or v.ow or v.open or v.cwrap then
+			if v.tw or v.cw or v.ow or v.open then
 				v.pre, v.post = v.pre or prerun, v.post or postrun
-			end
-			if tmt and v.premt then
-				tmt = v.premt .. "\n" .. tmt
 			end
 			if tmt and v.postmt then
 				tmt = tmt .. "\n" .. v.postmt
@@ -1342,34 +1322,9 @@ securecall(function() -- uipanel: token
 		end
 	end
 	do -- further panels init
-		panels.options.cw, panels.options.cw2 = panels.csp.cw, panels.cgm.cw
+		panels.options.cw = closeButton(InterfaceOptionsFrame)
 		panels.macro.postmt = widgetClickCommand("cmf", panels.macro.cw)
 		panels.gamemenu.cw = panels.cgm.cw
-		panels.character.icon = "Interface/Icons/inv_helmet_25"
-		panels.gamemenu.icon = "Interface/Icons/INV_Misc_Wrench_01"
-		panels.achievements = not AchievementFrame and nil or panels.achievements
-		panels.social.icon = "Interface/Icons/INV_Letter_18"
-		panels.social.tw = SocialsMicroButton
-		local cfp = panels.character
-		cfp.gw = CharacterFrame
-		cfp.tw = CharacterFrameTab1
-		cfp.open = nil
-		cfp.cw = nil
-		local gfp = panels.groupfinder
-		gfp.icon = "Interface/Icons/INV_Misc_GroupLooking"
-		gfp.gw = LFDParentFrame
-		gfp.tw = LFDMicroButton
-		gfp.cw, gfp.skipCloseSound = nil, nil
-		gfp.open, gfp.premt = nil, nil
-		local opts = panels.options
-		opts.gw = InterfaceOptionsFrame
-		opts.open = function() InterfaceOptionsFrame_Show() end
-		opts.cw = closeButton(InterfaceOptionsFrame)
-		opts.cw2 = nil
-		opts.noduck = nil
-		function panels.currency.req()
-			return GetCurrencyListSize() > 0
-		end
 		function EV.ADDON_LOADED()
 			if MacroFrame then
 				panels.macro.cw:SetParent(MacroFrame)
@@ -1390,12 +1345,7 @@ securecall(function() -- uipanel: token
 		if not i then return end
 		local gw, icon, s = i.gw, i.icon, 0
 		s = (gw and gw:IsVisible()) and s + 1 or s
-		if icon == nil then
-			icon, s = i.atlas, s + 262144
-		end
-		local tf = i.tip or nil
-		local willFail = gw and i.open == openPanelFallback and InCombatLockdown() and not gw:IsVisible()
-		return tk == "gamemenu" or not willFail, s, icon, i[1], nil, nil, nil, tf, tf and tk
+		return true, s, icon, i[1]
 	end
 	local function createPanel(tk)
 		local r = panelMap[tk]
@@ -1409,7 +1359,7 @@ securecall(function() -- uipanel: token
 	local function describePanel(tk)
 		local i = panels[tk]
 		if i and i[1] then
-			return L"Interface Panel", i[1], i.icon or i.atlas
+			return L"Interface Panel", i[1], i.icon
 		end
 		return L"Interface Panel"
 	end

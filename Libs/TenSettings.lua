@@ -389,7 +389,7 @@ do -- TenSettingsFrame
 		t:Hide()
 		t:SetScript("OnShow", container_onCanvasShow)
 		t.OnCommit, t.OnDefault, t.OnRefresh, t.OnCancel = cf.OnCommit, cf.OnDefault, cf.OnRefresh, cf.OnCancel
-		containers[t], ci.canvas = ci, t
+		containers[t] = ci
 		if type(opts) == "table" then
 			ci.forceRootVersion = opts.forceRootVersion
 			ci.rootTabText = opts.tabText
@@ -477,9 +477,9 @@ do -- TenSettingsFrame
 					return
 				end
 				waitLeft = 0.2
-				if TenSettingsFrame:IsVisible() or SettingsPanel:IsVisible() or I.undo:GetState() == 0 then
+				if TenSettingsFrame:IsVisible() or I.undo:GetState() == 0 then
 					watcher:Hide()
-				elseif not (TenSettingsFrame:IsShown() or SettingsPanel:IsShown()) then
+				elseif not TenSettingsFrame:IsShown() then
 					if currentSettingsTenant then
 						settings_hide(true, true)
 					end
@@ -492,10 +492,7 @@ do -- TenSettingsFrame
 				watcher:Show()
 			end
 		end
-		for i=1,2 do
-			local f = CreateFrame("Frame", nil, i == 1 and SettingsPanel or TenSettingsFrame)
-			f:SetScript("OnHide", cueWatcher)
-		end
+		CreateFrame("Frame", nil, TenSettingsFrame):SetScript("OnHide", cueWatcher)
 	end
 
 	TenSettingsFrame.ClosePanelButton:SetScript("OnClick", function()
@@ -527,13 +524,8 @@ do -- TenSettingsFrame
 
 	local function openSettingsPanel(panel)
 		local ci = containers[panel]
-		if SettingsPanel:IsVisible() then
-			container_setTenant(ci, panel)
-			Settings.OpenToCategory(ci.brID)
-		else
-			container_setTenant(ci, panel)
-			settings_show(ci.f)
-		end
+		container_setTenant(ci, panel)
+		settings_show(ci.f)
 	end
 	function I.AddOptionsCategory(panel, opts)
 		local name, parent = panel.name, panel.parent
@@ -542,9 +534,6 @@ do -- TenSettingsFrame
 		if parent == nil then
 			ci = container_new(name, panel, opts)
 			panel:SetParent(ci.f)
-			local cat = Settings.RegisterCanvasLayoutCategory(ci.canvas, name)
-			ci.brID = cat.ID
-			Settings.RegisterAddOnCategory(cat)
 		else
 			containers[panel] = ci
 			panel:SetParent(ci.f)

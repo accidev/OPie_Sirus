@@ -163,21 +163,6 @@ if not C_Widget.IsFrameWidget then
 	end
 end
 
-if not SettingsPanel then
-	local sp = CreateFrame("Frame")
-	sp:Hide()
-	SettingsPanel = sp
-end
-
-if not Settings then
-	Settings = {
-		RegisterCanvasLayoutCategory = function(_c, name) return {ID = name} end,
-		RegisterAddOnCategory        = function() end,
-		OpenToCategory               = function() end,
-		GetCategory                  = function() return nil end,
-	}
-end
-
 if not AreDangerousScriptsAllowed then AreDangerousScriptsAllowed = function() return true end end
 
 if not C_QuestLog then

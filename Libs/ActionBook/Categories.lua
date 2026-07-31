@@ -40,16 +40,6 @@ do
 			end
 		end
 	end
-	local function procRuneBookEntry(add, _ok, st, sid)
-		if st == "SPELL" and sid then
-			local n1 = GetSpellInfo(sid)
-			local n2, _, _, _, _, _, sid2 = GetSpellInfo(n1 or "")
-			if n2 ~= n1 and sid2 and not IsPassiveSpell(sid2) and not mark[sid2] then
-				mark[sid2] = 1
-				add("spell", sid2)
-			end
-		end
-	end
 	local WRATH_SKIP_TABS = {
 		["Общие"]                 = true,
 		["Гильдейские бонусы"]    = true,
@@ -382,7 +372,7 @@ do
 	end
 end
 do
-	local panels = {"character", "reputation", "currency", "spellbook", "talents", "profs", "achievements", "quests", "groupfinder", "collections", "adventureguide", "guild", "map", "vault", "social", "calendar", "macro", "options", "gamemenu"}
+	local panels = {"character", "reputation", "currency", "spellbook", "talents", "achievements", "quests", "groupfinder", "guild", "map", "social", "calendar", "macro", "options", "gamemenu"}
 	AB:AugmentCategory(L"UI panels", function(_, add)
 		for i=1,#panels do
 			i = panels[i]

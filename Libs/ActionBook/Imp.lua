@@ -10,10 +10,6 @@ local function assert(condition, text, level, ...)
 	return condition or error(tostring(text):format(...), 1 + (level or 1))((0)[0])
 end
 
-local function GetModernTalentSpells()
-	return function() end
-end
-
 local commandType, addCommandType = {["#show"]=0, ["#showtooltip"]=0, ["#imp"]=-1} do
 	function addCommandType(slashToken, ct)
 		local idx, s = 1
@@ -318,17 +314,6 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 				k = nl .. " (" .. sr:lower() .. ")"; spells[k] = spells[k] or id
 			end
 		end
-		local function addModernTalents()
-			for sid, _active, overrideName in GetModernTalentSpells() do
-				local name = GetSpellInfo(sid)
-				if name then
-					addSpell(name, sid, true)
-				end
-				if overrideName and overrideName ~= name then
-					addSpell(overrideName, sid, true)
-				end
-			end
-		end
 		local function addSpellBookTab(ofs, c, allowGenericOverwrite)
 			for j=ofs+1,ofs+c do
 				local n = GetSpellBookItemName(j, "spell")
@@ -369,13 +354,10 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 					addSpell(sn, sid)
 				end
 			end
-			for curSpec=0,1 do
-				for i=GetNumSpellTabs()+12,1,-1 do
-					local _, _, ofs, c, _, sid = GetSpellTabInfo(i)
-					if not ofs then -- WotLK: out-of-bounds tabs return nil
-					elseif ((curSpec == 0) == (sid == 0)) then
-						addSpellBookTab(ofs, c, true)
-					end
+			for i=GetNumSpellTabs(),1,-1 do
+				local _, _, ofs, c = GetSpellTabInfo(i)
+				if c and c > 0 then
+					addSpellBookTab(ofs, c, true)
 				end
 			end
 			spells[""], spells["()"] = nil
@@ -772,7 +754,6 @@ end
 local hum = {}
 setmetatable(IM, {__index=hum})
 hum.HUM = hum
-hum.GetModernTalentSpells = GetModernTalentSpells
 
 AB:RegisterModule("Imp", {
 	compatible=function(_, maj, rev)

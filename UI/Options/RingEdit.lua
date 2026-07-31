@@ -1516,13 +1516,6 @@ function sliceDetail.skipSpecs:text()
 	self:Disable()
 	return self:SetText(L"All characters")
 end
-local function focusSliceVisibility()
-	local sc = sliceDetail.showConditional
-	sc:SetFocus()
-	if not sc:IsMouseOver() then
-		sc:GetScript("OnEnter")(sc)
-	end
-end
 function sliceDetail.skipSpecs:initialize()
 	-- Specialization filter not available in WotLK
 end

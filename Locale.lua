@@ -3,7 +3,7 @@ local _, T = ...
 
 local C, z, V, K = GetLocale(), nil
 V =
-    C == "ruRU" and { -- 213/214 (100%)
+    C == "ruRU" and { -- 214/215 (100%)
       "%d |4минуту:минуты:минут; назад (%s)", "%s для отмены", "%s для поиска в текущих результатах", "(Все комплекты)", "(по умолчанию)", "(введите название иконки или путь к ней)", "Создать кольцо", "Добавить новый фрагмент", "Дополнительная прокрутка после использования", "Все персонажи   %s",
       "Все параметры", "Все персонажи", "Разрешить быстрое применение", "Нажать Alt для установки условной привязки", z, "Анимировать переходы", "Анимация", "Все внесенные изменения в настоящее время не будут сохраняться.", "Внешний вид", "Привязать ко всем специализациям",
       "В позиции всплывающей подсказки HUD", "В центре кольца", "Нажмите, чтобы изменить иконку", "Поведение", "Противоречие назначения горячей клавиши", "Назначение клавиши:", "Отмена", "Изменить действие", "Изменения не будут сохранены", "Выберите горячую клавишу для этого кольца, или включите опцию %s в настройках OPie.",
@@ -25,7 +25,7 @@ V =
       "Следующие макро команды открывают это кольцо:", "Этот раздел", "Это отображение может не поддерживать все возможности OPie.", "Данное сочетание клавиш уже используется другим аддоном.", "Данное сочетание клавиш неактивно, так как конфликтует с другим сочетанием.", "Профессиональные навыки", "Срабатывание по нажатию клавиши", "Срабатывание при отпускании клавиши", "Понятно;всё равно изменить", "Отменить изменения",
       "Неподвижный курсор", "Неподвижный курсор, или в центре кольца", "Требуется обновление", "Использовать привязку  для колец по умолчанию", "Использовать первый фрагмент при открытии", "Использовать глобальные настройки", "Использовать фрагмент", "Использовать фрагмент и закрыть кольцо", "Видимые условия:", "Когда кольцо открыто:",
       "World of Warcraft не удалось загрузить сохраненные переменные OPie из-за нехватки памяти. Попробуйте отключить другие аддоны.", "Вы можете отменить или вернуть предыдущие настройки позже.", "Вы можете использовать расширенные макро условия; см. %s.", "Вы должны включить опцию %s для этого кольца в настройках OPie для использования быстрых действий.", "Ваш персонаж не может использовать это в данный момент.", "по умолчанию", "Адаптация", "Благодарности", "Отблагодарить", "Поддержать дальнейшую разработку можно здесь:",
-      "%s — автор оригинального аддона.", "%s — адаптация для World of Warcraft 3.3.5a.", "%s — оптимизация под Sirus.", "Только высший ранг",
+      "%s — автор оригинального аддона.", "%s — адаптация для World of Warcraft 3.3.5a.", "%s — оптимизация под Sirus.", "Только высший ранг", "Метки на местности",
     } or nil
 
 K = V and {
@@ -50,7 +50,7 @@ K = V and {
       "The following macro command opens this ring:", "These Settings", "This appearance may not support all OPie features.", "This binding is currently used by another addon.", "This binding is not currently active because it conflicts with another.", "Trade Skills", "Trigger on binding press", "Trigger on binding release", "Understood; edit anyway", "Undo changes",
       "Unmoved cursor", "Unmoved cursor, or at ring center", "Update required", "Use default ring bindings", "Use first slice when opened", "Use global setting", "Use slice", "Use slice and close ring", "Visibility conditional:", "While a ring is open:",
       "World of Warcraft could not load OPie's saved variables due to a lack of memory. Try disabling other addons.", "You can cancel or revert to previous settings later.", "You may use extended conditionals; see %s for details.", "You must enable a %s interaction for this ring in OPie options to use quick actions.", "Your character currently cannot use this.", "default", "Adaptation", "Credits", "Donate", "You can support further development by visiting:",
-      "%s — author of the original addon.", "%s — adaptation for World of Warcraft 3.3.5a.", "%s — optimization for Sirus.", "Highest ranks only",
+      "%s — author of the original addon.", "%s — adaptation for World of Warcraft 3.3.5a.", "%s — optimization for Sirus.", "Highest ranks only", "World Markers",
 }
 
 local L = K and {}

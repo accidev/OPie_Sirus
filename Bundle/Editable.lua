@@ -14,6 +14,20 @@ R:AddDefaultRing("RaidSymbols", {
 	{"raidmark", 0, _u="c"}, -- clear all
 	name=L"Target Markers", hotkey="ALT-R", _u="OPCRS", v=1
 })
+if WORLD_RAID_MARKER_ORDER then
+	R:AddDefaultRing("RaidWorldMarkers", {
+		{"worldmark", 8, _u="y"},
+		{"worldmark", 7, _u="o"},
+		{"worldmark", 6, _u="p"},
+		{"worldmark", 5, _u="g"},
+		{"worldmark", 4, _u="s"},
+		{"worldmark", 3, _u="b"},
+		{"worldmark", 2, _u="r"},
+		{"worldmark", 1, _u="w"},
+		{"worldmark", 0, _u="c"},
+		name=L"World Markers", hotkey="ALT-W", _u="OPCWM", v=1
+	})
+end
 local firstAid = {id="/cast {{spell:3273}}", _u="f"}
 local _, playerClass = UnitClass("player")
 local commonTrades = {

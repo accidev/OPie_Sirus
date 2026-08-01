@@ -357,6 +357,13 @@ AB:AugmentCategory(L"Raid markers", function(_, add)
 		add("raidmark", i)
 	end
 end)
+if WORLD_RAID_MARKER_ORDER then
+	AB:AugmentCategory(L"Raid world markers", function(_, add)
+		for i=0,#WORLD_RAID_MARKER_ORDER do
+			add("worldmark", i)
+		end
+	end)
+end
 AB:AugmentCategory(L"Toys", function(_, add)
 	if not ToyBox or not ToyBox.PagingFrame then return end
 	local maxPages = ToyBox.PagingFrame:GetMaxPages()

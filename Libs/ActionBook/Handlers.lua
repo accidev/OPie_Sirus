@@ -817,6 +817,53 @@ securecall(function() -- raidmark
 		end)
 	end
 end)
+securecall(function() -- worldmark
+	local map, ORDER = {}, WORLD_RAID_MARKER_ORDER
+	if not (ORDER and PlaceRaidMarker and ClearRaidMarker and IsRaidMarkerActive) then return end
+	local CMD_PLACE = SLASH_WORLD_MARKER4 or SLASH_WORLD_MARKER2 or "/worldmarker"
+	local CMD_CLEAR = SLASH_CLEAR_WORLD_MARKER4 or SLASH_CLEAR_WORLD_MARKER2 or "/clearworldmarker"
+	local function CanPlaceWorldMarkers()
+		if (IsRaidLeader() or IsRaidOfficer()) and GetNumRaidMembers() > 0 then
+			return true
+		end
+		return not not (IsPartyLeader() and GetNumPartyMembers() > 0)
+	end
+	local function markerInfo(i)
+		local mi = ORDER[i]
+		local s = mi and _G["WORLD_MARKER" .. mi] or ""
+		return mi, s:match("|T(.-):") or "Interface/TargetingFrame/UI-RaidTargetingIcon_" .. (9 - i), (s:gsub("|T.-|t%s*", ""))
+	end
+	local function worldmarkHint(i)
+		local mi, icon, name = markerInfo(i)
+		return CanPlaceWorldMarkers(), (mi and IsRaidMarkerActive(mi)) and 1 or 0, icon, name, 0, 0, 0
+	end
+	local function removeHint()
+		return CanPlaceWorldMarkers(), 0, "Interface/RaidFrame/Raid-WorldPing", REMOVE_WORLD_MARKERS, 0, 0, 0
+	end
+	map[0] = AB:CreateActionSlot(removeHint, nil, "macrotext", CMD_CLEAR .. " " .. (ALL or "all"))
+	for i=1,#ORDER do
+		map[i] = AB:CreateActionSlot(worldmarkHint, i, "macrotext", CMD_PLACE .. " " .. ORDER[i])
+	end
+	local function createWorldMark(id)
+		return map[id]
+	end
+	local function describeWorldMark(id)
+		if id == 0 then return L"Raid World Marker", REMOVE_WORLD_MARKERS, "Interface/RaidFrame/Raid-WorldPing" end
+		local _, icon, name = markerInfo(id)
+		return L"Raid World Marker", name, icon
+	end
+	AB:RegisterActionType("worldmark", createWorldMark, describeWorldMark, 1)
+	if _G["SLASH_WORLD_MARKER1"] then
+		RW:ImportSlashCmd("WORLD_MARKER", true, false, 40, function(_, _, clause)
+			clause = tonumber(clause)
+			for i=1,#ORDER do
+				if ORDER[i] == clause then
+					return true, worldmarkHint(i)
+				end
+			end
+		end)
+	end
+end)
 securecall(function() -- action
 	local amap = {}
 	local function createAction(id, _flags)

@@ -1,0 +1,65 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'OPie_Sirus.toc'
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: get_version
+        run: |
+          VERSION=$(grep -i "^## Version:" OPie_Sirus.toc | head -1 | sed 's/.*: *//' | tr -d '\r' | xargs | sed 's/^[vV]//')
+          if [ -z "$VERSION" ]; then
+            echo "::error::No '## Version:' field found in OPie_Sirus.toc"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Found version: $VERSION"
+
+      - name: Check if tag already exists
+        run: |
+          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q .; then
+            echo "Tag v${VERSION} already exists; skipping release."
+            echo "EXISTS=true" >> "$GITHUB_ENV"
+          else
+            echo "EXISTS=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Create archive
+        if: env.EXISTS == 'false'
+        run: |
+          mkdir -p release/OPie_Sirus
+          git archive HEAD | tar -x -C release/OPie_Sirus
+          rm -rf release/OPie_Sirus/.github release/OPie_Sirus/.gitignore release/OPie_Sirus/.gitattributes
+          test -f release/OPie_Sirus/OPie_Sirus.toc
+          cd release
+          zip -r -9 "../OPie_Sirus-v${VERSION}.zip" OPie_Sirus
+          cp "../OPie_Sirus-v${VERSION}.zip" ../OPie_Sirus-latest.zip
+
+      - name: Create release
+        if: env.EXISTS == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ env.VERSION }}"
+          name: "OPie_Sirus v${{ env.VERSION }}"
+          files: |
+            OPie_Sirus-v${{ env.VERSION }}.zip
+            OPie_Sirus-latest.zip
+          generate_release_notes: true

@@ -50,9 +50,9 @@ local navView = CreateFrame("Frame", nil, frame) do
 		fs:SetMaxLines(1)
 		fs:SetJustifyH("CENTER")
 	end
-	makeActButton(1, L"What's New")
+	makeActButton(1, L"Credits")
 	makeActButton(2, L"Report an Issue", 180)
-	makeActButton(3, L"Translate OPie")
+	makeActButton(3, L"Donate")
 
 	local function makeNav(id, title, text, y1)
 		oy, t = oy - (y1 or 40), CreateFrame("Button", nil, navView, nil, id)
@@ -103,31 +103,15 @@ local logView = CreateFrame("Frame", nil, frame) do
 	logView:SetPoint("TOPLEFT", 0, oy - 32)
 	logView:SetPoint("TOPRIGHT", 0, oy - 32)
 	logView:Hide()
-	pcall(logView.SetScript, logView, "OnHyperlinkClick", function(_, link, text)
-		local url = link == "url" and text:match("|h(.-)|h") or link:match("^url:.-(%w+://.+)")
-		if url then
-			TS:ShowCopyOverlay(frame, BROWSER_COPY_LINK, " ", url, L"Copy the URL shown above and visit it using a web browser.", OKAY, 1)
-		end
-	end)
-	pcall(logView.SetHyperlinksEnabled, logView, true)
 
 	local oy, t = 0, logView:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	t:SetPoint("TOPLEFT", 20, oy)
-	t:SetText(L"What's New")
+	t:SetText(L"Credits")
 	t = CreateFrame("Button", nil, logView, "UIPanelCloseButtonNoScripts")
 	t:SetPoint("TOPRIGHT", -10, oy+6)
 	t:SetScript("OnClick", function() frame.refresh() end)
 
-	oy, t = oy-25, logView:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	t:SetPoint("TOPLEFT", 20, oy)
-	t:SetPoint("TOPRIGHT", -20, oy)
-	t:SetJustifyH("LEFT")
-	local link = "|cff00a0ff|Hurl|hhttps://townlong-yak.com/addons/opie/release|h|r"
-	local intro = (L"Selected highlights from recent updates to OPie are summarized below. For full release notes, please visit %s"):format(link)
 	local MARK_TEXTURE = "Interface/AddOns/" .. ADDON .. "/gfx/mark.png"
-	local uvMark = "|T" .. MARK_TEXTURE .. ":0:0:0:1:2:1:1:2:0:1:221:102:0|t"
-	intro = intro .. "\n\n" .. (L"Changes marked with %s were inspired by submitted feedback."):format(uvMark)
-	t:SetFormattedText(intro, link)
 
 	local vGradient = {x=0, y=7}
 	local clipHost = CreateFrame("Frame", nil, logView)
@@ -137,14 +121,14 @@ local logView = CreateFrame("Frame", nil, frame) do
 		clipHost:SetAlphaGradient(0, vGradient)
 		clipHost:SetAlphaGradient(1, vGradient)
 	end
-	clipHost:SetPoint("TOPLEFT", t, "BOTTOMLEFT", 0, -12)
+	clipHost:SetPoint("TOPLEFT", logView, "TOPLEFT", 20, oy-37)
 	clipHost:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30, 15)
 	if clipHost.SetHyperlinkPropagateToParent then clipHost:SetHyperlinkPropagateToParent(true) end
 	local clipAnchor = CreateFrame("Frame", nil, clipHost)
 	clipAnchor:SetHeight(0.125)
 	clipAnchor:SetPoint("TOPLEFT", 20, 0)
 	clipAnchor:SetPoint("TOPRIGHT", 0, 0)
-	local clipBar = XU:Create("ScrollBar", nil, logView), t
+	local clipBar = XU:Create("ScrollBar", nil, logView)
 	clipBar:SetPoint("TOPLEFT", clipHost, "TOPRIGHT", 2, 20)
 	clipBar:SetPoint("BOTTOMLEFT", clipHost, "BOTTOMRIGHT", 2, -16)
 	clipBar:SetWheelScrollTarget(clipHost, -2, -5, -2, -1)
@@ -167,24 +151,18 @@ local logView = CreateFrame("Frame", nil, frame) do
 	end
 	clipHost:SetScript("OnShow", syncScrollRange)
 	clipHost:SetScript("OnSizeChanged", syncScrollRange)
-	local function li(text, uv)
+	local function li(text)
 		local oy, b = anchorY, clipHost:CreateTexture(nil, "OVERLAY")
 		b:SetSize(14, 14)
 		b:SetPoint("TOPRIGHT", anchorTo, "BOTTOMLEFT", anchorX-4, oy+1)
 		b:SetTexture(MARK_TEXTURE)
-		b:SetTexCoord(uv and 0.5 or 0, uv and 1 or 0.5, 0, 1)
-		if uv then
-			b:SetVertexColor(221/255, 102/255, 0)
-		end
+		b:SetTexCoord(0, 0.5, 0, 1)
 		local t = clipHost:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		t:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", anchorX, oy)
 		t:SetPoint("TOPRIGHT", anchorTo, "BOTTOMRIGHT", 0, oy)
 		t:SetJustifyH("LEFT")
-		t:SetText((text:gsub("<tt>(.-)</tt>", "|cffa0ff00%1|r"):gsub("<b>(.-)</b>", NORMAL_FONT_COLOR_CODE .. "%1|r")))
+		t:SetText(text)
 		anchorTo, anchorX, anchorY = t, 0, -8
-	end
-	local function uv(text)
-		return li(text, true)
 	end
 	local function vh(text)
 		local oy, t = anchorTo ~= clipAnchor and anchorY -12 or -2, clipHost:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -194,16 +172,16 @@ local logView = CreateFrame("Frame", nil, frame) do
 		t:SetText(text)
 		anchorTo, anchorX, anchorY = t, 20, -4
 	end
-	securecall(T.WhatsNewData, vh, uv, li)
+	securecall(T.CreditsData, vh, li)
 end
 
-local navDialogs = {"ShowWhatsNew", "ShowReportIssuePrompt", "ShowTranslatePrompt",
+local navDialogs = {"ShowCredits", "ShowReportIssuePrompt", "ShowDonatePrompt",
                     "ShowOptionsPanel", "ShowBindingsPanel", "ShowCustomRingsPanel"}
 
 function H.HandleNavClick(id)
 	return H[navDialogs[id]]()
 end
-function H.ShowWhatsNew()
+function H.ShowCredits()
 	if not frame:IsVisible() then
 		frame:OpenPanel()
 	end
@@ -212,15 +190,15 @@ function H.ShowWhatsNew()
 end
 function H.ShowReportIssuePrompt()
 	local text = L"If something in OPie does not behave correctly (or if you'd like it to behave differently), create an issue by visiting:"
-	local url = "https://townlong-yak.com/addons/opie/issues"
+	local url = "https://discord.gg/wRPF8CCpNV"
 	local hint = L"Copy the URL shown above and visit it using a web browser."
 	TS:ShowCopyOverlay(frame, L"Report an Issue", text, url, hint, OKAY, 0.85)
 end
-function H.ShowTranslatePrompt()
-	local text = L"You can help translate OPie by visiting:"
-	local url = "https://townlong-yak.com/addons/opie/localization"
+function H.ShowDonatePrompt()
+	local text = L"You can support further development by visiting:"
+	local url = "https://boosty.to/accidev"
 	local hint = L"Copy the URL shown above and visit it using a web browser."
-	TS:ShowCopyOverlay(frame, L"Translate OPie", text, url, hint, OKAY, 0.85)
+	TS:ShowCopyOverlay(frame, L"Donate", text, url, hint, OKAY, 0.85)
 end
 function H.ShowOptionsPanel()
 	T.ShowOPieOptionsPanel()
@@ -237,4 +215,4 @@ function frame.refresh()
 	logView:Hide()
 end
 
-T.AddSlashSuffix(H.ShowWhatsNew, "w", "new")
+T.AddSlashSuffix(H.ShowCredits, "credits", "thanks")

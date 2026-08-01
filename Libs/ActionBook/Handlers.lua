@@ -1124,13 +1124,16 @@ securecall(function() -- uipanel: token
 	local panelMap, panels = {}, {
 		character={CHARACTER, icon="Interface/Icons/inv_helmet_25", gw=CharacterFrame, tw=CharacterFrameTab1},
 		reputation={REPUTATION, icon="Interface/Icons/Achievement_Reputation_01", gw=ReputationFrame, tw=CharacterFrameTab3},
-		currency={CURRENCY, icon="Interface/Icons/INV_Misc_Coin_17", gw=TokenFrame, tw=CharacterFrameTab5, req=function() return GetCurrencyListSize() > 0 end},
+		currency={CURRENCY, icon="Interface/Icons/INV_Misc_Coin_17", gw=TokenFrame, tw=CharacterFrameTab4, req=function() return GetCurrencyListSize() > 0 end},
 		spellbook={SPELLBOOK, icon="Interface/Icons/INV_Misc_Book_09", gw=SpellBookFrame, tmt="/click SpellbookMicroButton\n/click SpellBookFrameCloseButton", cw=SpellBookFrameCloseButton},
 		talents={TALENTS_BUTTON, icon="Interface/Icons/Ability_Marksmanship", gn="PlayerTalentFrame", tw=TalentMicroButton, req=function() return (UnitLevel("player") or 0) >= 10 end},
 		achievements={ACHIEVEMENTS, icon="Interface/Icons/Achievement_General", gn="AchievementFrame", tw=AchievementMicroButton, tcr=1},
 		quests={QUESTLOG_BUTTON, icon="Interface/Icons/INV_Misc_Book_08", gw=QuestLogFrame, tw=QuestLogMicroButton},
 		groupfinder={DUNGEONS_BUTTON, icon="Interface/Icons/INV_Misc_GroupLooking", gw=LFDParentFrame, tw=LFDMicroButton},
-		guild={title=GUILD, icon="Interface/Icons/INV_Shirt_GuildTabard_01", gw=GuildFrame, ow=FriendsFrameTab3, cw=FriendsFrameCloseButton, req=IsInGuild},
+		collections={COLLECTIONS, icon="Interface/Icons/Ability_Mount_RidingHorse", gw=CollectionsJournal, tw=CollectionsMicroButton},
+		adventureguide={ADVENTURE, icon="Interface/Icons/INV_Misc_Book_07", gw=EncounterJournal, tw=EncounterJournalMicroButton},
+		store={MAINMENUBAR_STORE_BUTTON, icon="Interface/Icons/INV_Misc_Coin_01", gw=StoreFrame, tw=StoreMicroButton, req=function() return C_StorePublic and C_StorePublic.IsEnabled() or false end},
+		guild={GUILD, icon="Interface/Icons/INV_Shirt_GuildTabard_01", gw=GuildFrame, tw=GuildMicroButton, req=IsInGuild},
 		map={WORLD_MAP, icon="Interface/Icons/Inv_Misc_Map08", gw=WorldMapFrame, tw=MiniMapWorldMapButton},
 		social={SOCIAL_BUTTON, icon="Interface/Icons/INV_Letter_18", gw=FriendsFrame, tw=SocialsMicroButton},
 		calendar={L"Calendar", icon="Interface/Icons/Spell_Holy_BorrowedTime", gn="CalendarFrame", tw=GameTimeFrame},
@@ -1148,14 +1151,18 @@ securecall(function() -- uipanel: token
 		local ex = CreateFrame("Button", exName, nil, "SecureActionButtonTemplate")
 		ex:SetAttribute("type", "macro")
 		ex:SetAttribute("pressAndHoldAction", 1)
+		local function isEnabled(w)
+			local e = w:IsEnabled()
+			return not not (e and e ~= 0)
+		end
 		local function prerun(k)
 			local i, r = panels[k], 0
 			local tw, gw, cw, cw2, ow, ofun = i.tw, i.gw, i.cw, i.cw2, i.ow, i.open
-			if tw and not tw:IsEnabled() then
+			if tw and not isEnabled(tw) then
 				r = i.tcr and r + 1 or r; tw:Enable()
 			end
 			if cw or ow or ofun then
-				local gh, cd, od = not (gw and gw:IsShown()), not (cw and cw:IsEnabled()), not (ow and ow:IsEnabled())
+				local gh, cd, od = not (gw and gw:IsShown()), not (cw and isEnabled(cw)), not (ow and isEnabled(ow))
 				if cw and gh ~= cd then
 					r = r + (gh and 6 or 2); cw:SetEnabled(not gh)
 				end

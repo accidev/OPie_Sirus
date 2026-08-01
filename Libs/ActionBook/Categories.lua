@@ -7,6 +7,8 @@ local IM = T.ActionBook:compatible("Imp", 1,8)
 assert(AB and RW and IM and 1, "Incompatible library bundle")
 local L = T.ActionBook.L
 local mark = {}
+local spellRankFilter = {maxOnly=true}
+T.SpellRankFilter = spellRankFilter
 
 local function icmp(a,b)
 	return strcmputf8i(a,b) < 0
@@ -49,14 +51,59 @@ do
 		["Питомец"]               = true,
 		["Питомцы"]               = true,
 		["Коллекция: Игрушки"]    = true,
+		["Коллекция: Иллюзии"]    = true,
 		["Коллекция: Наследие"]   = true,
 	}
-	local WRATH_CLASS_PREFIX = (UnitClass("player")) .. " - "
+	local isSpecHeaderName do
+		local prefixes, seen = {}, {}
+		local localized, cls = UnitClass("player")
+		local function addPrefix(n)
+			if type(n) == "string" and n ~= "" and not seen[n] then
+				seen[n], prefixes[#prefixes+1] = true, n .. " - "
+			end
+		end
+		addPrefix(localized)
+		addPrefix(LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[cls])
+		addPrefix(LOCALIZED_CLASS_NAMES_FEMALE and LOCALIZED_CLASS_NAMES_FEMALE[cls])
+		function isSpecHeaderName(...)
+			for i=1,select("#", ...) do
+				local name = select(i, ...)
+				if type(name) == "string" then
+					for j=1,#prefixes do
+						local p = prefixes[j]
+						if name:sub(1, #p) == p then return true end
+					end
+				end
+			end
+			return false
+		end
+	end
+	local function spellBookRank(slot)
+		local bookName, rank = GetSpellBookItemName(slot, "spell")
+		return bookName, type(rank) == "string" and tonumber(rank:match("(%d+)%s*$")) or nil
+	end
+	local function collectTopRanks()
+		local top = {}
+		for i=1,GetNumSpellTabs()+12 do
+			local tabName, _, ofs, c = GetSpellTabInfo(i)
+			if not ofs then break end
+			if not (WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]) then
+				for j=ofs+1, ofs+c do
+					local bookName, rank = spellBookRank(j)
+					if bookName and rank and rank > (top[bookName] or 0) then
+						top[bookName] = rank
+					end
+				end
+			end
+		end
+		return top
+	end
 	local function addSpells(add, knownFilter)
 		local asv = GetCVar("showAllSpellRanks")
 		if asv and asv ~= "1" then
 			SetCVar("showAllSpellRanks", "1")
 		end
+		local top = spellRankFilter.maxOnly and collectTopRanks()
 		for i=1,GetNumSpellTabs()+12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
 			if not ofs then break end
@@ -68,8 +115,10 @@ do
 						local _, sid = GetSpellBookItemInfo(j, "spell")
 						if sid and sid > 0 and not mark[sid] and not IsPassiveSpell(sid) then
 							local name = GetSpellInfo(sid)
-							local isSpecHeader = WRATH_CLASS_PREFIX and name and name:sub(1, #WRATH_CLASS_PREFIX) == WRATH_CLASS_PREFIX
-							if not isSpecHeader then
+							local bookName, rank = spellBookRank(j)
+							local isSpecHeader = isSpecHeaderName(name, bookName)
+							local isLowRank = top and rank and bookName and top[bookName] and rank < top[bookName]
+							if not isSpecHeader and not isLowRank then
 								mark[sid] = 1
 								local t2 = tex
 								AB:SetSpellIconOverride(sid, function() return t2 end)

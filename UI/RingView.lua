@@ -816,7 +816,7 @@ end
 function api:SetDisplayOptions(token, icon, label, r,g,b)
 	if type(r) ~= "number" or type(g) ~= "number" or type(b) ~= "number" then r,g,b = nil end
 	if label == "" or type(label) ~= "string" then label = nil end
-	if iconIsAtlas[icon] or type(icon) == "string" and not GetFileIDFromPath(icon) and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(icon) then
+	if iconIsAtlas[icon] or type(icon) == "string" and not icon:match("[/\\]") and C_Texture.GetAtlasInfo(icon) then
 		iconIsAtlas[icon] = true
 	end
 	tokenR[token], tokenG[token], tokenB[token], tokenIcon[token], tokenLabel[token] = r,g,b, icon, label

@@ -3,6 +3,7 @@ local PC, RK, ORI, L, config = T.OPieCore, T.RingKeeper, OPie.UI, T.L, T.config
 local AB, EV, TS, XU = T.ActionBook:compatible(2,23), T.Evie, T.TenSettings, T.exUI
 local GameTooltip = T.NotGameTooltip or GameTooltip
 assert(PC and RK and ORI and AB and EV and TS and XU and L and 1, 'Incompatible library bundle')
+local pickerPrefs, rankFilter = PC:RegisterPVar("PickerPrefs", {}), T.SpellRankFilter or {maxOnly=true}
 
 local FULLNAME, SHORTNAME do
 	function EV.PLAYER_LOGIN()
@@ -65,8 +66,7 @@ local function PlayCheckboxSound(self)
 	PlaySound(SOUNDKIT[self:GetChecked() and "IG_MAINMENU_OPTION_CHECKBOX_ON" or "IG_MAINMENU_OPTION_CHECKBOX_OFF"])
 end
 local function SetCursor(tex)
-	tex = type(tex) == "string" and GetFileIDFromPath(tex) or tex
-	_G.SetCursor(type(tex) == "number" and tex > 0 and tex or tex and 132761)
+	_G.SetCursor(type(tex) == "string" and tex ~= "" and tex or tex and "Interface\\Icons\\INV_Misc_QuestionMark")
 end
 local CallSetRing
 local function SaveRingVersion(name, liveData)
@@ -862,7 +862,7 @@ end
 newSlice = CreateFrame("Frame", nil, ringContainer) do
 	newSlice:SetAllPoints()
 	newSlice:Hide()
-	local NUM_VISIBLE_CATS, NUM_VISIBLE_ACTION_ROWS = 22, 12
+	local NUM_VISIBLE_CATS, NUM_VISIBLE_ACTION_ROWS = 22, 11
 	local catSliderVal, catSliderMax, catSyncFn, catDoScroll = 0, 0, nil, nil
 	do -- custom cat scrollbar
 		local s = CreateFrame("Frame", nil, newSlice)
@@ -1134,7 +1134,7 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		GameTooltip:Show()
 	end
 	local actionsContainer = CreateFrame("ScrollFrame", nil, newSlice)
-		actionsContainer:SetPoint("TOPLEFT", newSlice.desc, "BOTTOMLEFT", 0, 8)
+		actionsContainer:SetPoint("TOPLEFT", newSlice.desc, "BOTTOMLEFT", 0, -22)
 		actionsContainer:SetSize(344, 36*NUM_VISIBLE_ACTION_ROWS-1)
 		actionsContainer:SetVerticalScroll(0)
 		actionsContainer:EnableMouseWheel(true)
@@ -1213,8 +1213,10 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 			newSlice.search.ico:SetVertexColor(0.75, 0.75, 0.75)
 		end
 	end
+	local ABILITIES_CATEGORY = T.ActionBook.L"Abilities"
 	function selectCategory(id)
 		selectedCategoryId, selectedCategory = id, id == -1 and searchCat or AB:GetCategoryContents(id)
+		newSlice.maxRankOnly:SetShown(id ~= -1 and AB:GetCategoryInfo(id) == ABILITIES_CATEGORY)
 		if id ~= -1 then
 			newSlice.search:SetText("")
 			newSlice.search.label:Show()
@@ -1226,9 +1228,25 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		syncActions()
 		newSlice.search:ClearFocus()
 	end
+	do -- newSlice.maxRankOnly
+		local b = TS:CreateOptionsCheckButton(nil, newSlice)
+		b.Text:SetFontObject(GameFontHighlightSmall)
+		b.Text:SetText(L"Highest ranks only")
+		b:SetPoint("TOP", newSlice.desc, "BOTTOM", -(b.Text:GetStringWidth()+2)/2, 4)
+		b:SetScript("OnClick", function(self)
+			PlayCheckboxSound(self)
+			local on = not not self:GetChecked()
+			pickerPrefs.maxRankOnly, rankFilter.maxOnly = on, on
+			selectCategory(selectedCategoryId or 1)
+		end)
+		newSlice.maxRankOnly = b
+	end
 	newSlice.slider:SetScript("OnValueChanged", syncCats)
 	newSlice.slider2:SetScript("OnValueChanged", syncActions)
 	newSlice:SetScript("OnShow", function(self)
+		local on = pickerPrefs.maxRankOnly ~= false
+		rankFilter.maxOnly = on
+		self.maxRankOnly:SetChecked(on)
 		selectCategory(1)
 		self.slider:SetMinMaxValues(0, math.max(0, AB:GetNumCategories() - #cats))
 		self.slider:SetValue(0)

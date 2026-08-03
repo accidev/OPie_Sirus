@@ -2,6 +2,7 @@ local _, T = ...
 local XU, type = T.exUI, type
 local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
+local SOLID = "Interface\\Buttons\\WHITE8X8"
 local HOLD_HOVER_HINT_DURATION, ICON_FILE_NAMES, LookupIconName = 0.2, nil
 local resolveTexturePath do
 	local probe
@@ -132,24 +133,27 @@ function internal.CreateIconButton(parent, pool, id)
 	local f, sz = CreateFrame("CheckButton", nil, parent, nil, id), 32
 	f:SetSize(sz, sz)
 	f:SetNormalTexture("")
-	f:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square")
-	f:GetHighlightTexture():SetBlendMode("ADD")
-	f:SetCheckedTexture("Interface/Buttons/CheckButtonHilight")
-	f:GetCheckedTexture():SetBlendMode("ADD")
-	f:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress")
+	f:SetHighlightTexture(SOLID)
+	f:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.14)
+	f:SetCheckedTexture(SOLID)
+	f:GetCheckedTexture():SetVertexColor(0.16, 0.66, 1.00, 0.28)
+	f:GetCheckedTexture():SetDrawLayer("OVERLAY", 1)
+	f:SetPushedTexture(SOLID)
+	f:GetPushedTexture():SetVertexColor(0, 0, 0, 0.35)
+	f:GetPushedTexture():SetDrawLayer("OVERLAY", 2)
 	f:SetScript("OnClick", internal.OnIconClick)
 	f:SetScript("OnEnter", internal.OnIconEnter)
 	f:SetScript("OnLeave", internal.OnIconLeave)
 	local tex = f:CreateTexture(nil, "ARTWORK")
 	tex:SetAllPoints()
+	local edge = f:CreateTexture(nil, "BACKGROUND", nil, -2)
+	edge:SetTexture(0.21, 0.23, 0.27, 1)
+	edge:SetPoint("TOPLEFT", tex, "TOPLEFT", -2, 2)
+	edge:SetPoint("BOTTOMRIGHT", tex, "BOTTOMRIGHT", 2, -2)
 	local bg = f:CreateTexture(nil, "BACKGROUND", nil, -1)
-	bg:SetTexture("Interface/Buttons/UI-EmptySlot-Disabled")
-	bg:SetPoint("CENTER", tex, "CENTER")
-	bg:SetSize(1.5*sz, 1.5*sz)
-	local edge = f:CreateTexture(nil, "OVERLAY", nil, -1)
-	edge:SetTexture("Interface/Buttons/UI-Quickslot2")
-	edge:SetSize(1.625*sz, 1.625*sz)
-	edge:SetPoint("CENTER", tex, "CENTER", 0.25, -0.25)
+	bg:SetTexture(0.075, 0.082, 0.096, 1)
+	bg:SetPoint("TOPLEFT", tex, "TOPLEFT", -1, 1)
+	bg:SetPoint("BOTTOMRIGHT", tex, "BOTTOMRIGHT", 1, -1)
 	f.tex, f.background, f.edge = tex, bg, edge
 	pool[id] = f
 	return f
@@ -166,13 +170,23 @@ function internal.RenderView(d, value, allowSkip)
 	if allowSkip and d.viewIndexOffset == value then return end
 	local icons, icontex, sel, selectedButton = d.pool, d.iconList, d.selectedAsset
 	for i=0, d.lastVisibleIcon do
-		local ico, tex = icons[i].tex, i == 0 and value == 0 and (d.firstAsset or "Interface/Icons/INV_Misc_QuestionMark") or icontex[i+value]
-		icons[i]:SetShown(not not tex)
+		local w = icons[i]
+		local tex = i == 0 and value == 0 and (d.firstAsset or "Interface/Icons/INV_Misc_QuestionMark") or icontex[i+value]
 		if tex then
-			ico:SetTexture(tex)
-			local check = sel and (tex == sel or ico:GetTexture() == sel)
-			icons[i]:SetChecked(check)
-			selectedButton = check and icons[i] or selectedButton
+			if w.shownAsset ~= tex then
+				w.tex:SetTexture(tex)
+				w.shownAsset = tex
+			end
+			if not w:IsShown() then
+				w:Show()
+			end
+			local check = (sel and (tex == sel or w.tex:GetTexture() == sel)) and true or false
+			if (not not w:GetChecked()) ~= check then
+				w:SetChecked(check)
+			end
+			selectedButton = check and w or selectedButton
+		elseif w:IsShown() then
+			w:Hide()
 		end
 	end
 	d.viewIndexOffset, d.selectedButton = value, selectedButton
@@ -284,7 +298,25 @@ end
 local function CreateIconSelector(name, parent, outerTemplate, id)
 	local f, d, t, a = CreateFrame("Frame", name, parent, outerTemplate, id)
 	d = newWidgetData(f, IconSelectorData, IconSelectorProps)
-	d.pool, d.backdrop = {}, XU:Create("Backdrop", f, {bgFile = "Interface/ChatFrame/ChatFrameBackground", edgeFile = "Interface/DialogFrame/UI-DialogBox-Border", tile = true, tileSize = 32, edgeSize = 32, insets = { left = 11, right = 11, top = 11, bottom = 10 }, bgColor=0xd8000000})
+	d.pool = {}
+	local panelBG = f:CreateTexture(nil, "BACKGROUND", nil, -7)
+	panelBG:SetTexture(0.043, 0.047, 0.055, 0.98)
+	panelBG:SetAllPoints()
+	for i=1,4 do
+		local e = f:CreateTexture(nil, "BACKGROUND", nil, -6)
+		e:SetTexture(0.21, 0.23, 0.27, 1)
+		if i < 3 then
+			e:SetHeight(1)
+			e:SetPoint("LEFT")
+			e:SetPoint("RIGHT")
+			e:SetPoint(i == 1 and "TOP" or "BOTTOM")
+		else
+			e:SetWidth(1)
+			e:SetPoint("TOP")
+			e:SetPoint("BOTTOM")
+			e:SetPoint(i == 3 and "LEFT" or "RIGHT")
+		end
+	end
 	f:EnableMouse(1)
 	f:SetToplevel(1)
 	f:Hide()
@@ -300,6 +332,7 @@ local function CreateIconSelector(name, parent, outerTemplate, id)
 	t:Hide()
 	t, d.origin = XU:Create("ScrollBar", nil, f), t
 	t:SetStyle("thin")
+	t:SetAnimationMaxSteps(0)
 	t:SetPoint("TOPRIGHT", -9, -36)
 	t:SetPoint("BOTTOMRIGHT", -9, 12)
 	t:SetWheelScrollTarget(d.clipRoot, -2, -5, -2, -1)
@@ -321,13 +354,11 @@ local function CreateIconSelector(name, parent, outerTemplate, id)
 	a:SetTextColor(0.85, 0.85, 0.85)
 	d.manualInputHint = a
 	t = CreateFrame("Button", nil, f, "UIPanelCloseButton")
-	t:SetPoint("TOPRIGHT", -2, -1)
-	t:SetHitRectInsets(4, 4, 4, 6)
-	t, d.closeButton = t:CreateTexture(nil, "BACKGROUND", nil, -5), t
-	t:SetTexture("Interface/ChatFrame/UI-ChatInputBorder-Mid2")
-	t:SetPoint("BOTTOMLEFT", d.manualInput, "BOTTOMRIGHT", 7, -6.25)
-	t:SetSize(18.75, 8)
-	t:SetTexCoord(0,1, 0.75,1)
+	t:SetPoint("TOPRIGHT", -6, -5)
+	d.closeButton = t
+	if T.TenSettings then
+		T.TenSettings:StyleCloseButton(t)
+	end
 	return f
 end
 

@@ -1,6 +1,7 @@
 local _, T = ...
 local XU, int, ScrollableBlockData, positionArchive, hoverWatcher = T.exUI, {}, {}, setmetatable({}, {__mode="k"}), nil
 local MIN_SCROLL_ENTRIES, MAX_VISIBLE_ENTRIES, WHEEL_STEP = 20, 16, 8
+local SOLID = "Interface\\Buttons\\WHITE8X8"
 local assert, getWidgetData, _, setWidgetData = XU:GetImpl()
 DropDownList1:HookScript("OnHide", function() wipe(positionArchive) end)
 
@@ -50,25 +51,25 @@ local getFreeBlock do
 			b:SetPoint("TOPLEFT", scrollOrigin, 0, 16-16*i)
 			b:SetPoint("TOPRIGHT", scrollOrigin, -16, 16-16*i)
 			b:SetScript("OnClick", int.OnEntryClick)
-			b:SetHighlightTexture([[Interface\QuestFrame\UI-QuestTitleHighlight]])
-			b:SetCheckedTexture([[Interface\Common\UI-DropDownRadioChecks]])
-			b:SetNormalTexture([[Interface\Common\UI-DropDownRadioChecks]])
+			b:SetHighlightTexture(SOLID)
+			b:SetCheckedTexture(SOLID)
+			b:SetNormalTexture(SOLID)
 			b:SetNormalFontObject(GameFontHighlightSmallLeft)
 			b:SetDisabledFontObject(GameFontHighlightSmallLeft)
 			b:SetText("The Fifth Surprise")
 			b:GetFontString():ClearAllPoints()
 			b:GetFontString():SetPoint("LEFT", 22, 0)
 			local h, c, n = b:GetHighlightTexture(), b:GetCheckedTexture(), b:GetNormalTexture()
-			h:SetBlendMode("ADD")
 			h:SetAllPoints()
-			c:SetTexCoord(0, 0.5, 0.5, 1)
+			h:SetVertexColor(0.16, 0.66, 1.00, 0.18)
 			c:ClearAllPoints()
-			c:SetSize(16,16)
-			c:SetPoint("LEFT", 3, 0)
-			n:SetTexCoord(0.5, 1, 0.5, 1)
+			c:SetSize(8,8)
+			c:SetPoint("LEFT", 7, 0)
+			c:SetVertexColor(0.16, 0.66, 1.00, 1)
 			n:ClearAllPoints()
-			n:SetSize(16,16)
-			n:SetPoint("LEFT", 3, 0)
+			n:SetSize(8,8)
+			n:SetPoint("LEFT", 7, 0)
+			n:SetVertexColor(0.30, 0.32, 0.37, 1)
 			buttons[i] = b
 		end
 		local d = {root=block, clip=clipRoot, scrollBar=scrollBar, buttons=buttons, bottomTex=bb}

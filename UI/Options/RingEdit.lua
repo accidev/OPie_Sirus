@@ -1,5 +1,6 @@
 local api, _, T = {}, ...
 local PC, RK, ORI, L, config = T.OPieCore, T.RingKeeper, OPie.UI, T.L, T.config
+local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 local AB, EV, TS, XU = T.ActionBook:compatible(2,23), T.Evie, T.TenSettings, T.exUI
 local GameTooltip = T.NotGameTooltip or GameTooltip
 assert(PC and RK and ORI and AB and EV and TS and XU and L and 1, 'Incompatible library bundle')
@@ -34,31 +35,52 @@ local function prepEditBox(self, save)
 	end
 	self:SetScript("OnEditFocusLost", save)
 end
-local function addIconSlotTextures(tex, sz)
+local WHITE = "Interface\\Buttons\\WHITE8X8"
+local function addSlotEdge(anchor, layer, sub, c)
+	local p = anchor.CreateTexture and anchor or anchor:GetParent()
+	local e = {}
+	for i=1,4 do
+		local t = p:CreateTexture(nil, layer, nil, sub)
+		t:SetTexture(c[1], c[2], c[3], c[4])
+		e[i] = t
+		if i < 3 then
+			t:SetHeight(1)
+			t:SetPoint("LEFT", anchor, "LEFT")
+			t:SetPoint("RIGHT", anchor, "RIGHT")
+			t:SetPoint(i == 1 and "TOP" or "BOTTOM", anchor, i == 1 and "TOP" or "BOTTOM")
+		else
+			t:SetWidth(1)
+			t:SetPoint("TOP", anchor, "TOP")
+			t:SetPoint("BOTTOM", anchor, "BOTTOM")
+			t:SetPoint(i == 3 and "LEFT" or "RIGHT", anchor, i == 3 and "LEFT" or "RIGHT")
+		end
+	end
+	return e
+end
+local function addIconSlotTextures(tex)
 	local p = tex:GetParent()
 	local bg = p:CreateTexture(nil, "BACKGROUND", nil, -1)
-	bg:SetTexture("Interface/Buttons/UI-EmptySlot-Disabled")
-	bg:SetPoint("CENTER", tex, "CENTER")
-	bg:SetSize(1.5*sz, 1.5*sz)
-	local edge = p:CreateTexture(nil, "OVERLAY", nil, -1)
-	edge:SetTexture("Interface/Buttons/UI-Quickslot2")
-	edge:SetSize(1.625*sz, 1.625*sz)
-	edge:SetPoint("CENTER", tex, "CENTER", 0.25, -0.25)
-	return bg, edge
+	bg:SetTexture(TS.SKIN.header[1], TS.SKIN.header[2], TS.SKIN.header[3], 1)
+	bg:SetPoint("TOPLEFT", tex, "TOPLEFT", -2, 2)
+	bg:SetPoint("BOTTOMRIGHT", tex, "BOTTOMRIGHT", 2, -2)
+	return bg, addSlotEdge(bg, "OVERLAY", -1, TS.SKIN.edge)
 end
 local function createIconButton(name, parent, id, skipSlotDecorations)
 	local f = CreateFrame("CheckButton", name, parent, nil, id or 0)
 	f:SetSize(32,32)
 	f:SetNormalTexture("")
-	f:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square")
-	f:GetHighlightTexture():SetBlendMode("ADD")
-	f:SetCheckedTexture("Interface/Buttons/CheckButtonHilight")
-	f:GetCheckedTexture():SetBlendMode("ADD")
-	f:SetPushedTexture("Interface/Buttons/UI-Quickslot-Depress")
+	f:SetHighlightTexture(WHITE)
+	f:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.14)
+	f:SetCheckedTexture(WHITE)
+	f:GetCheckedTexture():SetVertexColor(TS.SKIN.accent[1], TS.SKIN.accent[2], TS.SKIN.accent[3], 0.28)
+	f:GetCheckedTexture():SetDrawLayer("OVERLAY", 1)
+	f:SetPushedTexture(WHITE)
+	f:GetPushedTexture():SetVertexColor(0, 0, 0, 0.35)
+	f:GetPushedTexture():SetDrawLayer("OVERLAY", 2)
 	f.tex = f:CreateTexture(nil, "ARTWORK")
 	f.tex:SetAllPoints()
 	if skipSlotDecorations ~= true then
-		f.background, f.edge = addIconSlotTextures(f.tex, 32)
+		f.background, f.edge = addIconSlotTextures(f.tex)
 	end
 	return f
 end
@@ -364,20 +386,25 @@ ringContainer = CreateFrame("Frame", nil, panel) do
 			ico:SetScript("OnDragStart", dragStart)
 			ico:SetScript("OnDragStop", dragStop)
 			ico:SetScript("OnHide", dragAbort)
-			ico.check = ico:CreateTexture(nil, "OVERLAY")
-			ico.check:SetSize(8,8) ico.check:SetPoint("BOTTOMRIGHT", -1, 1)
-			ico.check:SetTexture("Interface/FriendsFrame/StatusIcon-Online")
-			ico.auto = ico:CreateTexture(nil, "OVERLAY", nil, 4)
-			ico.auto:SetAllPoints()
-			ico.auto:SetTexture("Interface/Buttons/UI-AutoCastableOverlay")
-			ico.auto:SetTexCoord(14/64, 49/64, 14/64, 49/64)
+			ico.check = ico:CreateTexture(nil, "OVERLAY", nil, 3)
+			ico.check:SetSize(6,6) ico.check:SetPoint("BOTTOMRIGHT", -1, 1)
+			ico.check:SetTexture(0.20, 0.85, 0.35, 1)
+			ico.auto = CreateFrame("Frame", nil, ico)
+			ico.auto:SetPoint("TOPLEFT", -2, 2)
+			ico.auto:SetPoint("BOTTOMRIGHT", 2, -2)
+			ico.auto:Hide()
+			addSlotEdge(ico.auto, "OVERLAY", 4, {1, 0.78, 0.28, 1})
 			ringContainer.slices[i+1] = ico
 		end
 	end
 	ringContainer.newSlice = createIconButton(nil, ringContainer, nil, true) do
 		local b = ringContainer.newSlice
 		b:SetSize(24,24)
-		b.tex:SetTexture("Interface/GuildBankFrame/UI-GuildBankFrame-NewTab")
+		b.tex:ClearAllPoints()
+		b.tex:SetPoint("CENTER")
+		b.tex:SetSize(12, 12)
+		b.tex:SetTexture(GFX .. "plus.tga")
+		b.tex:SetVertexColor(0.72, 0.75, 0.80)
 		b:SetScript("OnClick", function(self)
 			PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 			config.ui.HideTooltip(self)
@@ -441,7 +468,7 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	end
 	local tex = ringDetail.name:CreateTexture()
 	tex:SetHeight(1) tex:SetPoint("BOTTOMLEFT", 0, -2) tex:SetPoint("BOTTOMRIGHT", 0, -2)
-	tex:SetTexture(1,0.82,0, 0.5)
+	tex:SetTexture(TS.SKIN.accent[1], TS.SKIN.accent[2], TS.SKIN.accent[3], 0.6)
 	ringDetail.scope = XU:Create("DropDown", nil, ringDetail)
 	ringDetail.scope:SetPoint("TOPLEFT", 250, -37)
 	ringDetail.scope:SetWidth(272)
@@ -633,7 +660,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 			GameTooltip:SetOwner(self, "ANCHOR_TOP")
 			GameTooltip:AddLine(((L"Visibility conditional:"):gsub("%s*:%s*$", "")))
 			GameTooltip:AddLine((L"If this macro options expression evaluates to %s, or if none of its clauses apply, this slice will be hidden."):format(GREEN_FONT_COLOR_CODE .. "hide" .. "|r"), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
-			GameTooltip:AddLine((L"You may use extended conditionals; see %s for details."):format("|cff33DDFFhttps://townlong-yak.com/addons/opie/extended-conditionals|r"), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
+			GameTooltip:AddLine("Готовые условия с описанием — в списке ниже.", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
 			local isHorde, _, class = UnitFactionGroup("player") == "Horde", UnitClass("player")
 			local ex1, ex2 = isHorde and "horde" or "alliance", class and ",me:" .. class:lower() or ",mod"
 			local c = "[combat] hide; [" .. ex1 .. ex2 .. "] show";
@@ -689,13 +716,16 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 		local b = sliceDetail.color.button
 		b:SetSize(14, 14) b:SetPoint("LEFT")
 		b.bg = sliceDetail.color.button:CreateTexture(nil, "BACKGROUND")
-		b.bg:SetSize(12, 12) b.bg:SetPoint("CENTER")
+		b.bg:SetAllPoints()
 		b.bg:SetTexture(1,1,1)
-		b:SetNormalTexture("Interface/ChatFrame/ChatFrameColorSwatch")
-		b:SetScript("OnEnter", function(self) self.bg:SetVertexColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b) end)
-		b:SetScript("OnLeave", function(self) self.bg:SetVertexColor(1, 1, 1) end)
+		b:SetNormalTexture(WHITE)
+		b:SetScript("OnEnter", function(self) self.bg:SetVertexColor(TS.SKIN.accent[1], TS.SKIN.accent[2], TS.SKIN.accent[3]) end)
+		b:SetScript("OnLeave", function(self) self.bg:SetVertexColor(TS.SKIN.edge[1], TS.SKIN.edge[2], TS.SKIN.edge[3]) end)
 		b:SetScript("OnShow", b:GetScript("OnLeave"))
 		local ctex = b:GetNormalTexture()
+		ctex:ClearAllPoints()
+		ctex:SetPoint("TOPLEFT", 1, -1)
+		ctex:SetPoint("BOTTOMRIGHT", -1, 1)
 		local function update()
 			if not ColorPickerFrame:IsShown() or ColorPickerFrame.Footer and ColorPickerFrame.Footer.OkayButton:GetButtonState() == "PUSHED" then
 				api.setSliceProperty("color", ColorPickerFrame:GetColorRGB())
@@ -725,7 +755,8 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 		f:SetHitRectInsets(0,-280,0,0) f:SetSize(18, 18)
 		f:SetPoint("TOPLEFT", 270, -oy-2)
 		oy = oy + 23
-		f:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square")
+		f:SetHighlightTexture(WHITE)
+		f:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.14)
 		f:SetNormalFontObject(GameFontHighlight) f:SetHighlightFontObject(GameFontGreen) f:SetPushedTextOffset(3/4, -3/4)
 		f:SetText(" ") f:GetFontString():ClearAllPoints() f:GetFontString():SetPoint("LEFT", f, "RIGHT", 4, 0)
 		f.icon = f:CreateTexture() f.icon:SetAllPoints()
@@ -753,7 +784,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 			if self:IsSearchPossible() then
 				GameTooltip:AddLine((L"Press %s to search"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ALT-ENTER", "KEY_") .. "|r"), nc.r, nc.g, nc.b, 1)
 			else
-				local at = HIGHLIGHT_FONT_COLOR_CODE .. "IconFileNames |cff606060<|cff40a0ffhttps://townlong-yak.com/addons/iconfilenames|r>|r|r"
+				local at = HIGHLIGHT_FONT_COLOR_CODE .. "IconFileNames|r"
 				GameTooltip:AddLine((L"Install and enable %s to search by file name."):format(at), nc.r, nc.g, nc.b, 1)
 			end
 			GameTooltip:Show()
@@ -864,6 +895,235 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 		end
 		sliceDetail.editorContainer = f
 	end
+	do
+		local GROUPS = {
+			{"Состояние", {
+				{"combat", "В бою", "Фрагмент виден, только пока вы в бою."},
+				{"nocombat", "Вне боя", "Фрагмент скрыт в бою."},
+				{"mounted", "Верхом", "Вы на транспортном средстве."},
+				{"swimming", "В воде", "Вы плывёте."},
+				{"flying", "В полёте", "Вы летите на транспорте."},
+				{"indoors", "В помещении", "Вы под крышей."},
+				{"outdoors", "Под небом", "Вы на открытом воздухе."},
+				{"stealth", "В скрытности", "Вы невидимы или крадётесь."},
+				{"moving", "В движении", "Персонаж двигается."},
+				{"falling", "В падении", "Персонаж падает."},
+			}},
+			{"Цель", {
+				{"exists", "Есть цель", "Цель выбрана."},
+				{"harm", "Враг", "Цель враждебна."},
+				{"help", "Союзник", "Цель дружественна."},
+				{"dead", "Цель мертва", "Цель мертва."},
+				{"buff:Имя", "Бафф на цели", "На цели есть указанный эффект. Имя пишите как в игре."},
+				{"debuff:Имя", "Дебафф на цели", "На цели есть указанный отрицательный эффект."},
+				{"ownbuff:Имя", "Ваш бафф", "Эффект наложен именно вами."},
+				{"owndebuff:Имя", "Ваш дебафф", "Отрицательный эффект наложен вами."},
+				{"cleanse", "Есть что снять", "На дружественной цели висит снимаемый эффект."},
+			}},
+			{"Персонаж", {
+				{"selfbuff:Имя", "Бафф на вас", "На вас висит указанный эффект."},
+				{"selfdebuff:Имя", "Дебафф на вас", "На вас висит указанный отрицательный эффект."},
+				{"level:80", "Уровень", "Ваш уровень не ниже указанного."},
+				{"me:Имя", "Имя или класс", "Совпадает имя персонажа либо его класс."},
+				{"race:Human", "Раса", "Раса персонажа. Токен на английском: Human, Orc, Scourge и т.д."},
+				{"combo:3", "Комбо-очки", "Комбо-очков не меньше указанного."},
+				{"ready:Умение", "Готово", "Умение или предмет не на восстановлении. Без значения — проверка ГКД."},
+				{"have:Предмет", "Есть предмет", "Предмет лежит в сумках."},
+				{"imbuedmh", "Заточка правой", "На основном оружии временная заточка."},
+				{"imbuedoh", "Заточка левой", "На дополнительном оружии временная заточка."},
+				{"equipped:Латные", "Экипировка", "Надет предмет указанного типа: Латные, Щиты, Мечи и т.д."},
+				{"form:1", "Форма или аура", "Активна форма (аура, стойка, облик) с указанным номером."},
+			}},
+			{"Спутник", {
+				{"pet", "Есть питомец", "Питомец призван."},
+				{"nopet", "Нет питомца", "Питомец не призван."},
+				{"petcontrol", "Питомец доступен", "Класс и уровень позволяют иметь питомца."},
+				{"havepet", "Питомец в стойле", "Только для охотника: питомец есть в стойле."},
+			}},
+			{"Группа и место", {
+				{"party", "В группе", "Вы в подземельной группе."},
+				{"raid", "В рейде", "Вы в рейде."},
+				{"group", "В группе или рейде", "Вы в любой группе."},
+				{"in:world", "Открытый мир", "Вы не в инстансе."},
+				{"in:dungeon", "Подземелье", "Вы в пятиместном подземелье."},
+				{"in:raid", "Рейд", "Вы в рейдовом подземелье."},
+				{"in:bg", "Поле боя", "Вы на поле боя."},
+				{"in:arena", "Арена", "Вы на арене."},
+				{"zone:Название", "Зона", "Название зоны или подзоны, как в игре."},
+				{"anyflyable", "Можно летать", "В этой зоне разрешён полёт."},
+				{"horde", "Орда", "Персонаж за Орду."},
+				{"alliance", "Альянс", "Персонаж за Альянс."},
+			}},
+			{"Управление", {
+				{"mod", "Любой модификатор", "Зажат Alt, Ctrl или Shift."},
+				{"mod:alt", "Alt", "Зажат Alt."},
+				{"mod:ctrl", "Ctrl", "Зажат Ctrl."},
+				{"mod:shift", "Shift", "Зажат Shift."},
+				{"button:1", "Кнопка мыши", "Кольцо открыто указанной кнопкой мыши."},
+				{"bar:1", "Панель действий", "Активна указанная панель действий."},
+			}},
+			{"Профессии", {
+				{"alch:450", "Алхимия", "Навык алхимии не ниже указанного."},
+				{"bs:450", "Кузнечное дело", "Навык кузнечного дела не ниже указанного."},
+				{"ench:450", "Наложение чар", "Навык наложения чар не ниже указанного."},
+				{"engi:450", "Инженерия", "Навык инженерии не ниже указанного."},
+				{"lw:450", "Кожевничество", "Навык кожевничества не ниже указанного."},
+				{"tail:450", "Портняжное дело", "Навык портняжного дела не ниже указанного."},
+				{"herb:450", "Травничество", "Навык травничества не ниже указанного."},
+				{"skin:450", "Снятие шкур", "Навык снятия шкур не ниже указанного."},
+				{"mine:450", "Горное дело", "Навык горного дела не ниже указанного."},
+			}},
+		}
+		local host = CreateFrame("Frame", nil, sliceDetail)
+		host:SetPoint("TOPLEFT", sliceDetail.fastClick.label, "BOTTOMLEFT", 0, -10)
+		host:SetPoint("BOTTOMRIGHT", -10, 36)
+		host:Hide()
+		sliceDetail.conditionHelp = host
+		local rule = TS.Fill(host, "ARTWORK", nil, TS.SKIN.line)
+		rule:SetHeight(1)
+		rule:SetPoint("TOPLEFT", 0, -2)
+		rule:SetPoint("TOPRIGHT", 0, -2)
+		local title = host:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		title:SetPoint("TOPLEFT", 2, -10)
+		title:SetText("Готовые условия")
+		local hint = host:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		hint:SetPoint("LEFT", title, "RIGHT", 8, 0)
+		hint:SetText("ЛКМ — добавить к условию, Shift+ЛКМ — отдельным вариантом")
+		local clip = CreateFrame("ScrollFrame", nil, host)
+		clip:SetPoint("TOPLEFT", 0, -26)
+		clip:SetPoint("BOTTOMRIGHT")
+		local canvas = CreateFrame("Frame", nil, clip)
+		canvas:SetSize(10, 10)
+		clip:SetScrollChild(canvas)
+		local scrollOffset, scrollMax = 0, 0
+		local function doScroll(v)
+			scrollOffset = math.max(0, math.min(scrollMax, v))
+			clip:SetVerticalScroll(scrollOffset)
+		end
+		clip:EnableMouseWheel(true)
+		clip:SetScript("OnMouseWheel", function(_, delta)
+			doScroll(scrollOffset - delta * 24)
+		end)
+		local function insertToken(self)
+			local eb, tok = sliceDetail.showConditional, self.token
+			local cur = eb:GetText() or ""
+			local text
+			if not cur:match("%S") then
+				text = "[" .. tok .. "]"
+			elseif IsShiftKeyDown() then
+				text = cur .. " [" .. tok .. "]"
+			else
+				local head = cur:match("^(.*)%]%s*$")
+				text = head and (head .. "," .. tok .. "]") or (cur .. " [" .. tok .. "]")
+			end
+			eb:SetText(text)
+			eb:SetFocus()
+			eb:SetCursorPosition(#text)
+			PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
+		end
+		local function tagEnter(self)
+			GameTooltip:SetOwner(self, "ANCHOR_NONE")
+			GameTooltip:SetPoint("BOTTOMLEFT", self, "TOPLEFT", -4, 2)
+			GameTooltip:AddLine(self.title, 1, 1, 1)
+			GameTooltip:AddLine("|cff29a8ff[" .. self.token .. "]|r", nil, nil, nil, true)
+			GameTooltip:AddLine(self.desc, HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
+			GameTooltip:Show()
+		end
+		local tags, headers = {}, {}
+		for gi=1,#GROUPS do
+			local g = GROUPS[gi]
+			local fs = canvas:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+			fs:SetText("|cff8a8f99" .. g[1] .. "|r")
+			headers[gi] = fs
+			for ti=1,#g[2] do
+				local e = g[2][ti]
+				local b = CreateFrame("Button", nil, canvas)
+				b.token, b.title, b.desc, b.group = e[1], e[2], e[3], gi
+				b:SetHeight(18)
+				b:SetNormalFontObject(GameFontHighlightSmall)
+				b:SetHighlightFontObject(GameFontNormalSmall)
+				b:SetText(e[1])
+				b:SetWidth(math.max(28, b:GetFontString():GetStringWidth() + 12))
+				TS.Box(b, "BACKGROUND", nil, TS.SKIN.btn)
+				TS.Outline(b, "BORDER", nil, TS.SKIN.edge)
+				TS.Box(b, "HIGHLIGHT", nil, {0.16, 0.66, 1.00, 0.22})
+				b:SetScript("OnClick", insertToken)
+				b:SetScript("OnEnter", tagEnter)
+				b:SetScript("OnLeave", config.ui.HideTooltip)
+				tags[#tags+1] = b
+			end
+		end
+		local lastWidth
+		local function layout()
+			local w = clip:GetWidth()
+			if not (w and w > 40) then return end
+			if w ~= lastWidth then
+				lastWidth = w
+				local x, y, group = 0, -2, nil
+				for i=1,#tags do
+					local b = tags[i]
+					if b.group ~= group then
+						group = b.group
+						if x > 0 then
+							x, y = 0, y - 20
+						end
+						headers[group]:ClearAllPoints()
+						headers[group]:SetPoint("TOPLEFT", 2, y - 2)
+						y = y - 15
+					end
+					local bw = b:GetWidth()
+					if x > 0 and x + bw > w - 6 then
+						x, y = 0, y - 20
+					end
+					b:ClearAllPoints()
+					b:SetPoint("TOPLEFT", x + 2, y)
+					x = x + bw + 4
+				end
+				canvas:SetSize(w, -y + 22)
+			end
+			scrollMax = math.max(0, (canvas:GetHeight() or 0) - (clip:GetHeight() or 0))
+			doScroll(scrollOffset)
+		end
+		host:SetScript("OnSizeChanged", layout)
+		host:SetScript("OnShow", layout)
+		local function editorContentBottom()
+			local lo
+			local function scan(f, depth)
+				if depth > 3 then return end
+				for _, c in ipairs({f:GetChildren()}) do
+					if c:IsShown() then
+						local ot = c:GetObjectType()
+						if ot ~= "Frame" and ot ~= "ScrollFrame" then
+							local b = c:GetBottom()
+							if b and (not lo or b < lo) then lo = b end
+						end
+						scan(c, depth + 1)
+					end
+				end
+				for _, r in ipairs({f:GetRegions()}) do
+					if r:IsShown() and r:GetObjectType() == "FontString" and (r:GetText() or "") ~= "" then
+						local b = r:GetBottom()
+						if b and (not lo or b < lo) then lo = b end
+					end
+				end
+			end
+			scan(sliceDetail.editorContainer, 0)
+			return lo
+		end
+		function api.updateConditionHelp()
+			local ec = sliceDetail.editorContainer
+			local lo, top = editorContentBottom(), ec:GetTop()
+			local ofs = math.min(-4, (lo and top) and (lo - top - 8) or -4)
+			host:ClearAllPoints()
+			host:SetPoint("TOPLEFT", ec, "TOPLEFT", 0, ofs)
+			host:SetPoint("BOTTOMRIGHT", ec, "BOTTOMRIGHT")
+			lastWidth = nil
+			host:SetShown((ec:GetHeight() or 0) + ofs >= 100)
+			if host:IsShown() then
+				layout()
+			end
+		end
+	end
 	sliceDetail.remove = CreateButton(sliceDetail)
 	sliceDetail.remove:SetPoint("BOTTOMRIGHT", -10, 10)
 	sliceDetail.remove:SetText(L"Delete slice")
@@ -947,9 +1207,10 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		s:SetWidth(153)
 		s:SetPoint("TOPLEFT", 7, -1) s:SetTextInsets(16, 0, 0, 0)
 		local i = s:CreateTexture(nil, "OVERLAY")
-		i:SetSize(14, 14) i:SetPoint("LEFT", 0, -1)
-		i:SetTexture("Interface/Common/UI-Searchbox-Icon")
+		i:SetSize(11, 11) i:SetPoint("LEFT", 2, -1)
+		i:SetTexture(GFX .. "search.tga")
 		local l, tip = s:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall"), CreateFrame("GameTooltip", "RKC_SearchTip", newSlice, "GameTooltipTemplate")
+		if T.UseSharedTooltipSkin then T.UseSharedTooltipSkin(tip) end
 		l:SetPoint("LEFT", 16, 0)
 		l:SetText(L"Search")
 		s:SetScript("OnEditFocusGained", function(s)
@@ -1007,11 +1268,16 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 	for i=1, NUM_VISIBLE_CATS+1 do
 		local b, fs = CreateFrame("Button", nil, catInner)
 		b:SetSize(159, 20)
-		b:SetNormalTexture("Interface/AchievementFrame/UI-Achievement-Category-Background")
-		b:SetHighlightTexture("Interface/AchievementFrame/UI-Achievement-Category-Highlight")
-		b:GetNormalTexture():SetTexCoord(7/256, 162/256, 5/32, 24/32)
-		b:GetHighlightTexture():SetTexCoord(7/256, 163/256, 5/32, 24/32)
-		b:GetNormalTexture():SetVertexColor(0.6, 0.6, 0.6)
+		b:SetNormalTexture(WHITE)
+		b:SetHighlightTexture(WHITE)
+		b:GetNormalTexture():SetVertexColor(TS.SKIN.btn[1], TS.SKIN.btn[2], TS.SKIN.btn[3], 1)
+		b:GetNormalTexture():ClearAllPoints()
+		b:GetNormalTexture():SetPoint("TOPLEFT", 0, -1)
+		b:GetNormalTexture():SetPoint("BOTTOMRIGHT", 0, 1)
+		b:GetHighlightTexture():SetVertexColor(TS.SKIN.accent[1], TS.SKIN.accent[2], TS.SKIN.accent[3], 0.20)
+		b:GetHighlightTexture():ClearAllPoints()
+		b:GetHighlightTexture():SetPoint("TOPLEFT", 0, -1)
+		b:GetHighlightTexture():SetPoint("BOTTOMRIGHT", 0, 1)
 		b:SetNormalFontObject(GameFontHighlight)
 		b:SetHighlightFontObject(GameFontHighlight)
 		b:SetPushedTextOffset(0,0)
@@ -1146,7 +1412,7 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		f:SetScript("OnLeave", config.ui.HideTooltip)
 		f.ico = f:CreateTexture(nil, "ARTWORK")
 		f.ico:SetSize(32,32) f.ico:SetPoint("LEFT", 1, 0)
-		addIconSlotTextures(f.ico, 32)
+		addIconSlotTextures(f.ico)
 		f.name = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		f.name:SetHeight(14)
 		f.name:SetJustifyV("TOP")
@@ -1158,8 +1424,8 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		f.sub:SetPoint("TOPLEFT", f.name, "BOTTOMLEFT", 0, -2)
 		f.sub:SetPoint("RIGHT", -2, 0)
 		f.sub:SetJustifyH("LEFT")
-		f:SetHighlightTexture("Interface/Buttons/ButtonHilight-Square")
-		f:GetHighlightTexture():SetAllPoints(f.ico)
+		f:SetHighlightTexture(WHITE)
+		f:GetHighlightTexture():SetVertexColor(1, 1, 1, 0.10)
 	end
 
 	local function syncActions()
@@ -1750,9 +2016,13 @@ function api.selectSlice(offset, select)
 	newSlice:Hide()
 	api.hideSliceDetail()
 	ringContainer.newSlice:SetChecked(nil)
-	local oid, id = (currentSliceIndex or 0) + 1 - sliceBaseIndex, sliceBaseIndex + offset
-	local old, desc = ringContainer.slices[oid], currentRing[id]
-	if old and oid ~= id then old:SetChecked(nil) end
+	local id = sliceBaseIndex + offset
+	local desc = currentRing[id]
+	for i=1, #ringContainer.slices do
+		if i ~= offset + 1 then
+			ringContainer.slices[i]:SetChecked(nil)
+		end
+	end
 	currentSliceIndex = nil
 	if not desc then
 		return ringDetail:Show()
@@ -1781,6 +2051,7 @@ function api.updateSliceDisplay(_id, desc)
 	sliceDetail.shortLabel:SetText(desc.label or "")
 	api.updateSliceOptions(desc)
 	editorHost:SetAction(desc)
+	api.updateConditionHelp()
 	local canRestore, hasRestore = RK:CanRestoreSlice(currentRingName, desc)
 	sliceDetail.restore:SetShown(hasRestore)
 	sliceDetail.restore:SetEnabled(canRestore)

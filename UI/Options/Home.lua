@@ -7,7 +7,7 @@ local GameTooltip = T.NotGameTooltip or GameTooltip
 local frame = TS:CreateOptionsPanel("OPie", nil, {
 	forceRootVersion=true,
 	selfBrandedRoot=true,
-	tabText="|TInterface/Buttons/UI-HomeButton:14:16:0:-3|t " .. L"Overview"
+	tabText="|T" .. GFX .. "home:13:13:0:-2|t " .. L"Overview"
 })
 frame.version:SetText(PC:GetVersion() or "")
 T.ConfigHomePanel = frame
@@ -21,9 +21,11 @@ local navView = CreateFrame("Frame", nil, frame) do
 
 	local oy = TS.PANEL_VIEW_MARGIN_TOP_TITLESHIFT + 4
 	local t = navView:CreateFontString(nil, "OVERLAY", "GameFont_Gigantic")
-	t:SetTextColor(1, 1, 1)
-	t:SetText("OPie_Sirus")
+	t:SetText("|cff29a8ffOPie|r")
 	t:SetPoint("TOPLEFT", 16, oy)
+	local byline = navView:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	byline:SetText("|cff6f7480port by |r|cffffc94dAccidev|r")
+	byline:SetPoint("BOTTOMLEFT", t, "BOTTOMRIGHT", 9, 4)
 	oy = oy - 34
 	t = navView:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	t:SetTextColor(0.62, 0.65, 0.70)
@@ -56,8 +58,8 @@ local navView = CreateFrame("Frame", nil, frame) do
 		cd:SetText(text)
 		cd:SetJustifyH("LEFT")
 		local ar = b:CreateTexture(nil, "OVERLAY")
-		ar:SetTexture("Interface/Glues/Common/Glue-RightArrow-Button-Up")
-		ar:SetSize(22, 22)
+		ar:SetTexture(GFX .. "arrowright.tga")
+		ar:SetSize(14, 14)
 		ar:SetPoint("RIGHT", -10, 0)
 		ar:SetVertexColor(0.55, 0.58, 0.64)
 		b:SetScript("OnEnter", function()

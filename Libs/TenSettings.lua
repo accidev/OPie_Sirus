@@ -1,5 +1,6 @@
 ﻿local M, I, _, T = {}, {}, ...
 local EV, XU, noop = T.Evie, T.exUI, function() end
+local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 T.TenSettings = M
 
 local SKIN = {
@@ -58,6 +59,14 @@ end
 M.Fill, M.Box, M.Outline = fill, box, outline
 
 local styled = setmetatable({}, {__mode="k"})
+local function prepCheckMark(tex, r, g, b)
+	if not tex then return end
+	tex:SetVertexColor(r, g, b)
+	tex:SetBlendMode("BLEND")
+	tex:ClearAllPoints()
+	tex:SetPoint("TOPLEFT", 4, -4)
+	tex:SetPoint("BOTTOMRIGHT", -4, 4)
+end
 function M:StyleButton(b, kind)
 	if not b or styled[b] then return b end
 	styled[b] = true
@@ -79,8 +88,8 @@ function M:StyleCloseButton(b)
 	b:SetSize(20, 20)
 	box(b, "HIGHLIGHT", nil, SKIN.danger)
 	local x = b:CreateTexture(nil, "ARTWORK")
-	x:SetTexture("Interface\\Buttons\\UI-StopButton")
-	x:SetSize(11, 11)
+	x:SetTexture(GFX .. "close.tga")
+	x:SetSize(10, 10)
 	x:SetPoint("CENTER")
 	x:SetVertexColor(0.78, 0.79, 0.82)
 	b.Icon = x
@@ -108,12 +117,11 @@ function M:StyleCheckButton(b)
 	e:SetPoint("TOPLEFT", 5, -5)
 	e:SetPoint("BOTTOMRIGHT", -5, 5)
 	outline(e, "BORDER", nil, SKIN.edge)
-	local ct = b:GetCheckedTexture()
-	if ct then
-		ct:SetVertexColor(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3])
-		ct:ClearAllPoints()
-		ct:SetPoint("TOPLEFT", 1, -1)
-		ct:SetPoint("BOTTOMRIGHT", -1, 1)
+	b:SetCheckedTexture(GFX .. "check.tga")
+	prepCheckMark(b:GetCheckedTexture(), 1, 1, 1)
+	if b.SetDisabledCheckedTexture then
+		b:SetDisabledCheckedTexture(GFX .. "check.tga")
+		prepCheckMark(b:GetDisabledCheckedTexture(), 0.42, 0.44, 0.48)
 	end
 	return b
 end
@@ -589,6 +597,10 @@ do -- TenSettingsFrame
 		if not TenSettingsFrame:IsShown() then
 			TenSettingsFrame:ClearAllPoints()
 			TenSettingsFrame:SetPoint("CENTER", 0, 50)
+		end
+		local cw, ch = TenSettingsFrame:GetSize()
+		if (cw or 0) < WINDOW_WIDTH or (ch or 0) < WINDOW_HEIGHT then
+			TenSettingsFrame:SetSize(math.max(cw or 0, WINDOW_WIDTH), math.max(ch or 0, WINDOW_HEIGHT))
 		end
 		I.OnUndoStateChange()
 		TenSettingsFrame:Show()

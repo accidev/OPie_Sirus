@@ -1,5 +1,6 @@
 local _, T = ...
 local XU = T.exUI
+local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 local assert, getWidgetData, newWidgetData, _setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
 local DropDown, DropDownData, internal = {}, {}, {}
@@ -64,12 +65,14 @@ function internal.OnDropHide(self, ...)
 	CallObjectScript(d.self, "OnHide", ...)
 end
 
-local function prepArrowTexture(p, m, f)
-	p["Set" .. m](p, f)
+local function prepArrowTexture(p, m, r, g, b)
+	p["Set" .. m](p, GFX .. "chevron.tga")
 	local tex = p["Get" .. m](p)
 	tex:ClearAllPoints()
-	tex:SetSize(24, 24)
-	tex:SetPoint("RIGHT", -16, 3)
+	tex:SetSize(12, 12)
+	tex:SetPoint("RIGHT", -22, 3)
+	tex:SetTexCoord(0, 1, 1, 0)
+	tex:SetVertexColor(r, g, b)
 	return tex
 end
 local function nop() end
@@ -83,10 +86,10 @@ local function CreateDropDown(name, parent, outerTemplate, id)
 	f:SetDisabledFontObject(GameFontDisableSmall)
 	f:SetPushedTextOffset(0,0)
 	f:SetScript("OnHide", internal.OnDropHide)
-	prepArrowTexture(f, "NormalTexture", [[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up]])
-	prepArrowTexture(f, "PushedTexture", [[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down]])
-	prepArrowTexture(f, "DisabledTexture", [[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled]])
-	prepArrowTexture(f, "HighlightTexture", [[Interface\Buttons\UI-Common-MouseHilight]]):SetBlendMode("ADD")
+	prepArrowTexture(f, "NormalTexture", 0.62, 0.65, 0.72)
+	prepArrowTexture(f, "PushedTexture", 0.16, 0.66, 1.00)
+	prepArrowTexture(f, "DisabledTexture", 0.34, 0.35, 0.39)
+	prepArrowTexture(f, "HighlightTexture", 1, 1, 1)
 	f:SetScript("OnClick", internal.OnDropArrowClick)
 	t = f:CreateTexture(nil, "BACKGROUND", nil, -3)
 	t:SetTexture(0.115, 0.125, 0.145, 1)

@@ -21,13 +21,20 @@ local RegisterSimpleOptionsPanel do
 	end
 	for i=1,3 do
 		local e = CreateFrame("CheckButton", nil, f, "InterfaceOptionsCheckButtonTemplate")
-		e.Text:SetPoint("LEFT", e, "RIGHT", 0, 1)
+		e:SetSize(24, 24)
+		e.Text:SetPoint("LEFT", e, "RIGHT", 2, 1)
 		e.Text:SetFontObject(GameFontHighlightLeft)
 		hooksecurefunc(e.Text, "SetText", updateCheckButtonHitRect)
 		if e.SetMotionScriptsWhileDisabled then e:SetMotionScriptsWhileDisabled(1) end
 		e:SetScript("OnClick", callSave)
 		fButtons[i] = e
 	end
+	T.Evie.After(0, function()
+		local TS = T.TenSettings
+		for i=1, TS and #fButtons or 0 do
+			TS:StyleCheckButton(fButtons[i])
+		end
+	end)
 
 	local function IsOwned(self, host)
 		return curHandle == self and f:GetParent() == host

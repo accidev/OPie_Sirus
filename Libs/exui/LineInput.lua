@@ -2,6 +2,8 @@ local _, T = ...
 local XU, type = T.exUI, type
 local assert, getWidgetData, newWidgetData, _setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
+local FIELD_BG, FIELD_EDGE, FIELD_FOCUS = {0.075, 0.082, 0.096, 1}, {0.21, 0.23, 0.27, 1}, {0.16, 0.66, 1.00, 1}
+
 local LineInput, LineInputData = {}, {}, {}
 local LineInputProps = {
 	api=LineInput,
@@ -16,30 +18,19 @@ local function adjustPlaceholderVisibility(self)
 	local sup = d.proto.super
 	d.phText:SetShown(not sup.HasFocus(self) and sup.GetText(self) == "")
 end
+local function paintFieldEdge(d, focused)
+	local c = focused and FIELD_FOCUS or FIELD_EDGE
+	for i=1,4 do
+		d.edge[i]:SetTexture(c[1], c[2], c[3], c[4])
+	end
+end
 function LineInput:SetStyle(style)
 	local d = assert(getWidgetData(self, LineInputData), 'invalid object type')
 	assert(style == nil or type(style) == 'string', 'Syntax: LineInput:SetStyle("style")')
-	local common, l, r, m = style == "common", d.l, d.r, d.m
-	m:SetPoint("LEFT", l, "RIGHT")
-	m:SetPoint("RIGHT", r, "LEFT")
-	l:SetSize(common and 8 or 32, common and 20 or 32)
-	l:SetPoint("LEFT", common and -5 or -10, 0)
-	l:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Left2")
-	r:SetSize(common and 8 or 32, common and 20 or 32)
-	r:SetPoint("RIGHT", common and 0 or 10, 0)
-	r:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Right2")
-	m:SetHeight(common and 20 or 32)
-	m:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Mid2", "MIRROR")
-	if common then
-		l:SetTexCoord(0,1/16, 0,5/8)
-		r:SetTexCoord(15/16,1, 0,5/8)
-		m:SetTexCoord(1/16,15/16, 0,5/8)
-	else
-		l:SetTexCoord(0,1, 0,1)
-		r:SetTexCoord(0,1, 0,1)
-		m:SetTexCoord(0,1, 0,1)
-	end
-	m:SetHorizTile(not common)
+	local vp = style == "common" and 0 or 3
+	d.bg:ClearAllPoints()
+	d.bg:SetPoint("TOPLEFT", -2, vp)
+	d.bg:SetPoint("BOTTOMRIGHT", 2, -vp)
 	d.style = style
 	LineInput.SetTextInsets(self, d.tipL, d.tipR, d.tipT, d.tipB)
 end
@@ -81,10 +72,12 @@ local function findFontString(a, ...)
 end
 local function onEditFocusGained(self, ...)
 	adjustPlaceholderVisibility(self)
+	paintFieldEdge(getWidgetData(self, LineInputData), true)
 	return CallObjectScript(self, "OnEditFocusGained", ...)
 end
 local function onEditFocusLost(self, ...)
 	adjustPlaceholderVisibility(self)
+	paintFieldEdge(getWidgetData(self, LineInputData), false)
 	self:HighlightText(0,0)
 	return CallObjectScript(self, "OnEditFocusLost", ...)
 end
@@ -98,14 +91,32 @@ local function CreateLineInput(name, parent, outerTemplate, id)
 	input:SetFontObject(ChatFontNormal)
 	t, d.text = input:CreateFontString(nil, "OVERLAY"), findFontString(input:GetRegions())
 	t:SetFontObject(GameFontDisableSmall)
-	t:SetTextColor(0.35, 0.35, 0.35)
+	t:SetTextColor(0.45, 0.46, 0.50)
 	t:SetPoint("LEFT", 2, 0)
 	t:SetPoint("RIGHT", -2, 0)
 	t:SetJustifyH("LEFT")
 	t:SetMaxLines(1)
 	d.phText = t
 	input:SetScript("OnEscapePressed", input.ClearFocus)
-	d.l, d.m, d.r = input:CreateTexture(nil, "BACKGROUND"), input:CreateTexture(nil, "BACKGROUND"), input:CreateTexture(nil, "BACKGROUND")
+	d.bg = input:CreateTexture(nil, "BACKGROUND", nil, -3)
+	d.bg:SetTexture(FIELD_BG[1], FIELD_BG[2], FIELD_BG[3], FIELD_BG[4])
+	d.edge = {}
+	for i=1,4 do
+		local e = input:CreateTexture(nil, "BACKGROUND", nil, -2)
+		d.edge[i] = e
+		if i < 3 then
+			e:SetHeight(1)
+			e:SetPoint("LEFT", d.bg, "LEFT")
+			e:SetPoint("RIGHT", d.bg, "RIGHT")
+			e:SetPoint(i == 1 and "TOP" or "BOTTOM", d.bg, i == 1 and "TOP" or "BOTTOM")
+		else
+			e:SetWidth(1)
+			e:SetPoint("TOP", d.bg, "TOP")
+			e:SetPoint("BOTTOM", d.bg, "BOTTOM")
+			e:SetPoint(i == 3 and "LEFT" or "RIGHT", d.bg, i == 3 and "LEFT" or "RIGHT")
+		end
+	end
+	paintFieldEdge(d, false)
 	LineInput.SetStyle(input, "common")
 	return input
 end

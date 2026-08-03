@@ -1,31 +1,39 @@
 local _, T = ...
-local XU = T.exUI
+local XU, TS = T.exUI, T.TenSettings
+local SKIN = TS.SKIN
 local assert, getWidgetData, newWidgetData, _setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
-local function confToggleTexture(tex, blendMode, ...)
-	tex:SetBlendMode(blendMode)
-	tex:SetTexCoord(...)
-	tex:SetTextureSliceMargins(12,12,12,12)
+local function paint(tex, c)
+	tex:SetTexture(c[1], c[2], c[3], c[4])
+end
+local function syncToggleSkin(self)
+	local s = self.tabSkin
+	if not s then return end
+	local on = not not self:GetChecked()
+	paint(s.bg, on and SKIN.accentDim or SKIN.btn)
+	for i=1,#s.edge do
+		paint(s.edge[i], on and SKIN.accent or SKIN.edge)
+	end
+	s.marker:SetShown(on)
+	self:SetNormalFontObject(on and GameFontHighlight or GameFontNormal)
 end
 local function CreateToggleButton(name, parent, outerTemplate, id)
 	local button = CreateFrame("CheckButton", name, parent, outerTemplate, id)
 	button:SetSize(170, 30)
-	button:SetNormalFontObject(GameFontHighlightMedium)
-	button:SetPushedTextOffset(-1, -1)
-	button:SetNormalTexture("Interface\\PVPFrame\\PvPMegaQueue")
-	confToggleTexture(button:GetNormalTexture(), "BLEND", 1/512,301/512, 447/512,475/512)
-	button:SetPushedTexture("Interface\\PVPFrame\\PvPMegaQueue")
-	confToggleTexture(button:GetPushedTexture(), "BLEND", 1/512,301/512,476/512,504/512)
-	button:SetHighlightTexture("Interface\\PVPFrame\\PvPMegaQueue")
-	confToggleTexture(button:GetHighlightTexture(), "ADD", 1/512,327/512, 362/512,393/512)
-	button:SetCheckedTexture("Interface\\PVPFrame\\PvPMegaQueue")
-	confToggleTexture(button:GetCheckedTexture(), "ADD", 1/512,327/512, 394/512,425/512)
-	for i=1,2 do
-		local tex = i == 1 and button:GetHighlightTexture() or button:GetCheckedTexture()
-		tex:ClearAllPoints()
-		tex:SetPoint("TOPLEFT", button, "TOPLEFT", 1.5, 12.3-15)
-		tex:SetPoint("BOTTOMRIGHT", button, "BOTTOMRIGHT", -1.5, 15-12.3)
-	end
+	button:SetNormalFontObject(GameFontNormal)
+	button:SetHighlightFontObject(GameFontHighlight)
+	button:SetDisabledFontObject(GameFontDisable)
+	button:SetPushedTextOffset(0, -1)
+	local bg = TS.Box(button, "BACKGROUND", nil, SKIN.btn)
+	local edge = TS.Outline(button, "BORDER", nil, SKIN.edge)
+	TS.Box(button, "HIGHLIGHT", nil, SKIN.hover)
+	local marker = TS.Fill(button, "ARTWORK", nil, SKIN.accent)
+	marker:SetHeight(2)
+	marker:SetPoint("BOTTOMLEFT", 1, 1)
+	marker:SetPoint("BOTTOMRIGHT", -1, 1)
+	marker:Hide()
+	button.tabSkin = {bg=bg, edge=edge, marker=marker}
+	hooksecurefunc(button, "SetChecked", syncToggleSkin)
 	return button
 end
 XU:RegisterFactory("OPie:ToggleButton", CreateToggleButton)
@@ -119,14 +127,14 @@ do -- OPie:OptionsSlider
 	local OptionsSliderData, OptionsSlider = {}, {}
 
 	local function Thumb_OnLeave(self)
-		local d = getWidgetData(self:GetParent(), OptionsSliderData)
+		local d = getWidgetData(self, OptionsSliderData)
 		d.HiThumb:Hide()
 		if GameTooltip:IsOwned(d.self) then
 			GameTooltip:Hide()
 		end
 	end
 	local function Thumb_OnEnter(self)
-		local d = getWidgetData(self:GetParent(), OptionsSliderData)
+		local d = getWidgetData(self, OptionsSliderData)
 		d.HiThumb:Show()
 		local v, f = d.self:GetValue(), d.tipValueFormatter
 		if type(f) == "function" then
@@ -138,7 +146,7 @@ do -- OPie:OptionsSlider
 			-- MEH[5.5.0]: Classic doesn't let Textures own Tooltips
 			GameTooltip:SetOwner(d.self, "ANCHOR_NONE")
 			GameTooltip:ClearAllPoints()
-			GameTooltip:SetPoint("BOTTOM", self, "TOP", 0, 4)
+			GameTooltip:SetPoint("BOTTOM", d.Thumb, "TOP", 0, 4)
 			GameTooltip:SetText(v)
 		end
 	end
@@ -146,7 +154,7 @@ do -- OPie:OptionsSlider
 		local d = assert(getWidgetData(self, OptionsSliderData), "Invalid object type")
 		CallObjectScript(d.self, "OnValueChanged", nv, ...)
 		if GameTooltip:IsOwned(d.self) then
-			Thumb_OnEnter(d.Thumb)
+			Thumb_OnEnter(d.self)
 		end
 	end
 
@@ -207,9 +215,12 @@ do -- OPie:OptionsSlider
 			local th = CreateFrame("Frame", nil, s)
 			th:SetSize(14, 20)
 			th:SetPoint("CENTER", thumbTex, "CENTER")
-			th:EnableMouse(true)
+			th:EnableMouse(false)
 			s.Thumb = th
 		end
+		s:EnableMouse(true)
+		s:SetScript("OnEnter", Thumb_OnEnter)
+		s:SetScript("OnLeave", Thumb_OnLeave)
 		s:SetScript("OnValueChanged", OptionsSlider_OnValueChanged)
 		d = newWidgetData(s, OptionsSliderData, OptionsSliderProps)
 		t = s:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -221,8 +232,6 @@ do -- OPie:OptionsSlider
 		d.hi:SetPoint("LEFT", s, "RIGHT", 2, 0)
 		d.lo:SetText(LOW)
 		d.hi:SetText(HIGH)
-		s.Thumb:SetScript("OnEnter", Thumb_OnEnter)
-		s.Thumb:SetScript("OnLeave", Thumb_OnLeave)
 		t = s:CreateTexture(nil, "OVERLAY")
 		t:SetAllPoints(s.Thumb)
 		t:SetBlendMode("ADD")

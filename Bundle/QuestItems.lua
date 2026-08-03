@@ -4,6 +4,7 @@ local AB, ORI, EV, L, PC, XU, config, KR = T.ActionBook, OPie.UI, T.Evie, T.L, T
 AB, KR = AB and AB:compatible(2, 14), AB and AB:compatible("Kindred", 1, 34)
 assert(ORI and EV and L and PC and XU and config and AB and KR, "Incompatible library bundle")
 local GameTooltip = T.NotGameTooltip or GameTooltip
+local TS, GFX = T.TenSettings, ([[Interface\AddOns\%s\gfx\]]):format(ADDON)
 
 local exclude, questItems = PC:RegisterPVar("AutoQuestExclude", {}), {}
 local IsQuestItem, IsQuestItemF, disItems
@@ -242,13 +243,30 @@ local edFrame = CreateFrame("Frame") do
 		t:SetHeight(20)
 		t:SetJustifyH("LEFT")
 		t, x.Text = x:CreateTexture(nil, "ARTWORK", nil, 0), t
-		t:SetTexture("Interface\\Buttons\\UI-CheckBox-Up")
-		t:SetSize(20, 20)
-		t:SetPoint("LEFT", 2, 0)
-		t = x:CreateTexture(nil, "ARTWORK", nil, 1)
-		t:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
-		t:SetSize(20, 20)
-		t:SetPoint("LEFT", 2, 0)
+		t:SetTexture(TS.SKIN.btn[1], TS.SKIN.btn[2], TS.SKIN.btn[3], 1)
+		t:SetSize(16, 16)
+		t:SetPoint("LEFT", 4, 0)
+		local checkBox = t
+		for i=1,4 do
+			local e = x:CreateTexture(nil, "ARTWORK", nil, 1)
+			e:SetTexture(TS.SKIN.edge[1], TS.SKIN.edge[2], TS.SKIN.edge[3], 1)
+			if i < 3 then
+				e:SetHeight(1)
+				e:SetPoint("LEFT", checkBox, "LEFT")
+				e:SetPoint("RIGHT", checkBox, "RIGHT")
+				e:SetPoint(i == 1 and "TOP" or "BOTTOM", checkBox, i == 1 and "TOP" or "BOTTOM")
+			else
+				e:SetWidth(1)
+				e:SetPoint("TOP", checkBox, "TOP")
+				e:SetPoint("BOTTOM", checkBox, "BOTTOM")
+				e:SetPoint(i == 3 and "LEFT" or "RIGHT", checkBox, i == 3 and "LEFT" or "RIGHT")
+			end
+		end
+		t = x:CreateTexture(nil, "ARTWORK", nil, 2)
+		t:SetTexture(GFX .. "check.tga")
+		t:SetVertexColor(TS.SKIN.accent[1], TS.SKIN.accent[2], TS.SKIN.accent[3])
+		t:SetSize(12, 12)
+		t:SetPoint("CENTER", checkBox, "CENTER")
 		x.Mark = t
 		x:SetScript("OnClick", controller.OnRowClick)
 		x:SetScript("OnEnter", controller.OnRowEnter)

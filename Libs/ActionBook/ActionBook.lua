@@ -659,8 +659,14 @@ local editorPanels, createEditorHost = {} do
 			rq:Hide()
 			rq:SetSize(30, 26)
 			rq:SetPoint("CENTER")
-			rq:SetNormalTexture("Interface\\Buttons\\UI-RotationRight-Button-Up")
-			rq:SetPushedTexture("Interface\\Buttons\\UI-RotationRight-Button-Down")
+			if T.TenSettings then
+				T.TenSettings:StyleButton(rq)
+			end
+			local ico = rq:CreateTexture(nil, "ARTWORK")
+			ico:SetSize(13, 13)
+			ico:SetPoint("CENTER")
+			ico:SetTexture("Interface\\Buttons\\UI-RotationRight-Button-Up")
+			ico:SetVertexColor(0.78, 0.80, 0.84)
 			rq:SetScript("OnClick", hf_OnReaquireClick)
 		end
 		local hd, hh = {host=hf, hh=0, rq=rq}, newproxy(hhproto)

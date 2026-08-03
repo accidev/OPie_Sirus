@@ -87,7 +87,8 @@ do -- config.bind
 	local activeCaptureButton
 	local alternateFrame = CreateFrame("Frame", nil, UIParent) do
 		alternateFrame:Hide()
-		XU:Create("Backdrop", alternateFrame, { bgFile="Interface/ChatFrame/ChatFrameBackground", edgeFile="Interface/DialogFrame/UI-DialogBox-Border", tile=true, tileSize=32, edgeSize=32, insets={left=11, right=11, top=11, bottom=10}, bgColor=0xd8000000})
+		TS.Box(alternateFrame, "BACKGROUND", -7, TS.SKIN.bg)
+		TS.Outline(alternateFrame, "BACKGROUND", -6, TS.SKIN.edge)
 		alternateFrame:SetSize(380, 115)
 		alternateFrame:EnableMouse(1)
 		alternateFrame:SetScript("OnHide", alternateFrame.Hide)
@@ -106,13 +107,14 @@ do -- config.bind
 			GameTooltip:SetPoint("TOP", self, "BOTTOM")
 			GameTooltip:AddLine(L"Conditional Bindings", NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
 			GameTooltip:AddLine(L"The binding will update to reflect the value of this macro options expression.", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
-			GameTooltip:AddLine((L"You may use extended conditionals; see %s for details."):format("|cff33DDFFhttps://townlong-yak.com/addons/opie/extended-conditionals|r"), HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
+			GameTooltip:AddLine("Готовые условия с описанием — в настройках фрагмента, под списком параметров.", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
 			GameTooltip:AddLine((L"Example: %s."):format(GREEN_FONT_COLOR_CODE .. "[combat] ALT-C; [nomounted] CTRL-F|r"), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
 			GameTooltip:Show()
 		end)
 		extReminder:SetScript("OnLeave", config.ui.HideTooltip)
 		extReminder:SetScript("OnHide", extReminder:GetScript("OnLeave"))
 		local textarea = XU:Create("TextArea", "OPC_AlternateBindInput", alternateFrame)
+		textarea:SetStyle("tooltip")
 		textarea:SetPoint("TOPLEFT", 12, -28)
 		textarea:SetPoint("BOTTOMRIGHT", -10, 10)
 		alternateFrame.input = textarea

@@ -1,5 +1,6 @@
 local _, T = ...
 local L, EV, TS, XU, PC, config, frame = T.L, T.Evie, T.TenSettings, T.exUI, T.OPieCore, T.config, nil
+local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 local GameTooltip = T.NotGameTooltip or GameTooltip
 
 local REQ_POINTER, DISABLED_TEXT = {1, 1}, "|cffa0a0a0" .. L"Disabled"
@@ -255,14 +256,22 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 		fs:SetMaxLines(1)
 		return b, halfpoint and ofsY - math.max(rowHeight, 30) or ofsY, not halfpoint, halfpoint and 0 or 30
 	end
+	local function setTwofArrow(tb, method, r, g, b)
+		tb["Set" .. method](tb, GFX .. "chevron.tga")
+		local tex = tb["Get" .. method](tb)
+		tex:ClearAllPoints()
+		tex:SetSize(13, 13)
+		tex:SetPoint("CENTER")
+		tex:SetTexCoord(0, 1, 1, 0)
+		tex:SetVertexColor(r, g, b)
+	end
 	function build.twof(v, ofsY, halfpoint, rowHeight, rframe)
 		local tb = CreateFrame("Button", nil, controlContainer)
 		tb:SetSize(24,24)
-		tb:SetNormalTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up]])
-		tb:SetPushedTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down]])
-		tb:SetDisabledTexture([[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled]])
-		tb:SetHighlightTexture([[Interface\Buttons\UI-Common-MouseHilight]])
-		tb:GetHighlightTexture():SetBlendMode("ADD")
+		setTwofArrow(tb, "NormalTexture", 0.62, 0.65, 0.72)
+		setTwofArrow(tb, "PushedTexture", 0.16, 0.66, 1.00)
+		setTwofArrow(tb, "DisabledTexture", 0.34, 0.35, 0.39)
+		setTwofArrow(tb, "HighlightTexture", 1, 1, 1)
 		tb:SetPoint("TOPLEFT", rframe, "TOPLEFT", halfpoint and 316 or 16, ofsY-13.5)
 		tb:SetScript("OnClick", onTwofClick)
 		tb:SetScript("OnEnter", onTwofEnter)

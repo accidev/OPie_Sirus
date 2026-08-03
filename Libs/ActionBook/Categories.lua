@@ -4,7 +4,8 @@ if T.SkipLocalActionBook then return end
 local AB = T.ActionBook:compatible(2,21)
 local RW = T.ActionBook:compatible("Rewire", 1,27)
 local IM = T.ActionBook:compatible("Imp", 1,8)
-assert(AB and RW and IM and 1, "Incompatible library bundle")
+local EV = T.Evie
+assert(AB and RW and IM and EV and 1, "Incompatible library bundle")
 local L = T.ActionBook.L
 local mark = {}
 local spellRankFilter = {maxOnly=true}
@@ -42,18 +43,24 @@ do
 			end
 		end
 	end
+	local GENERAL_TAB = 1
 	local WRATH_SKIP_TABS = {
-		["Общие"]                 = true,
-		["Гильдейские бонусы"]    = true,
 		["Спутники"]              = true,
 		["Транспортные средства"] = true,
 		["Транспорт"]             = true,
 		["Питомец"]               = true,
 		["Питомцы"]               = true,
-		["Коллекция: Игрушки"]    = true,
-		["Коллекция: Иллюзии"]    = true,
-		["Коллекция: Наследие"]   = true,
+		["Companions"]            = true,
+		["Mounts"]                = true,
+		["Pet"]                   = true,
+		["Pets"]                  = true,
 	}
+	local function isSkippedTab(index, name, icon)
+		if index == GENERAL_TAB or icon == nil or WRATH_SKIP_TABS[name] then
+			return true
+		end
+		return type(icon) == "string" and icon:lower():find("achievement_guild", 1, true) ~= nil
+	end
 	local isSpecHeaderName do
 		local prefixes, seen = {}, {}
 		local localized, cls = UnitClass("player")
@@ -85,9 +92,9 @@ do
 	local function collectTopRanks()
 		local top = {}
 		for i=1,GetNumSpellTabs()+12 do
-			local tabName, _, ofs, c = GetSpellTabInfo(i)
+			local tabName, ico, ofs, c = GetSpellTabInfo(i)
 			if not ofs then break end
-			if not (WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]) then
+			if not isSkippedTab(i, tabName, ico) then
 				for j=ofs+1, ofs+c do
 					local bookName, rank = spellBookRank(j)
 					if bookName and rank and rank > (top[bookName] or 0) then
@@ -107,7 +114,7 @@ do
 		for i=1,GetNumSpellTabs()+12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
 			if not ofs then break end
-			local isSkipped = WRATH_SKIP_TABS and WRATH_SKIP_TABS[tabName]
+			local isSkipped = isSkippedTab(i, tabName, ico)
 			if not isSkipped then
 				for j=ofs+1, ofs+c do
 					local tex = GetSpellTexture(j, "spell")
@@ -136,6 +143,73 @@ do
 			SetCVar("showAllSpellRanks", asv)
 		end
 	end
+	local flyoutRing, flyoutOwner, staleRing = {}, {}, {} do
+		local function syncFlyout(fid, aid)
+			local col, ni = {}, 1
+			local _, _, slots = GetFlyoutInfo(fid)
+			for i=1, slots or 0 do
+				local sid, _osid, known = GetFlyoutSlotInfo(fid, i)
+				if sid and known then
+					local said = AB:GetActionSlot("spell", sid)
+					if said then
+						local tok = "OPbFO" .. fid .. "s" .. sid
+						col[ni], col[tok], ni = tok, said, ni + 1
+					end
+				end
+			end
+			if aid then
+				AB:UpdateActionSlot(aid, col)
+				return aid
+			end
+			return AB:CreateActionSlot(nil, nil, "collection", col)
+		end
+		local function createFlyout(fid)
+			fid = tonumber(fid)
+			if not (fid and GetFlyoutInfo(fid)) then return end
+			local aid = flyoutRing[fid]
+			if not aid then
+				aid = syncFlyout(fid)
+				flyoutRing[fid], flyoutOwner[aid] = aid, fid
+			end
+			return aid
+		end
+		local function describeFlyout(fid)
+			fid = tonumber(fid)
+			local name = fid and GetFlyoutInfo(fid)
+			local _, _, icon = fid and GetSpellInfo(fid)
+			return L"Spell flyout", name or tostring(fid), icon, nil, nil, nil, "collection"
+		end
+		AB:RegisterActionType("opie.flyout", createFlyout, describeFlyout, 1)
+		AB:AddObserver("internal.collection.preopen", function(_, _, aid)
+			local fid = flyoutOwner[aid]
+			if fid and staleRing[fid] and not InCombatLockdown() then
+				staleRing[fid] = nil
+				syncFlyout(fid, aid)
+			end
+		end)
+		EV.SPELLS_CHANGED = function()
+			for fid in pairs(flyoutRing) do
+				staleRing[fid] = true
+			end
+		end
+	end
+	AB:AugmentCategory(L"General abilities", function(_, add)
+		local _, _, ofs, count = GetSpellTabInfo(GENERAL_TAB)
+		for j = (ofs or 0) + 1, (ofs or 0) + (count or 0) do
+			local tex = GetSpellTexture(j, "spell")
+			if type(tex) == "string" then
+				local _, sid = GetSpellBookItemInfo(j, "spell")
+				if sid and sid > 0 and not IsPassiveSpell(sid) and not C_SpellBook.IsSpellHiddenForUI(sid) then
+					local name, t2 = GetSpellInfo(sid), tex
+					AB:SetSpellIconOverride(sid, function() return t2 end)
+					if name then
+						AB:SetSpellIconOverride(name, function() return t2 end)
+					end
+					add(GetFlyoutInfo(sid) and "opie.flyout" or "spell", sid)
+				end
+			end
+		end
+	end)
 	AB:AugmentCategory(L"Abilities", function(_, add)
 		wipe(mark)
 		addSpells(add, true)
@@ -366,6 +440,7 @@ if WORLD_RAID_MARKER_ORDER then
 end
 AB:AugmentCategory(L"Toys", function(_, add)
 	if not ToyBox or not ToyBox.PagingFrame then return end
+	wipe(mark)
 	local maxPages = ToyBox.PagingFrame:GetMaxPages()
 	local origPage = ToyBox.PagingFrame:GetCurrentPage()
 	local wasShown = ToyBox:IsShown()
@@ -374,7 +449,8 @@ AB:AugmentCategory(L"Toys", function(_, add)
 		if page ~= origPage then ToyBox.PagingFrame:SetCurrentPage(page) end
 		for b = 1, 18 do
 			local btn = _G["ToyBoxIconsFrameSpellButton"..b]
-			if btn and btn.spellID and btn.spellID > 0 then
+			if btn and btn.spellID and btn.spellID > 0 and not mark[btn.spellID] and btn.itemID and PlayerHasToy(btn.itemID) then
+				mark[btn.spellID] = 1
 				add("spell", btn.spellID)
 			end
 		end
@@ -383,6 +459,7 @@ AB:AugmentCategory(L"Toys", function(_, add)
 		ToyBox.PagingFrame:SetCurrentPage(origPage)
 	end
 	if not wasShown then ToyBox:Hide() end
+	wipe(mark)
 end)
 do
 	AB:AddActionToCategory(L"Miscellaneous", "imptext", "")

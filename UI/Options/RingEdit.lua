@@ -1536,11 +1536,17 @@ function sliceDetail.skipSpecs:GetValue()
 	return self.val:match("^/(.+)/$")
 end
 local specCount, specName do
+	local GetGroupNote = C_Talent and C_Talent.GetTalentGroupNote
 	function specCount()
-		local n = GetNumTalentGroups and GetNumTalentGroups() or 1
+		local n = C_Talent and C_Talent.GetNumTalentGroups and C_Talent.GetNumTalentGroups()
+		         or GetNumTalentGroups and GetNumTalentGroups() or 1
 		return n and n > 0 and n or 1
 	end
 	function specName(i)
+		local note = GetGroupNote and GetGroupNote(i)
+		if type(note) == "string" and note:match("%S") then
+			return i .. ". " .. note
+		end
 		return i == 1 and TALENT_SPEC_PRIMARY or i == 2 and TALENT_SPEC_SECONDARY or (TALENTS .. " " .. i)
 	end
 end

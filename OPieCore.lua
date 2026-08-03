@@ -118,6 +118,7 @@ local sfDelQueue, sfGlobalOptions, sfRingsAll, sfRingsOne, sfBindsAll, sfBindsOn
 OR_SecCore:SetSize(2^15, 2^15)
 OR_SecCore:SetFrameStrata("FULLSCREEN_DIALOG")
 OR_SecCore:RegisterForClicks("AnyUp", "AnyDown")
+OR_SecCore:SetAttribute("downbutton", true)
 OR_SecCore:EnableMouseWheel(true)
 OR_SecCore:Hide()
 OR_SecCore:SetFrameRef("AB", AB:seclib())
@@ -854,6 +855,7 @@ local OR_SyncRingBinding do -- Binding management
 		if not clickProxy then
 			clickProxy = CreateFrame("Button", "ORL_RProxy" .. id, nil, "SecureActionButtonTemplate")
 			clickProxy:RegisterForClicks("AnyUp", "AnyDown")
+			clickProxy:SetAttribute("downbutton", true)
 			OR_SecCore:WrapScript(clickProxy, "OnClick", "return owner:RunFor(self, ORL_OnClick, button, down)", 'owner:RunFor(self, ORL_PostClick, message)')
 			OR_SecCore:SetFrameRef("proxy" .. id, clickProxy)
 			local bk, lab = "BINDING_NAME_CLICK ".. clickProxy:GetName() .. ":r" .. id, (L"OPie ring: %s"):format(props.name or "?")
@@ -1287,10 +1289,19 @@ function EV:SAVED_VARIABLES_TOO_LARGE(addon)
 		OR_LoadedState = false
 	end
 end
+local greeted
 function EV:PLAYER_LOGIN()
 	OR_LoadedState = OR_LoadedState == 1 and -1 or OR_LoadedState
 	OR_NotifyPVars("LOGIN")
 	OR_NotifyPVars("POST-LOGIN")
+	if not greeted then
+		greeted = true
+		EV.After(8, function()
+			print(
+				"|cFF00BFFFOPie|r |cFFFF4444»|r Спасибо за использование моей адаптации под Sirus. Другие аддоны в: -> |cff9aedff|Hhttp:https://discord.gg/wRPF8CCpNV|h[Discord]|h|r"
+			)
+		end)
+	end
 	return "remove"
 end
 function EV:PLAYER_ENTERING_WORLD(_, isReload)

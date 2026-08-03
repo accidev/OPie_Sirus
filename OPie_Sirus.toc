@@ -1,6 +1,6 @@
 ﻿## Interface: 30300
 ## Title: |cFF00FF00OPie_Sirus|r
-## Version: 1.33
+## Version: 1.34
 ## Author: foxlit, Poslevkusie, Accidev
 ## Notes: Group abilities into rings that appear when you hold down a binding.
 ## Notes-ruRU: Объединяет умения в кольца, которые появляются при нажатии назначенных клавиш.
@@ -32,3 +32,4 @@ Meta\EQSet2.lua
 Bundle\QuestItems.lua
 Bundle\Tracking.lua
 Bundle\Editable.lua
+Bundle\BattlePass.lua

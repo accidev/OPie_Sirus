@@ -3,37 +3,48 @@ local EV, XU, noop = T.Evie, T.exUI, function() end
 T.TenSettings = M
 
 do -- EscapeCallback
-	local getInfo, setInfo do
-		local info = {}
-		function getInfo(k)
-			return info[k]
+	local catchers = {}
+	local function refresh()
+		if InCombatLockdown() then return end
+		for i=1,#catchers do
+			ClearOverrideBindings(catchers[i])
 		end
-		function setInfo(k, v)
-			info[k] = v
-		end
-	end
-	local function ESC_OnKeyDown(self, key)
-		local it = getInfo(self)
-		if key and (key == "ESCAPE" or key == it[3]) and (not GetCurrentKeyBoardFocus or GetCurrentKeyBoardFocus() == nil) then
-			it[2](it[1], key)
-		else
-			local a, b = it[4], it[5]
-			a:SetScript("OnKeyDown", nil)
-			b:SetScript("OnKeyDown", noop)
-			it[4], it[5] = b, a
+		for i=1,#catchers do
+			local c = catchers[i]
+			if c.owner:IsVisible() then
+				SetOverrideBindingClick(c, true, c.key, c:GetName())
+			end
 		end
 	end
+	local pending
+	local function refreshSoon()
+		refresh()
+		if not pending then
+			pending = true
+			EV.After(0, function()
+				pending = nil
+				refresh()
+			end)
+		end
+	end
+	local function ESC_OnClick(self)
+		if GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil then return end
+		return self.callback(self.owner, self.key)
+	end
+	EV.PLAYER_REGEN_ENABLED = refresh
 	function M:EscapeCallback(parent, key2, callback)
 		if callback == nil then
 			callback, key2 = key2, nil
 		end
-		local f0 = CreateFrame("Frame", nil, parent)
-		local f1 = CreateFrame("Frame", nil, parent)
-		local f2 = CreateFrame("Frame", nil, parent)
-		setInfo(f0, {parent, callback, key2, f1, f2})
-		if f0.SetPropagateKeyboardInput then f0:SetPropagateKeyboardInput(true) end
-		f0:SetScript("OnKeyDown", ESC_OnKeyDown)
-		f1:SetScript("OnKeyDown", noop)
+		for i=1, key2 and 2 or 1 do
+			local c = CreateFrame("Button", "TenSettingsEscapeCatcher" .. (#catchers+1), parent)
+			c.owner, c.callback, c.key = parent, callback, i == 2 and key2 or "ESCAPE"
+			c:SetScript("OnClick", ESC_OnClick)
+			catchers[#catchers+1] = c
+		end
+		parent:HookScript("OnShow", refreshSoon)
+		parent:HookScript("OnHide", refreshSoon)
+		refreshSoon()
 	end
 end
 do -- TenSettingsFrame

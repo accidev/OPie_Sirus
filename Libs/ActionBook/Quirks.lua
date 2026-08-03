@@ -7,7 +7,7 @@ local playerClass, _, playerRace = UnitClassBase("player"), UnitRace("player")
 
 securecall(function() -- spec conditional sync
 	local function syncSpec()
-		local group = GetActiveTalentGroup() or 1
+		local group = C_Talent and C_Talent.GetActiveTalentGroup and C_Talent.GetActiveTalentGroup() or GetActiveTalentGroup() or 1
 		local maxPts, bestName = 0, nil
 		for i = 1, GetNumTalentTabs() do
 			local name, _, pts = GetTalentTabInfo(i)
@@ -22,4 +22,7 @@ securecall(function() -- spec conditional sync
 		syncSpec()
 	end
 	EV.PLAYER_LOGIN = syncSpec
+	EV.ACTIVE_TALENT_GROUP_CHANGED = syncSpec
+	EV.PLAYER_TALENT_UPDATE_EX = syncSpec
+	EV.PLAYER_TALENT_ACTIVE_GROUP_REFRESH = syncSpec
 end)

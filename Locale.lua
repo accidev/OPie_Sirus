@@ -26,6 +26,7 @@ V =
       "Неподвижный курсор", "Неподвижный курсор, или в центре кольца", "Требуется обновление", "Использовать привязку  для колец по умолчанию", "Использовать первый фрагмент при открытии", "Использовать глобальные настройки", "Использовать фрагмент", "Использовать фрагмент и закрыть кольцо", "Видимые условия:", "Когда кольцо открыто:",
       "World of Warcraft не удалось загрузить сохраненные переменные OPie из-за нехватки памяти. Попробуйте отключить другие аддоны.", "Вы можете отменить или вернуть предыдущие настройки позже.", "Вы можете использовать расширенные макро условия; см. %s.", "Вы должны включить опцию %s для этого кольца в настройках OPie для использования быстрых действий.", "Ваш персонаж не может использовать это в данный момент.", "по умолчанию", "Адаптация", "Благодарности", "Отблагодарить", "Поддержать дальнейшую разработку можно здесь:",
       "%s — автор оригинального аддона.", "%s — адаптация для World of Warcraft 3.3.5a.", "%s — оптимизация под Sirus.", "Только высший ранг", "Метки на местности",
+      "Боевой пропуск", "Открыть боевой пропуск", "Открыть задания", "Завершить ежедневные задания", "Завершить все задания", "Собрать награды",
     } or nil
 
 K = V and {
@@ -51,6 +52,7 @@ K = V and {
       "Unmoved cursor", "Unmoved cursor, or at ring center", "Update required", "Use default ring bindings", "Use first slice when opened", "Use global setting", "Use slice", "Use slice and close ring", "Visibility conditional:", "While a ring is open:",
       "World of Warcraft could not load OPie's saved variables due to a lack of memory. Try disabling other addons.", "You can cancel or revert to previous settings later.", "You may use extended conditionals; see %s for details.", "You must enable a %s interaction for this ring in OPie options to use quick actions.", "Your character currently cannot use this.", "default", "Adaptation", "Credits", "Donate", "You can support further development by visiting:",
       "%s — author of the original addon.", "%s — adaptation for World of Warcraft 3.3.5a.", "%s — optimization for Sirus.", "Highest ranks only", "World Markers",
+      "Battle Pass", "Open Battle Pass", "Open quests", "Complete daily quests", "Complete all quests", "Collect rewards",
 }
 
 local L = K and {}

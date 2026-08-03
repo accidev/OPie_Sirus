@@ -39,7 +39,13 @@ local function adjustIconAspect(d, aspect)
 end
 local CreateCooldown, CallCooldownUpdate do
 	local ninf = -math.huge
+	local SWIPE_FADE_IN = 0.25
 	local AROUND_LEFT, TAU = {x=0, y=0.5}, 2*math.pi
+	local supportsSpiralMask do
+		local f = CreateFrame("Frame")
+		supportsSpiralMask = not not (f.CreateMaskTexture and f:CreateTexture().AddMaskTexture)
+		f:Hide()
+	end
 	local sparkPos do
 		local CORNER_CUT = 3.5/62
 		local CORNER_A4MIN = math.atan2(0.5-CORNER_CUT, 0.5)
@@ -67,8 +73,29 @@ local CreateCooldown, CallCooldownUpdate do
 			return x+0.5, y+0.5
 		end
 	end
+	local function syncSwipe(d)
+		local es = d.parent:GetEffectiveScale()
+		if es and es > 0 and d.swipeScale ~= es then
+			d.swipeScale = es
+			d.swipe:SetScale(1/es)
+			d.swipe:SetSize(d.swipeSize*es, d.swipeSize*es)
+		end
+	end
 	local function cdOnUpdate(self, elapsed)
 		local d = getWidgetData(self, CooldownData)
+		if d.swipeFade then
+			local f = d.swipeFade + elapsed
+			if f < SWIPE_FADE_IN then
+				d.swipeFade = f
+				d.swipe:SetAlpha(d.swipeAlpha * f / SWIPE_FADE_IN)
+			else
+				d.swipeFade = nil
+				d.swipe:SetAlpha(d.swipeAlpha)
+			end
+		end
+		if d.swipe then
+			syncSwipe(d)
+		end
 		local ucd, expire, time = d.updateCooldown or 0, d.expire or ninf, GetTime()
 		if ucd > elapsed and time < expire then
 			d.updateCooldown = ucd - elapsed
@@ -81,25 +108,28 @@ local CreateCooldown, CallCooldownUpdate do
 			self:Hide()
 			return
 		end
-		local s0, s1 = d, d.sst1
 		progress = progress < 0 and 0 or (1 - progress/duration)
-		local pos = progress >= 0.5 and 2 or 1
-		for i=1, d.pos ~= pos and 2 or 0 do
-			local j = i+2
-			s0[i]:SetShown(i > pos)
-			s0[j]:SetShown(i > pos)
-			s1[i]:SetShown(i == pos)
-			s1[j]:SetShown(i == pos)
+		local s1 = d.sst1
+		if s1 then
+			local s0 = d
+			local pos = progress >= 0.5 and 2 or 1
+			for i=1, d.pos ~= pos and 2 or 0 do
+				local j = i+2
+				s0[i]:SetShown(i > pos)
+				s0[j]:SetShown(i > pos)
+				s1[i]:SetShown(i == pos)
+				s1[j]:SetShown(i == pos)
+			end
+			d.pos = pos
+			s1.mask:SetRotation((1-progress)*TAU, AROUND_LEFT)
 		end
-		d.pos = pos
-		s1.mask:SetRotation((1-progress)*TAU, AROUND_LEFT)
 
 		local sx, sy = sparkPos(progress)
 		d.spark:SetPoint("CENTER", self, "CENTER", 45*(sx-0.5), 45*(sy-0.5))
 	end
 	local function cdSetVeilShown(d, shown)
 		local s0, s1 = d, d.sst1
-		for i=3, 4 do
+		for i=3, s1 and 4 or 2 do
 			s0[i]:SetShown(shown)
 			s1[i]:SetShown(shown)
 		end
@@ -107,8 +137,9 @@ local CreateCooldown, CallCooldownUpdate do
 	local function cdOnHide(self)
 		local d = getWidgetData(self, CooldownData)
 		local toExpire = GetTime() - (d.expire or 0)
-		d.expire, d.pos = nil
+		d.expire, d.pos, d.swipeFade, d.swipeScale = nil
 		cdSetVeilShown(d, false)
+		if d.swipe then d.swipe:Hide() end
 		d.self:Hide()
 		d.spark:Hide()
 		if -0.1 < toExpire and toExpire < 0.25 then
@@ -119,6 +150,12 @@ local CreateCooldown, CallCooldownUpdate do
 		local d = getWidgetData(self, CooldownData)
 		cdSetVeilShown(d, true)
 		d.pos = nil -- Forces quad texture update
+		if d.swipe and d.expire and (d.duration or 0) > 0 then
+			syncSwipe(d)
+			d.swipe:SetCooldown(d.expire - d.duration, d.duration)
+			d.swipeFade = 0
+			d.swipe:SetAlpha(0)
+		end
 		return cdOnUpdate(self, 0)
 	end
 	function CallCooldownUpdate(d)
@@ -174,6 +211,15 @@ local CreateCooldown, CallCooldownUpdate do
 		cd:SetScript("OnShow", cdOnShow)
 		cd:SetScript("OnHide", cdOnHide)
 		cd:SetScript("OnUpdate", cdOnUpdate)
+		if not supportsSpiralMask then
+			w = CreateFrame("Cooldown", nil, parent, "CooldownFrameTemplate")
+			w:ClearAllPoints()
+			w:SetPoint("CENTER")
+			w:SetSize(size*60/64, size*60/64)
+			w:SetFrameLevel(parent:GetFrameLevel()+1)
+			w:Hide()
+			d.swipe, d.swipeAlpha, d.swipeSize = w, 1, size*60/64
+		end
 		w = (overParent or cd):CreateTexture(nil, "OVERLAY", nil, 2)
 		w:SetTexture(gx.CooldownSpark)
 		w:SetSize(24,24)
@@ -204,9 +250,10 @@ local CreateCooldown, CallCooldownUpdate do
 		b:SetDuration(1/8)
 		b:SetStartDelay(3/8)
 
-		createSpiralOverlay(cd, parent, d, gx.BorderLow, gx.White128, scale, false, iconmask)
-		local s1 = createSpiralOverlay(cd, parent, {}, gx.BorderLow, gx.White128, scale, true, iconmask)
-		d.sst1 = s1
+		if supportsSpiralMask then
+			createSpiralOverlay(cd, parent, d, gx.BorderLow, gx.White128, scale, false, iconmask)
+			d.sst1 = createSpiralOverlay(cd, parent, {}, gx.BorderLow, gx.White128, scale, true, iconmask)
+		end
 
 		return cd, d
 	end
@@ -274,7 +321,7 @@ function Indicator:SetDominantColor(r,g,b)
 	d.edge:SetVertexColor(darken(r,g,b, 0.80))
 	d.cdText:SetTextColor(r, g, b)
 	cdd.spark:SetVertexColor(r, g, b)
-	for i=1,2 do
+	for i=1, cdd[1] and 2 or 0 do
 		local j = i+2
 		cdd[i]:SetVertexColor(r2, g2, b2)
 		cdd[j]:SetVertexColor(r3, g3, b3)
@@ -320,22 +367,32 @@ function Indicator:SetCooldown(remain, duration, usableCharge)
 		local td, showSpark = expire - (cdd.expire or 0), usable and d.ustate == 0
 		if td < -0.05 or td > 0.05 then
 			cdd.duration, cdd.expire, cdd.updateCooldownStep, cdd.updateCooldown = duration, expire, duration/1536/d.self:GetEffectiveScale()
+			if cdd.swipe then
+				cdd.swipe:SetCooldown(expire - duration, duration)
+			end
 			cdd.spark:SetShown(showSpark)
 		end
 		if cdd.usable ~= usable then
 			cdd.usable = usable
 			local s0, s1 = cdd, cdd.sst1
-			for i=1,2 do
+			for i=1, s1 and 2 or 0 do
 				local j = 2+i
 				s0[i]:SetAlpha(usable and 0.45 or 1)
 				s0[j]:SetAlpha(usable and 0.25 or 0.85)
 				s1[i]:SetAlpha(usable and 0.45 or 1)
 				s1[j]:SetAlpha(usable and 0.25 or 0.85)
 			end
+			if cdd.swipe then
+				cdd.swipeAlpha = usable and 0.5 or 1
+				if not cdd.swipeFade then
+					cdd.swipe:SetAlpha(cdd.swipeAlpha)
+				end
+			end
 			cdd.spark:SetShown(showSpark)
 		end
-		local gcS, gcL = GetSpellCooldown(61304)
-		if (duration ~= gcL or gcS+gcL-now < remain) and d[usableCharge and "rcTextShown" or "cdTextShown"] then
+		local _, gcL = GetSpellCooldown(61304)
+		local isGCD = (gcL or 0) > 0 and duration <= gcL + 0.01
+		if not isGCD and d[usableCharge and "rcTextShown" or "cdTextShown"] then
 			d.cdText:SetFormattedText(cooldownFormat(remain))
 			d.cdText:SetAlpha(1)
 		else

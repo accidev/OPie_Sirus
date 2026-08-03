@@ -85,8 +85,9 @@ securecall(function() -- spell: spell ID + mount spell ID
 	local function isCurrentForm(q, qsid)
 		local id = GetShapeshiftForm()
 		if id == 0 then return end
-		local _, _, _, sid = GetShapeshiftFormInfo(id)
-		return q == sid or qsid == sid or q == GetSpellInfo(sid or 0) or (sid and q and ("" .. sid) == q)
+		local _, name = GetShapeshiftFormInfo(id)
+		if not name then return end
+		return q == name or (qsid and GetSpellInfo(qsid) == name) or false
 	end
 	local SetSpellBookItem, SetSpellByID, SetSpellByExactID do
 		local tr1 = {}
@@ -124,7 +125,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 		return tonumber(((GetSpellLink(n) or ""):match("spell:(%d+)")))
 	end
 	local iconOverrideHandlers = {} -- keyed by numeric msid OR lowercased spell name (string)
-	local sbslotCache = {} -- FindSpellBookSlotBySpellID result per spellID; stable per session
+	local sbslotCache = {} -- FindSpellBookSlotBySpellID result per spellID; wiped on SPELLS_CHANGED
 	local function spellHint(n, _modState, target)
 		if not n then return end
 		local sname, _, gicon = GetSpellInfo(n) -- gicon=pos3: icon fallback (Sirus custom spells)
@@ -170,7 +171,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 		return usable, state, ico or slotTex or GetSpellTexture(n) or gicon, sname, overCount, cdLeft, cdLength, sbslot and SetSpellBookItem or msid and SetSpellByID, sbslot or msid
 	end
 	function spellFeedback(sname, target, spellId)
-		spellMap[sname] = spellId or spellMap[sname] or getSpellIDFromName(sname)
+		spellMap[lowered[sname]] = spellId or spellMap[lowered[sname]] or getSpellIDFromName(sname)
 		return spellHint(sname, nil, target)
 	end
 	local function createSpell(id, flags)
@@ -256,6 +257,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 	AB:RegisterActionType("spell", createSpell, describeSpell, 2, true)
 	function EV.SPELLS_CHANGED()
 		wipe(spellMap)
+		wipe(sbslotCache)
 		AB:NotifyObservers("spell")
 	end
 	function AB.HUM:SetSpellIconOverride(id, f)
@@ -341,8 +343,7 @@ securecall(function() -- item: items ID/inventory slot
 		end
 		local nCharge = GetItemCount(ident, false, true) or 0
 		local usable = nCharge > 0 and (GetItemSpell(ident) == nil or IsUsableItem(ident))
-		local qual = 0
-		local state = (IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0) + qual
+		local state = (IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		usable = not not (usable and inRange and cdLeft == 0)
 		icon = icon or select(10, GetItemInfo(ident))
 		local oh = countOverrideHandlers[iid]
@@ -994,7 +995,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 	end
 	function toyHint(iid, _modState, target)
 		local state, count, hasUsableCharge, now = 0, 0, false, GetTime()
-		local _, name, icon = C_ToyBox.GetToyInfo(iid)
+		local _, _, name, icon = C_ToyBox.GetToyInfo(iid)
 		local cdLeft, cdLength, cdEnabled = toCooldown(now, GetItemCooldown(iid))
 		local ignUse, usable = IGNORE_TOY_USABILITY[iid]
 		local _, sid = GetItemSpell(iid)
@@ -1059,7 +1060,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 	end
 	local function describeToy(id)
 		if type(id) ~= "number" then return end
-		local ignUse, haveToy, _, name, tex = IGNORE_TOY_USABILITY[id], playerHasToy(id), C_ToyBox.GetToyInfo(id)
+		local ignUse, haveToy, _, _, name, tex = IGNORE_TOY_USABILITY[id], playerHasToy(id), C_ToyBox.GetToyInfo(id)
 		local canUse = haveToy and (type(ignUse) ~= "string" or KR:EvaluateCmdOptions(ignUse)) and (ignUse or C_ToyBox.IsToyUsable(id))
 		local actionFlags = haveToy and not canUse and 1 or nil
 		return L"Toy", name, tex or select(10, GetItemInfo(id)), nil, callMethod.SetItemByID, id, nil, actionFlags
@@ -1115,12 +1116,11 @@ securecall(function() -- disenchant: iid
 		local count = GetItemCount(ident, false, false, false)
 		local usable = IsSpellKnown(DISENCHANT_SID) and count > 0
 		local name = (GetItemInfo(ident))
-		local qual = 0
 		local state, cdUsable = 0, nil
 		local cdLeft, cdLength, cdEnabled = GetSpellCooldown(DISENCHANT_SID)
 		cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), cdLeft, cdLength, cdEnabled)
 		cdUsable = cdLeft == 0
-		state = state + qual + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
+		state = state + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		local disName = ICON_PREFIX .. (name or ("item:" .. ident))
 		return not not (usable and cdUsable), state, select(10, GetItemInfo(ident)), disName, count,
 			cdLeft or 0, cdLength or 0, disenchantTip, ident

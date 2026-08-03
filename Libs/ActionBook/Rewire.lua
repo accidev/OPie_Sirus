@@ -650,7 +650,8 @@ do -- core:setMute(mute)
 		local arm, disarm = mute and not muteArmed, muteCount == 0 and not mute
 		if arm then
 			oSFX, oES = GetCVar("Sound_EnableSFX"), GetCVar("Sound_EnableErrorSpeech")
-			oUEM = UIErrorsFrame:UnregisterEvent("UI_ERROR_MESSAGE")
+			UIErrorsFrame:UnregisterEvent("UI_ERROR_MESSAGE")
+			oUEM = true
 		elseif oUEM and disarm then
 			UIErrorsFrame:RegisterEvent("UI_ERROR_MESSAGE")
 		end

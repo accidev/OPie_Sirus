@@ -55,6 +55,25 @@ do -- config.ui
 			GameTooltip:Hide()
 		end
 	end
+	function config.ui.AttachThumbDrag(thumb, track, getValue, getMax, setValue)
+		local dragY0, dragS0
+		local function onUpdate(self)
+			local cy = select(2, GetCursorPosition()) / self:GetEffectiveScale()
+			local th, tmbH = track:GetHeight(), self:GetHeight()
+			if th > tmbH then
+				setValue(dragS0 + (dragY0 - cy) * getMax() / (th - tmbH))
+			end
+		end
+		thumb:SetScript("OnMouseDown", function(self, btn)
+			if btn ~= "LeftButton" then return end
+			dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
+			dragS0 = getValue()
+			self:SetScript("OnUpdate", onUpdate)
+		end)
+		thumb:SetScript("OnMouseUp", function(self)
+			self:SetScript("OnUpdate", nil)
+		end)
+	end
 	function config.ui.ShowControlTooltip(self)
 		local title, text = self.tooltipTitle, self.tooltipText
 		if not (title or text) then return end
@@ -239,7 +258,7 @@ do -- config.bind
 		end
 		pre3, bind = (bind or ""):match('^%s*(!*)%s*(%S.*)$')
 		bind = bind and KR:UnescapeCmdOptionsValue(bind):gsub("[^%-]+$", specialSymbolMap)
-		local bindText = bind and bind ~= "" and GetBindingText(bind)
+		local bindText = bind and bind ~= "" and GetBindingText(bind, "KEY_")
 		self.hasSetBinding = not not (hasBinding or bindText)
 		return self:SetText((pre or "") .. (pre2 or "") .. (pre3 or "") .. (bindText or L"Not bound") .. (post or ""))
 	end
@@ -248,7 +267,7 @@ do -- config.bind
 			alternateFrame:Hide()
 		else
 			alternateFrame.apiFrame, alternateFrame.owner = self:GetParent(), self
-			alternateFrame.caption:SetFormattedText(L"Press %s to save.", NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER") .. "|r")
+			alternateFrame.caption:SetFormattedText(L"Press %s to save.", NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER", "KEY_") .. "|r")
 			alternateFrame.input:SetText(bind or "")
 			alternateFrame:SetParent(self)
 			alternateFrame:SetFrameLevel(self:GetFrameLevel()+10)
@@ -279,7 +298,7 @@ do -- config.bind
 		end
 	end
 	function config.createBindingButton(parent, w)
-		local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+		local btn = TS:StyleButton(CreateFrame("Button", nil, parent, "UIPanelButtonTemplate"))
 		btn:SetSize(w or 120, 22)
 		btn:RegisterForClicks("AnyUp")
 		btn:SetScript("OnClick", OnClick)

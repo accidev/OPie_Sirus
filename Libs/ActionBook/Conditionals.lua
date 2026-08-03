@@ -78,8 +78,7 @@ securecall(function() -- form:token
 		local function syncForm()
 			local GetSpellName, s = GetSpellInfo, ""
 			for i=1,10 do
-				local _, _, _, fsid = GetShapeshiftFormInfo(i)
-				local name = fsid and GetSpellName(fsid)
+				local _, name = GetShapeshiftFormInfo(i)
 				s = ("%s[form:%d] %d%s;"):format(s, i,i, map[name] or "")
 			end
 			if curCnd ~= s then
@@ -242,7 +241,7 @@ securecall(function() -- combo:count
 	local power, powerMap = 4, {[265]=7, [267]=14, [258]=13, PALADIN=9, MONK=12}
 	local defaultPower = powerMap[playerClass] or 4
 	KR:SetNonSecureConditional("combo", function(_name, args)
-		local pow = UnitPower("player", power)
+		local pow = power == 4 and GetComboPoints("player", "target") or UnitPower("player", power)
 		return pow >= (tonumber(args) or 1)
 	end)
 	local function syncComboPower()
@@ -414,7 +413,7 @@ securecall(function() -- pet:stable id; havepet:stable id
 		end
 		for k in pairs(pt) do pt[k] = nil end
 		local o, hpo
-		for i=1,5 do
+		for i=1,NUM_PET_STABLE_SLOTS or 5 do
 			local _, n, _, r, spN, spID = GetStablePetInfo(i)
 			if n and r then
 				local stk = specTokenSuf[spID or spN]
@@ -462,7 +461,7 @@ securecall(function() -- imbuedmh, imbuedoh, imbuedrw
 		return not not GetWeaponEnchantInfo()
 	end)
 	KR:SetNonSecureConditional("imbuedoh", function()
-		return not not select(5, GetWeaponEnchantInfo())
+		return not not select(4, GetWeaponEnchantInfo())
 	end)
 	KR:SetStateConditionalValue("imbuedrw", false)
 end)

@@ -8,6 +8,23 @@ local function checkLDB()
 	LDB = LibStub and LibStub:GetLibrary("LibDataBroker-1.1", true)
 	LDB = LDB and LDB.DataObjectIterator and LDB or nil
 end
+local function registerSelf()
+	if not LDB.NewDataObject or LDB:GetDataObjectByName("OPie") then return end
+	LDB:NewDataObject("OPie", {
+		type = "launcher",
+		label = "OPie",
+		icon = "Interface\\Icons\\INV_Misc_Wrench_01",
+		OnClick = function(_, button)
+			if button ~= "RightButton" then
+				OPie_OpenSettings()
+			end
+		end,
+		OnTooltipShow = function(tip)
+			tip:AddLine("OPie")
+			tip:AddLine(L"Left click: Open settings", 1, 1, 1)
+		end,
+	})
+end
 
 do -- action handler
 	local nameMap = {}
@@ -58,10 +75,9 @@ do -- category
 	end
 	function EV.ADDON_LOADED()
 		if LDB or checkLDB() or LDB then
+			LDB.RegisterCallback("opie.databroker.launcher", "LibDataBroker_DataObjectCreated", onRegister)
+			registerSelf()
 			onRegister()
-			if waiting then
-				LDB.RegisterCallback("opie.databroker.launcher", "LibDataBroker_DataObjectCreated", onRegister)
-			end
 			return "remove"
 		end
 	end

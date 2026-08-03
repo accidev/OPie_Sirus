@@ -40,12 +40,7 @@ end
 local CreateCooldown, CallCooldownUpdate do
 	local ninf = -math.huge
 	local SWIPE_FADE_IN = 0.25
-	local AROUND_LEFT, TAU = {x=0, y=0.5}, 2*math.pi
-	local supportsSpiralMask do
-		local f = CreateFrame("Frame")
-		supportsSpiralMask = not not (f.CreateMaskTexture and f:CreateTexture().AddMaskTexture)
-		f:Hide()
-	end
+	local TAU = 2*math.pi
 	local sparkPos do
 		local CORNER_CUT = 3.5/62
 		local CORNER_A4MIN = math.atan2(0.5-CORNER_CUT, 0.5)
@@ -93,9 +88,7 @@ local CreateCooldown, CallCooldownUpdate do
 				d.swipe:SetAlpha(d.swipeAlpha)
 			end
 		end
-		if d.swipe then
-			syncSwipe(d)
-		end
+		syncSwipe(d)
 		local ucd, expire, time = d.updateCooldown or 0, d.expire or ninf, GetTime()
 		if ucd > elapsed and time < expire then
 			d.updateCooldown = ucd - elapsed
@@ -109,37 +102,16 @@ local CreateCooldown, CallCooldownUpdate do
 			return
 		end
 		progress = progress < 0 and 0 or (1 - progress/duration)
-		local s1 = d.sst1
-		if s1 then
-			local s0 = d
-			local pos = progress >= 0.5 and 2 or 1
-			for i=1, d.pos ~= pos and 2 or 0 do
-				local j = i+2
-				s0[i]:SetShown(i > pos)
-				s0[j]:SetShown(i > pos)
-				s1[i]:SetShown(i == pos)
-				s1[j]:SetShown(i == pos)
-			end
-			d.pos = pos
-			s1.mask:SetRotation((1-progress)*TAU, AROUND_LEFT)
-		end
-
-		local sx, sy = sparkPos(progress)
-		d.spark:SetPoint("CENTER", self, "CENTER", 45*(sx-0.5), 45*(sy-0.5))
-	end
-	local function cdSetVeilShown(d, shown)
-		local s0, s1 = d, d.sst1
-		for i=3, s1 and 4 or 2 do
-			s0[i]:SetShown(shown)
-			s1[i]:SetShown(shown)
+		if d.spark:IsShown() then
+			local sx, sy = sparkPos(progress)
+			d.spark:SetPoint("CENTER", self, "CENTER", 45*(sx-0.5), 45*(sy-0.5))
 		end
 	end
 	local function cdOnHide(self)
 		local d = getWidgetData(self, CooldownData)
 		local toExpire = GetTime() - (d.expire or 0)
-		d.expire, d.pos, d.swipeFade, d.swipeScale = nil
-		cdSetVeilShown(d, false)
-		if d.swipe then d.swipe:Hide() end
+		d.expire, d.swipeFade, d.swipeScale = nil
+		d.swipe:Hide()
 		d.self:Hide()
 		d.spark:Hide()
 		if -0.1 < toExpire and toExpire < 0.25 then
@@ -148,9 +120,7 @@ local CreateCooldown, CallCooldownUpdate do
 	end
 	local function cdOnShow(self)
 		local d = getWidgetData(self, CooldownData)
-		cdSetVeilShown(d, true)
-		d.pos = nil -- Forces quad texture update
-		if d.swipe and d.expire and (d.duration or 0) > 0 then
+		if d.expire and (d.duration or 0) > 0 then
 			syncSwipe(d)
 			d.swipe:SetCooldown(d.expire - d.duration, d.duration)
 			d.swipeFade = 0
@@ -166,60 +136,21 @@ local CreateCooldown, CallCooldownUpdate do
 			return cdOnUpdate(self, 0)
 		end
 	end
-	local function maybeAddMask(tex, mask)
-		return mask and tex.AddMaskTexture and tex:AddMaskTexture(mask)
-	end
-	local function createSpiralOverlay(cd, parent, d, borderTex, white128, scale, mask, iconmask)
-		local w, l
-		if mask then
-			if not parent.CreateMaskTexture then
-				parent.CreateMaskTexture = function(self, ...) return self:CreateTexture(nil, ...) end
-			end
-			w = parent:CreateMaskTexture()
-			w:SetTexture(white128, 'CLAMPTOBLACKADDITIVE', 'CLAMPTOBLACKADDITIVE', 'NEAREST')
-			w:SetSize(34*scale, 68*scale)
-			w:SetPoint("LEFT", parent, "CENTER")
-			if not w.AddMaskTexture then w:Hide() end
-			d.mask, mask = w, w
-		end
-		for i=1,2 do
-			w = cd:CreateTexture(nil, "ARTWORK", nil, 2)
-			l, d[i] = i == 2, w
-			w:SetTexture(borderTex)
-			w:SetSize(24, 48)
-			w:SetTexCoord(l and 0 or 0.5, l and 0.5 or 1, 0, 1)
-			w:SetPoint(l and "RIGHT" or "LEFT", cd, "CENTER")
-			maybeAddMask(w, mask)
-			w:Hide()
-			w = parent:CreateTexture(nil, "ARTWORK", nil, 4)
-			w:SetTexture(1,1,1)
-			if not w.AddMaskTexture then w:SetTexture(0,0,0,0) end
-			w:SetPoint(l and "RIGHT" or "LEFT", cd, "CENTER")
-			w:SetSize(21*scale, 42*scale)
-			maybeAddMask(w, mask)
-			maybeAddMask(w, iconmask)
-			w:Hide()
-			d[2+i] = w
-		end
-		return d
-	end
-	function CreateCooldown(parent, size, overParent, gx, pd, iconmask)
-		local cd, scale = CreateFrame("Frame", nil, parent), size * 87/4032
+	function CreateCooldown(parent, size, overParent, gx, pd)
+		local cd = CreateFrame("Frame", nil, parent)
 		local d, w, b = setWidgetData(cd, CooldownData, {self=cd, parent=parent, parentControl=pd})
 		cd:SetScale(size/48)
 		cd:SetAllPoints()
 		cd:SetScript("OnShow", cdOnShow)
 		cd:SetScript("OnHide", cdOnHide)
 		cd:SetScript("OnUpdate", cdOnUpdate)
-		if not supportsSpiralMask then
-			w = CreateFrame("Cooldown", nil, parent, "CooldownFrameTemplate")
-			w:ClearAllPoints()
-			w:SetPoint("CENTER")
-			w:SetSize(size*60/64, size*60/64)
-			w:SetFrameLevel(parent:GetFrameLevel()+1)
-			w:Hide()
-			d.swipe, d.swipeAlpha, d.swipeSize = w, 1, size*60/64
-		end
+		w = CreateFrame("Cooldown", nil, parent, "CooldownFrameTemplate")
+		w:ClearAllPoints()
+		w:SetPoint("CENTER")
+		w:SetSize(size*60/64, size*60/64)
+		w:SetFrameLevel(parent:GetFrameLevel()+1)
+		w:Hide()
+		d.swipe, d.swipeAlpha, d.swipeSize = w, 1, size*60/64
 		w = (overParent or cd):CreateTexture(nil, "OVERLAY", nil, 2)
 		w:SetTexture(gx.CooldownSpark)
 		w:SetSize(24,24)
@@ -249,11 +180,6 @@ local CreateCooldown, CallCooldownUpdate do
 		b:SetToAlpha(0)
 		b:SetDuration(1/8)
 		b:SetStartDelay(3/8)
-
-		if supportsSpiralMask then
-			createSpiralOverlay(cd, parent, d, gx.BorderLow, gx.White128, scale, false, iconmask)
-			d.sst1 = createSpiralOverlay(cd, parent, {}, gx.BorderLow, gx.White128, scale, true, iconmask)
-		end
 
 		return cd, d
 	end
@@ -311,9 +237,7 @@ function Indicator:SetDominantColor(r,g,b)
 	r, g, b = r or 1, g or 1, b or 0.6
 	if d.domR == r and d.domG == g and d.domB == b then return end
 	d.domR, d.domG, d.domB = r, g, b
-	local cdd, r2, g2, b2 = d.cdControl, darken(r,g,b, 0.20)
-	local r3, g3, b3 = darken(r,g,b, 0.10, 0.50)
-	local s1 = cdd.sst1
+	local cdd = d.cdControl
 	d.hiEdge:SetVertexColor(r, g, b)
 	d.iglow:SetVertexColor(r, g, b)
 	d.oglow:SetVertexColor(r, g, b)
@@ -321,15 +245,6 @@ function Indicator:SetDominantColor(r,g,b)
 	d.edge:SetVertexColor(darken(r,g,b, 0.80))
 	d.cdText:SetTextColor(r, g, b)
 	cdd.spark:SetVertexColor(r, g, b)
-	for i=1, cdd[1] and 2 or 0 do
-		local j = i+2
-		cdd[i]:SetVertexColor(r2, g2, b2)
-		cdd[j]:SetVertexColor(r3, g3, b3)
-		if s1 then
-			s1[i]:SetVertexColor(r2, g2, b2)
-			s1[j]:SetVertexColor(r3, g3, b3)
-		end
-	end
 end
 function Indicator:SetOverlayIcon(tex, w, h, ...)
 	local oi = getWidgetData(self, IndicatorData).overIcon
@@ -352,7 +267,7 @@ function Indicator:SetCount(count)
 	getWidgetData(self, IndicatorData).count:SetText(count or "")
 end
 function Indicator:SetBinding(binding)
-	binding = binding and GetBindingText(binding, 1) or ""
+	binding = binding and GetBindingText(binding, "KEY_", 1) or ""
 	getWidgetData(self, IndicatorData).key:SetText(binding)
 end
 function Indicator:SetCooldown(remain, duration, usableCharge)
@@ -367,26 +282,14 @@ function Indicator:SetCooldown(remain, duration, usableCharge)
 		local td, showSpark = expire - (cdd.expire or 0), usable and d.ustate == 0
 		if td < -0.05 or td > 0.05 then
 			cdd.duration, cdd.expire, cdd.updateCooldownStep, cdd.updateCooldown = duration, expire, duration/1536/d.self:GetEffectiveScale()
-			if cdd.swipe then
-				cdd.swipe:SetCooldown(expire - duration, duration)
-			end
+			cdd.swipe:SetCooldown(expire - duration, duration)
 			cdd.spark:SetShown(showSpark)
 		end
 		if cdd.usable ~= usable then
 			cdd.usable = usable
-			local s0, s1 = cdd, cdd.sst1
-			for i=1, s1 and 2 or 0 do
-				local j = 2+i
-				s0[i]:SetAlpha(usable and 0.45 or 1)
-				s0[j]:SetAlpha(usable and 0.25 or 0.85)
-				s1[i]:SetAlpha(usable and 0.45 or 1)
-				s1[j]:SetAlpha(usable and 0.25 or 0.85)
-			end
-			if cdd.swipe then
-				cdd.swipeAlpha = usable and 0.5 or 1
-				if not cdd.swipeFade then
-					cdd.swipe:SetAlpha(cdd.swipeAlpha)
-				end
+			cdd.swipeAlpha = usable and 0.5 or 1
+			if not cdd.swipeFade then
+				cdd.swipe:SetAlpha(cdd.swipeAlpha)
 			end
 			cdd.spark:SetShown(showSpark)
 		end
@@ -428,13 +331,6 @@ end
 function Indicator:SetShortLabel(text)
 	getWidgetData(self, IndicatorData).label:SetText(text)
 end
-function Indicator:SetQualityOverlay(_qualID, qualAtlas)
-	local s = getWidgetData(self, IndicatorData).qualityMark
-	if qualAtlas then
-		pcall(s.SetAtlas, s, qualAtlas)
-	end
-	s:SetShown(qualAtlas ~= nil)
-end
 function Indicator:SetCooldownDuration(duration)
 	return Indicator.SetCooldown(self, duration, duration)
 end
@@ -467,22 +363,10 @@ local function CreateIndicator(name, parent, size, nested, gx)
 		w:SetPoint("CENTER")
 		w:SetSize(60*size/64, 60*size/64)
 		w:SetTexture(0, 0, 0, 0)
-	if not ef.CreateMaskTexture then
-		ef.CreateMaskTexture = function(self, ...) return self:CreateTexture(nil, ...) end
-	end
-	w, d.iconbg = ef:CreateMaskTexture(), w
-		w:SetAllPoints()
-		if d.icon.AddMaskTexture then
-			w:SetTexture(gx.IconMask)
-			d.icon:AddMaskTexture(w)
-		else
-			w:SetTexture(0,0,0,0)
-		end
-		if d.iconbg.AddMaskTexture then d.iconbg:AddMaskTexture(w) end
-	w, d.iconmask = CreateFrame("Frame", nil, cf), w
+	w, d.iconbg = CreateFrame("Frame", nil, cf), w
 		w:SetAllPoints()
 		w:SetFrameLevel(ef:GetFrameLevel()+5)
-	d.cd, d.cdControl = CreateCooldown(ef, size, w, gx, d, d.iconmask)
+	d.cd, d.cdControl = CreateCooldown(ef, size, w, gx, d)
 	w = d.cd:CreateFontString(nil, "OVERLAY", "GameFontNormalLargeOutline")
 		w:SetPoint("CENTER")
 	w, d.cdText = ef:CreateTexture(nil, "ARTWORK", nil, 3), w
@@ -509,11 +393,7 @@ local function CreateIndicator(name, parent, size, nested, gx)
 		w:SetMaxLines(1)
 		w:SetPoint("BOTTOMLEFT", 3, 4)
 		w:SetPoint("BOTTOMRIGHT", d.count, "BOTTOMLEFT", 2, 0)
-	w, d.label = ef:CreateTexture(nil, "ARTWORK", nil, 3), w
-		w:SetPoint("TOPLEFT", 4, -4)
-		w:SetSize(14,14)
-		w:Hide()
-	d.qualityMark = w
+	d.label = w
 	return cf
 end
 

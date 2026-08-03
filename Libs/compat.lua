@@ -22,7 +22,6 @@ do
 				end
 			end
 		end
-		if not idx.GetAtlas               then idx.GetAtlas               = function() return nil end end
 		if not idx.SetTextureSliceMargins  then idx.SetTextureSliceMargins  = function() end end
 		if not idx.GetTextureSliceMargins  then idx.GetTextureSliceMargins  = function() return 0, 0, 0, 0 end end
 		if not idx.SetTexelSnappingBias    then idx.SetTexelSnappingBias    = function() end end

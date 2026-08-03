@@ -691,15 +691,11 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 		b.bg = sliceDetail.color.button:CreateTexture(nil, "BACKGROUND")
 		b.bg:SetSize(12, 12) b.bg:SetPoint("CENTER")
 		b.bg:SetTexture(1,1,1)
-		b.bg:SetSnapToPixelGrid(false)
-		b.bg:SetTexelSnappingBias(0)
 		b:SetNormalTexture("Interface/ChatFrame/ChatFrameColorSwatch")
 		b:SetScript("OnEnter", function(self) self.bg:SetVertexColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b) end)
 		b:SetScript("OnLeave", function(self) self.bg:SetVertexColor(1, 1, 1) end)
 		b:SetScript("OnShow", b:GetScript("OnLeave"))
 		local ctex = b:GetNormalTexture()
-		ctex:SetSnapToPixelGrid(false)
-		ctex:SetTexelSnappingBias(0)
 		local function update()
 			if not ColorPickerFrame:IsShown() or ColorPickerFrame.Footer and ColorPickerFrame.Footer.OkayButton:GetButtonState() == "PUSHED" then
 				api.setSliceProperty("color", ColorPickerFrame:GetColorRGB())
@@ -708,15 +704,8 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 		b:SetScript("OnClick", function()
 			local cp, r,g,b = ColorPickerFrame, ctex:GetVertexColor()
 			cp.previousValues, cp.hasOpacity, cp.func, cp.cancelFunc, cp.swatchFunc, cp.opacityFunc = true
-			if cp.SetColorRGB then
-				cp:SetColorRGB(r,g,b)
-				cp.func, cp.swatchFunc = update, update
-			else
-				cp.Content.ColorSwatchOriginal:SetTexture(r,g,b)
-				cp.Content.HexBox:OnColorSelect(r,g,b)
-				cp.Content.ColorPicker:SetColorRGB(r,g,b)
-				cp.swatchFunc = update
-			end
+			cp:SetColorRGB(r,g,b)
+			cp.func, cp.swatchFunc = update, update
 			cp:Show()
 		end)
 		local ceil = math.ceil
@@ -924,18 +913,7 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 			if catSyncFn then catSyncFn(nil, val) end
 			updateCatThumb()
 		end
-		local dragY0, dragS0
-		thumb:SetScript("OnMouseDown", function(self, btn)
-			if btn ~= "LeftButton" then return end
-			dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-			dragS0 = catSliderVal
-			self:SetScript("OnUpdate", function()
-				local cy = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-				local th, tmbH = s:GetHeight(), self:GetHeight()
-				if th > tmbH then catDoScroll(dragS0 + (dragY0 - cy) * catSliderMax / (th - tmbH)) end
-			end)
-		end)
-		thumb:SetScript("OnMouseUp", function(self) self:SetScript("OnUpdate", nil) end)
+		config.ui.AttachThumbDrag(thumb, s, function() return catSliderVal end, function() return catSliderMax end, catDoScroll)
 		s.GetValue = function() return catSliderVal end
 		s.SetValue = function(_, v) catDoScroll(v) end
 		s.SetMinMaxValues = function(_, mn, mx) catSliderMax = mx; catDoScroll(math.min(catSliderVal, mx)) end
@@ -1092,18 +1070,7 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 			if actSyncFn then actSyncFn() end
 			updateActThumb()
 		end
-		local dragY0, dragS0
-		thumb:SetScript("OnMouseDown", function(self, btn)
-			if btn ~= "LeftButton" then return end
-			dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-			dragS0 = actSliderVal
-			self:SetScript("OnUpdate", function()
-				local cy = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-				local th, tmbH = s:GetHeight(), self:GetHeight()
-				if th > tmbH then actDoScroll(dragS0 + (dragY0 - cy) * actSliderMax / (th - tmbH)) end
-			end)
-		end)
-		thumb:SetScript("OnMouseUp", function(self) self:SetScript("OnUpdate", nil) end)
+		config.ui.AttachThumbDrag(thumb, s, function() return actSliderVal end, function() return actSliderMax end, actDoScroll)
 		s.GetValue = function() return actSliderVal end
 		s.SetValue = function(_, v) actDoScroll(v) end
 		s.SetMinMaxValues = function(_, mn, mx) actSliderMax = mx; actDoScroll(math.min(actSliderVal, mx)) end

@@ -25,10 +25,15 @@ local getFreeBlock do
 		bb:SetTexture(0.3,0.3,0.3)
 		bb:SetPoint("BOTTOMLEFT", -4, -0.5)
 		bb:SetPoint("BOTTOMRIGHT", 0, -0.5)
-		local clipRoot = CreateFrame("Frame", nil, block)
+		local clipRoot = CreateFrame("ScrollFrame", nil, block)
 		clipRoot:SetAllPoints()
-		if clipRoot.SetClipsChildren then clipRoot:SetClipsChildren(true) end
-		local scrollOrigin = CreateFrame("Frame", nil, clipRoot)
+		local clipContent = CreateFrame("Frame", nil, clipRoot)
+		clipContent:SetSize(1, 16*(MAX_VISIBLE_ENTRIES+1))
+		clipRoot:SetScrollChild(clipContent)
+		clipRoot:SetScript("OnSizeChanged", function(self)
+			clipContent:SetWidth(self:GetWidth() or 1)
+		end)
+		local scrollOrigin = CreateFrame("Frame", nil, clipContent)
 		scrollOrigin:SetPoint("TOPLEFT")
 		scrollOrigin:SetPoint("TOPRIGHT")
 		scrollOrigin:SetHeight(1)
@@ -40,7 +45,7 @@ local getFreeBlock do
 		scrollBar:SetStepsPerPage(MAX_VISIBLE_ENTRIES-2)
 		local buttons = {}
 		for i=1,MAX_VISIBLE_ENTRIES+1 do
-			local b = CreateFrame("CheckButton", nil, clipRoot, nil, i)
+			local b = CreateFrame("CheckButton", nil, clipContent, nil, i)
 			b:SetSize(100, 16)
 			b:SetPoint("TOPLEFT", scrollOrigin, 0, 16-16*i)
 			b:SetPoint("TOPRIGHT", scrollOrigin, -16, 16-16*i)
@@ -66,7 +71,7 @@ local getFreeBlock do
 			n:SetPoint("LEFT", 3, 0)
 			buttons[i] = b
 		end
-		local d = {root=block, clip=clipRoot, origin=scrollOrigin, scrollBar=scrollBar, buttons=buttons, bottomTex=bb}
+		local d = {root=block, clip=clipRoot, scrollBar=scrollBar, buttons=buttons, bottomTex=bb}
 		setWidgetData(block, ScrollableBlockData, d)
 		return block
 	end
@@ -99,8 +104,7 @@ function int.SyncToBar(d, fullSync)
 	local position, isDone = scrollBar:GetValue(), scrollBar:IsValueAtRest()
 	positionArchive[dataList] = position
 	local oy, baseOffset = (position % 1)*16, math.floor(position)
-	d.origin:SetPoint("TOPLEFT", 0, oy)
-	d.origin:SetPoint("TOPRIGHT", 0, oy)
+	d.clip:SetVerticalScroll(oy)
 	for i=1,#buttons do
 		local w, eid = buttons[i], i+baseOffset
 		local ek = dataList[eid]

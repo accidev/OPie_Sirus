@@ -184,11 +184,13 @@ AB:RegisterActionType("opie.autoquest", createQI, describeQI, 1)
 
 local edFrame = CreateFrame("Frame") do
 	edFrame:Hide()
-	local clipRoot = CreateFrame("Frame", nil, edFrame)
-	if clipRoot.SetClipsChildren then clipRoot:SetClipsChildren(true) end
+	local clipRoot = CreateFrame("ScrollFrame", nil, edFrame)
 	clipRoot:SetPoint("TOPLEFT", 0, -2)
 	clipRoot:SetPoint("BOTTOMRIGHT", -20, 0)
-	local clipOrigin = CreateFrame("Frame", nil, clipRoot)
+	local clipContent = CreateFrame("Frame", nil, clipRoot)
+	clipContent:SetSize(1, 26)
+	clipRoot:SetScrollChild(clipContent)
+	local clipOrigin = CreateFrame("Frame", nil, clipContent)
 	clipOrigin:SetSize(0,1)
 	clipOrigin:SetPoint("TOPLEFT")
 	local bar = XU:Create("ScrollBar", nil, edFrame)
@@ -201,6 +203,7 @@ local edFrame = CreateFrame("Frame") do
 			clipOrigin:SetWidth(self:GetWidth() or clipOrigin:GetWidth() or 0)
 			visibleRange = (self:GetHeight()+2)/26
 			numRowsPV = 1 + math.ceil(visibleRange)
+			clipContent:SetSize(self:GetWidth() or 1, 26*numRowsPV)
 			bar:SetWindowRange(visibleRange)
 			bar:SetStepsPerPage(math.max(1,numRowsPV-5))
 			bar:SetMinMaxValues(0, controller:GetNumRows()-visibleRange)
@@ -221,7 +224,7 @@ local edFrame = CreateFrame("Frame") do
 	end
 
 	function controller:NewRow(idx)
-		local x, t = CreateFrame("Button", nil, clipRoot, nil, idx)
+		local x, t = CreateFrame("Button", nil, clipContent, nil, idx)
 		x:SetPoint("TOPLEFT", clipOrigin, 0, 26 - 26*idx)
 		x:SetPoint("TOPRIGHT", clipOrigin, 0, 26 - 26*idx)
 		x:SetHeight(24)
@@ -291,8 +294,7 @@ local edFrame = CreateFrame("Frame") do
 	controller.OnRowLeave = config.ui.HideTooltip
 	function controller:SetOffset(nv, _isInternal)
 		local fv = nv % 1
-		clipOrigin:SetPoint("TOPLEFT", 0, 26*fv)
-		clipOrigin:SetPoint("TOPRIGHT", 0, 26*fv)
+		clipRoot:SetVerticalScroll(26*fv)
 		local ofs, hadPendingGIIR = nv-fv, false
 		for i=1, numRowsPV do
 			local w = rows[i] or controller:NewRow(i)

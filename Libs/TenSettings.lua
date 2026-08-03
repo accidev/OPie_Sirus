@@ -500,7 +500,6 @@ do -- TenSettingsFrame
 	local function container_new(name, rootPanel, opts)
 		local cf = CreateFrame("Frame") do
 			cf:Hide()
-			if cf.SetClipsChildren then cf:SetClipsChildren(true) end
 			cf:SetScript("OnMouseWheel", noop)
 			local cn = container_notifications
 			cf.OnCommit, cf.OnDefault, cf.OnRefresh, cf.OnCancel = cn.okay, cn.default, cn.refresh, cn.cancel

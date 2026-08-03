@@ -26,6 +26,8 @@ local OPC_Options = {
 		{"bool", "ShowRecharge", caption=L"Show recharge numbers", depIndicatorFeature="CooldownNumbers"},
 		{"twof", "UseGameTooltip", caption=L"Show tooltips:"},
 		{"bool", "ShowShortLabels", caption=L"Show slice labels", depIndicatorFeature="ShortLabels"},
+		{"range", "IndicationOffsetX", -500, 500, 50, caption=L"Move rings right", valueFormat="%d"},
+		{"range", "IndicationOffsetY", -500, 500, 50, caption=L"Move rings down", valueFormat="%d"},
 	{ "section", caption=L"Animation"},
 		{"bool", "XTAnimation", caption=L"Animate transitions"},
 		{"bool", "MISpinOnHide", caption=L"Outward spiral on hide", depOn="XTAnimation", depValue=true, otherwise=false},
@@ -74,23 +76,7 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 			sbThumb:SetPoint("TOP", sbTrack, "TOP", 0, -val / scrollMax * math.max(0, th - tmbH))
 		end
 	end
-	local dragY0, dragS0
-	sbThumb:SetScript("OnMouseDown", function(self, btn)
-		if btn ~= "LeftButton" then return end
-		dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-		dragS0 = scrollOffset
-		self:SetScript("OnUpdate", function()
-			local cy = select(2, GetCursorPosition()) / self:GetEffectiveScale()
-			local th = sbTrack:GetHeight()
-			local tmbH = self:GetHeight()
-			if th > tmbH then
-				doScroll(dragS0 + (dragY0 - cy) * scrollMax / (th - tmbH))
-			end
-		end)
-	end)
-	sbThumb:SetScript("OnMouseUp", function(self)
-		self:SetScript("OnUpdate", nil)
-	end)
+	config.ui.AttachThumbDrag(sbThumb, sbTrack, function() return scrollOffset end, function() return scrollMax end, doScroll)
 	local function onWheel(_, delta)
 		doScroll(scrollOffset - delta * 30)
 	end
@@ -334,77 +320,6 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 	beam:SetScript("OnShow", OPC_UpdateViewport)
 end
 do -- customized widgets
-	local offsetPanel, offsetControl = CreateFrame("Frame", nil, frame, nil), {"panel", "IndicationOffset"} do
-		offsetPanel:Hide()
-		offsetPanel:SetSize(0, 78)
-		local function onOffsetValueChanged(self, nv)
-			return OPC_AlterOption(offsetControl, self:GetID() == 1 and "IndicationOffsetX" or "IndicationOffsetY", nv)
-		end
-		for i=1, 2 do
-			local t, s, leftMargin, _centerLine = nil, XU:Create("OPie:OptionsSlider", nil, offsetPanel)
-			s:SetID(i)
-			s:SetPoint("TOPLEFT", -leftMargin, 27-42*i)
-			s:SetPoint("TOPRIGHT", -5, 27-42*i)
-			t = s:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-			t:SetJustifyH("LEFT")
-			t:SetPoint("BOTTOMLEFT", s, "TOPLEFT", leftMargin, 3)
-			t:SetText(i == 1 and L"Move rings right" or L"Move rings down")
-			t:Show()
-			s:SetValueStep(50)
-			s:SetMinMaxValues(-500, 500)
-			if s.SetObeyStepOnDrag then s:SetObeyStepOnDrag(true) end
-			s:SetScript("OnValueChanged", onOffsetValueChanged)
-			s:SetRangeLabelText("", "")
-			offsetControl[2+i], offsetControl[4+i] = s, t
-		end
-		function offsetPanel:OnSetOwningButton()
-			getmetatable(self).__index.ClearAllPoints(self)
-			self:SetPoint("TOPRIGHT", self.owningButton)
-		end
-		function offsetPanel:GetPreferredEntryWidth()
-			return 200
-		end
-		function offsetPanel:ClearAllPoints()
-			-- called by UIDropDownMenu_CheckAddCustomFrame after OnSetOwningButton runs; keep our TOPRIGHT to size panel with button/dropdown
-		end
-		function offsetControl:refresh()
-			local ox = PC:GetOption("IndicationOffsetX", OR_CurrentOptionsDomain)
-			local oy = PC:GetOption("IndicationOffsetY", OR_CurrentOptionsDomain)
-			OPC_BlockInput = OPC_BlockInput or "IndicationOffset"
-			self[3]:SetValue(ox)
-			self[4]:SetValue(oy)
-			OPC_BlockInput = OPC_BlockInput ~= "IndicationOffset" and OPC_BlockInput or nil
-			self[5]:SetFormattedText("%s |cffffd500(%+d)|r", L"Move rings right", ox)
-			self[6]:SetFormattedText("%s |cffffd500(%+d)|r", L"Move rings down", oy)
-		end
-		if UIDropDownMenu_StopCounting then
-			local waitForLeave
-			local function waitForEnter(self)
-				if self:IsMouseOver() then
-					UIDropDownMenu_StopCounting(self:GetOwningDropdown())
-					self:SetScript("OnUpdate", waitForLeave)
-				end
-			end
-			function waitForLeave(self)
-				if not self:IsMouseOver() then
-					if DropDownList1:IsMouseOver() then
-						-- it's Someone Else's Problem now
-						self:SetScript("OnUpdate", nil)
-					else
-						UIDropDownMenu_StartCounting(self:GetOwningDropdown())
-						self:SetScript("OnUpdate", waitForEnter)
-					end
-				end
-			end
-			offsetPanel:SetScript("OnLeave", function(self) self:SetScript("OnUpdate", waitForLeave) end)
-			offsetPanel:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
-			offsetPanel:SetScript("OnEnter", function(self)
-				UIDropDownMenu_StopCounting(self:GetOwningDropdown())
-				self:SetScript("OnUpdate", nil)
-			end)
-		end
-		offsetControl.widget, optionControl[offsetControl[2]], widgetControl[offsetPanel] = offsetPanel, offsetControl, offsetControl
-	end
 	local function onMenuOptionToggle(_, option, owner, checked)
 		-- checked comes pre-toggled iff keepShownOnClick
 		OPC_AlterOption(widgetControl[owner], option, (not checked) == (not DropDownList1:IsShown()))
@@ -425,7 +340,7 @@ do -- customized widgets
 		OPC_IsViewDirty = true
 	end
 	local function onPrimaryPressReopenClick(_, pref, owner)
-		pref = pref == "Refresh" and 0 or pref == "Rehome" and 1 or pref == "Close" and 2 or nil
+		pref = pref == "Refresh" and 0 or pref == "Close" and 2 or nil
 		if pref then
 			OPC_AlterOption(widgetControl[owner], "ReOpenAction", pref)
 		end
@@ -447,8 +362,6 @@ do -- customized widgets
 		UIDropDownMenu_AddButton(info)
 		info.text, info.arg1, info.checked = L"Close ring", "Close", reOpen == 2
 		UIDropDownMenu_AddButton(info)
-
-		offsetControl:refresh()
 	end
 	function optionControl.OnPrimaryPress:refresh()
 		local atMouse = PC:GetOption("RingAtMouse", OR_CurrentOptionsDomain)

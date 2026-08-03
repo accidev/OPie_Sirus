@@ -74,7 +74,6 @@ local function prepArrowTexture(p, m, f)
 end
 local function nop() end
 local nopTex = {SetWidth=nop, Hide=nop}
-local HAS_CLASSIC_DROPDOWN_ATLAS = C_Texture and C_Texture.GetAtlasElementID and (C_Texture.GetAtlasElementID("common-dropdown-classic-textholder") or 0) ~= 0
 local function CreateDropDown(name, parent, outerTemplate, id)
 	local f, d, t = CreateFrame("Button", name, parent, outerTemplate, id)
 	f:SetSize(120, 32)
@@ -89,31 +88,23 @@ local function CreateDropDown(name, parent, outerTemplate, id)
 	prepArrowTexture(f, "DisabledTexture", [[Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled]])
 	prepArrowTexture(f, "HighlightTexture", [[Interface\Buttons\UI-Common-MouseHilight]]):SetBlendMode("ADD")
 	f:SetScript("OnClick", internal.OnDropArrowClick)
-	if HAS_CLASSIC_DROPDOWN_ATLAS then
-		t = f:CreateTexture(nil, "BACKGROUND")
-		t:SetAtlas("common-dropdown-classic-textholder")
-		t:SetTextureSliceMargins(26, 26, 26, 26)
-		t:SetPoint("TOPLEFT", 9, 6)
-		t:SetPoint("BOTTOMRIGHT", -9, -2.5)
-	else
-		t = f:CreateTexture(nil, "BACKGROUND", nil, -3)
-		t:SetTexture(0.115, 0.125, 0.145, 1)
-		t:SetPoint("TOPLEFT", 8, -1)
-		t:SetPoint("BOTTOMRIGHT", -8, 7)
-		for i=1,4 do
-			local e = f:CreateTexture(nil, "BACKGROUND", nil, -2)
-			e:SetTexture(0.21, 0.23, 0.27, 1)
-			if i < 3 then
-				e:SetHeight(1)
-				e:SetPoint("LEFT", t, "LEFT")
-				e:SetPoint("RIGHT", t, "RIGHT")
-				e:SetPoint(i == 1 and "TOP" or "BOTTOM", t, i == 1 and "TOP" or "BOTTOM")
-			else
-				e:SetWidth(1)
-				e:SetPoint("TOP", t, "TOP")
-				e:SetPoint("BOTTOM", t, "BOTTOM")
-				e:SetPoint(i == 3 and "LEFT" or "RIGHT", t, i == 3 and "LEFT" or "RIGHT")
-			end
+	t = f:CreateTexture(nil, "BACKGROUND", nil, -3)
+	t:SetTexture(0.115, 0.125, 0.145, 1)
+	t:SetPoint("TOPLEFT", 8, -1)
+	t:SetPoint("BOTTOMRIGHT", -8, 7)
+	for i=1,4 do
+		local e = f:CreateTexture(nil, "BACKGROUND", nil, -2)
+		e:SetTexture(0.21, 0.23, 0.27, 1)
+		if i < 3 then
+			e:SetHeight(1)
+			e:SetPoint("LEFT", t, "LEFT")
+			e:SetPoint("RIGHT", t, "RIGHT")
+			e:SetPoint(i == 1 and "TOP" or "BOTTOM", t, i == 1 and "TOP" or "BOTTOM")
+		else
+			e:SetWidth(1)
+			e:SetPoint("TOP", t, "TOP")
+			e:SetPoint("BOTTOM", t, "BOTTOM")
+			e:SetPoint(i == 3 and "LEFT" or "RIGHT", t, i == 3 and "LEFT" or "RIGHT")
 		end
 	end
 	d = newWidgetData(f, DropDownData, DropDownProps)

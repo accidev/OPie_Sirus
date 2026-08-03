@@ -4,12 +4,11 @@ local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, Cal
 
 local HOLD_HOVER_HINT_DURATION, ICON_FILE_NAMES, LookupIconName = 0.2, nil
 local resolveTexturePath do
-	local host
+	local probe
 	function resolveTexturePath(path)
-		host = host or CreateFrame("Frame")
-		local t = host:CreateTexture()
-		t:SetTexture(path)
-		return t:GetTexture() == path and path or nil
+		probe = probe or CreateFrame("Frame"):CreateTexture()
+		probe:SetTexture(path)
+		return probe:GetTexture() == path and path or nil
 	end
 end
 local IconSelector, IconSelectorData, internal = {}, {}, {}
@@ -292,7 +291,6 @@ local function CreateIconSelector(name, parent, outerTemplate, id)
 	t = CreateFrame("Frame", nil, f)
 	t:SetPoint("TOPLEFT", 12, -32)
 	t:SetPoint("BOTTOMRIGHT", -31, 12)
-	if t.SetClipsChildren then t:SetClipsChildren(true) end
 	t:SetScript("OnHide", internal.OnHide)
 	t:SetScript("OnShow", internal.OnShow)
 	setWidgetData(t, IconSelectorData, d)

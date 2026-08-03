@@ -22,25 +22,14 @@ function LineInput:SetStyle(style)
 	local common, l, r, m = style == "common", d.l, d.r, d.m
 	m:SetPoint("LEFT", l, "RIGHT")
 	m:SetPoint("RIGHT", r, "LEFT")
-	if style == "search" then
-		l:SetSize(8, 20)
-		r:SetSize(8, 20)
-		m:SetSize(10, 20)
-		l:SetPoint("LEFT", -5, 0)
-		r:SetPoint("RIGHT", 0)
-		pcall(l.SetAtlas, l, "common-search-border-left")
-		pcall(r.SetAtlas, r, "common-search-border-right")
-		pcall(m.SetAtlas, m, "common-search-border-middle")
-	else
-		l:SetSize(common and 8 or 32, common and 20 or 32)
-		l:SetPoint("LEFT", common and -5 or -10, 0)
-		l:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Left2")
-		r:SetSize(common and 8 or 32, common and 20 or 32)
-		r:SetPoint("RIGHT", common and 0 or 10, 0)
-		r:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Right2")
-		m:SetHeight(common and 20 or 32)
-		m:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Mid2", "MIRROR")
-	end
+	l:SetSize(common and 8 or 32, common and 20 or 32)
+	l:SetPoint("LEFT", common and -5 or -10, 0)
+	l:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Left2")
+	r:SetSize(common and 8 or 32, common and 20 or 32)
+	r:SetPoint("RIGHT", common and 0 or 10, 0)
+	r:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Right2")
+	m:SetHeight(common and 20 or 32)
+	m:SetTexture(common and "Interface\\Common\\Common-Input-Border" or "Interface\\ChatFrame\\UI-ChatInputBorder-Mid2", "MIRROR")
 	if common then
 		l:SetTexCoord(0,1/16, 0,5/8)
 		r:SetTexCoord(15/16,1, 0,5/8)
@@ -50,7 +39,7 @@ function LineInput:SetStyle(style)
 		r:SetTexCoord(0,1, 0,1)
 		m:SetTexCoord(0,1, 0,1)
 	end
-	m:SetHorizTile(not common and style ~= "search")
+	m:SetHorizTile(not common)
 	d.style = style
 	LineInput.SetTextInsets(self, d.tipL, d.tipR, d.tipT, d.tipB)
 end

@@ -55,6 +55,25 @@ do -- config.ui
 			GameTooltip:Hide()
 		end
 	end
+	function config.ui.AttachThumbDrag(thumb, track, getValue, getMax, setValue)
+		local dragY0, dragS0
+		local function onUpdate(self)
+			local cy = select(2, GetCursorPosition()) / self:GetEffectiveScale()
+			local th, tmbH = track:GetHeight(), self:GetHeight()
+			if th > tmbH then
+				setValue(dragS0 + (dragY0 - cy) * getMax() / (th - tmbH))
+			end
+		end
+		thumb:SetScript("OnMouseDown", function(self, btn)
+			if btn ~= "LeftButton" then return end
+			dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
+			dragS0 = getValue()
+			self:SetScript("OnUpdate", onUpdate)
+		end)
+		thumb:SetScript("OnMouseUp", function(self)
+			self:SetScript("OnUpdate", nil)
+		end)
+	end
 	function config.ui.ShowControlTooltip(self)
 		local title, text = self.tooltipTitle, self.tooltipText
 		if not (title or text) then return end

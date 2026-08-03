@@ -27,7 +27,7 @@ local L do
 	L, getmetatable(T.L).__call = T.L, function(_,k,t) return TL[k] or t or k end
 end
 if T.PKT ~= 1645127413 then
-	return C_Timer.After(1, function()
+	return EV.After(1, function()
 		print("|cffe82020" .. L"Restart World of Warcraft. If this message continues to appear, delete and re-install OPie.")
 	end)
 end

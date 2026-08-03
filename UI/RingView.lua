@@ -19,14 +19,6 @@ local MIN_ANIMATION_FPS, LOCKED_FRAMERATE = 20, 60 do
 	end
 	EV.After(0, unlockTick)
 end
-local PROF_QUALITY_ATLAS = {} do
-	for i=1,5 do
-		PROF_QUALITY_ATLAS[i] = "Professions-Icon-Quality-Tier" .. i .. "-Small"
-	end
-	PROF_QUALITY_ATLAS[6] = "Professions-ChatIcon-Quality-12-Tier1"
-	PROF_QUALITY_ATLAS[7] = "Professions-ChatIcon-Quality-12-Tier2"
-end
-
 local Slices, GhostIndication, IndicatorFactories = {}, {}, {}
 local ActiveIndicatorFactory, LastRegisteredIndicatorFactory
 
@@ -50,8 +42,6 @@ local CreateQuadTexture do
 			tex:SetSize(size,size)
 			tex:SetTexture(file)
 			tex:SetTexCoord(l and 0 or 1, l and 1 or 0, d and 1 or 0, d and 0 or 1)
-			tex:SetTexelSnappingBias(0)
-			tex:SetSnapToPixelGrid(false)
 			tex:SetPoint(quadPoints[i], parent or qparent[i], parent and "CENTER" or quadPoints[i])
 			group[i] = tex
 		end
@@ -70,8 +60,6 @@ local CreateIndicator do
 			Ribbon = b .. "ribbon",
 			CooldownStar = [[Interface\cooldown\star4]],
 			CooldownSpark = b .. "spark",
-			IconMask = b .. "iconmask",
-			White128 = b .. "white128",
 		}
 	end
 	function CreateIndicator(name, parent, size, nested)
@@ -292,7 +280,6 @@ local SwitchIndicatorFactory, ValidateIndicator do
 		SetCooldown=0, SetCooldownTextShown="supportsCooldownNumbers", SetShortLabel="supportsShortLabels",
 		SetCooldownDuration=nil, SetCooldownPH="supportsCooldownPH",
 		SetEquipState=0, SetHighlighted=0, SetActive=0, SetOuterGlow=0,
-		SetQualityOverlay=2,
 	}
 	local SkipMethodOption = {
 		SetCooldownDuration="supportsCooldownPH",
@@ -354,11 +341,6 @@ local SwitchIndicatorFactory, ValidateIndicator do
 end
 
 local tokenR, tokenG, tokenB, tokenIcon, tokenLabel, iconIsAtlas, tokenQuest = {}, {}, {}, {}, {}, {}, {}
-local qualMap, qualMod, qualModLow = {}, 131072, 16384 do
-	for v=qualModLow, qualMod-1, qualModLow do
-		qualMap[v] = v/qualModLow
-	end
-end
 local atlasRatio = setmetatable({}, {__index=function(t,k)
 	local i, r = k and C_Texture and C_Texture.GetAtlasInfo and C_Texture.GetAtlasInfo(k), 1
 	if i then
@@ -528,10 +510,9 @@ local function updateSlice(self, originAngle, selected, tok, usable, state, icon
 	local isDisenchanting = state % 262144 >= 131072
 	local isPartiallyHinted = state % 1048576 >= 524288
 	local cdHintID, holdCount = isPartiallyHinted and cd == nil and cd2, isPartiallyHinted and state % 2097152 >= 1048576
-	local onCooldown, noMana, noRange, qual = cd and cd > 0, state % 16 >= 8, state % 32 >= 16, state % qualMod
+	local onCooldown, noMana, noRange = cd and cd > 0, state % 16 >= 8, state % 32 >= 16
 	local usableCharge = usable or isRecharge
 	cd2 = cd and cd2 or nil
-	qual = qual >= qualModLow and qualMap[qual - qual % qualModLow] or 0
 	self[isAtlasIcon and "SetIconAtlas" or "SetIcon"](self, icon, isAtlasIcon and atlasRatio[icon] or 1)
 	if ext then securecall(applyExtIconCoord, self, ext) end
 	if not (ext and securecall(applyExtIconVertexColor, self, ext)) then
@@ -561,7 +542,6 @@ local function updateSlice(self, originAngle, selected, tok, usable, state, icon
 	if ActiveIndicatorFactory.supportsShortLabels then
 		self:SetShortLabel(configCache.ShowShortLabels and (tokenLabel[tok] or stext) or "")
 	end
-	self:SetQualityOverlay(qual, PROF_QUALITY_ATLAS[qual])
 	local hideCount = configCache.ShowOneCount and 0 or 1
 	local showCount = (count or 0) > hideCount
 	self:SetCount(showCount and count, holdCount)
@@ -576,8 +556,6 @@ local function updateSlice(self, originAngle, selected, tok, usable, state, icon
 		else
 			self:SetCooldown(0, 0, usableCharge)
 		end
-	else
-		
 	end
 	self:SetEquipState(isInContainer, isInInventory)
 	self:SetActive(active)

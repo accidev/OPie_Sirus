@@ -341,8 +341,7 @@ securecall(function() -- item: items ID/inventory slot
 		end
 		local nCharge = GetItemCount(ident, false, true) or 0
 		local usable = nCharge > 0 and (GetItemSpell(ident) == nil or IsUsableItem(ident))
-		local qual = 0
-		local state = (IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0) + qual
+		local state = (IsCurrentItem(ident) and 1 or 0) + (inRange and 0 or 16) + (slot and IsEquippableItem(ident) and (bag and (purpose == "equip" and 128 or 0) or (slot and 256 or 0)) or 0) + (hasRange and 512 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		usable = not not (usable and inRange and cdLeft == 0)
 		icon = icon or select(10, GetItemInfo(ident))
 		local oh = countOverrideHandlers[iid]
@@ -1115,12 +1114,11 @@ securecall(function() -- disenchant: iid
 		local count = GetItemCount(ident, false, false, false)
 		local usable = IsSpellKnown(DISENCHANT_SID) and count > 0
 		local name = (GetItemInfo(ident))
-		local qual = 0
 		local state, cdUsable = 0, nil
 		local cdLeft, cdLength, cdEnabled = GetSpellCooldown(DISENCHANT_SID)
 		cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), cdLeft, cdLength, cdEnabled)
 		cdUsable = cdLeft == 0
-		state = state + qual + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
+		state = state + 131072 + (IsCurrentItem(ident) and 1 or 0) + (usable and 0 or 1024) + (cdEnabled == 0 and 2048 or 0)
 		local disName = ICON_PREFIX .. (name or ("item:" .. ident))
 		return not not (usable and cdUsable), state, select(10, GetItemInfo(ident)), disName, count,
 			cdLeft or 0, cdLength or 0, disenchantTip, ident

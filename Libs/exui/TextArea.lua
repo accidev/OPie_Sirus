@@ -122,14 +122,6 @@ function int.adjustSpacing(d, force)
 		d.proto.super2.SetSpacing(d.editBox, correctedSpacing > 0 and correctedSpacing or 0)
 		d.cachedLineHeight, d.cachedScreenHeight = fsLineHeight, screenLocalHeight
 		d.cachedCursorH, d.cachedCursorW = pixSpacedLineHeight, mceil(2/pixel)*pixel
-		local p2 = mceil(1/pixel) * pixel
-		-- WotLK: SetVertexOffset не существует (Cata+); курсор без пиксель-перфект сдвига
-		if ct.SetVertexOffset then
-			ct:SetVertexOffset(1, -pixel, -p2)
-			ct:SetVertexOffset(3, -pixel, -p2)
-			ct:SetVertexOffset(2, -pixel, p2)
-			ct:SetVertexOffset(4, -pixel, p2)
-		end
 	end
 	ct:SetSize(d.cachedCursorW, d.cachedCursorH)
 end
@@ -174,7 +166,8 @@ function int:OnSizeChanged()
 		d.editBox:SetWidth(cw)
 	end
 	if d.holdScroll then return end
-	local sb, ch, th = d.scrollBar, d.clipArea:GetHeight(), d.editBox:GetHeight() + (d.editBox:GetText():sub(-1) == "\n" and (d.cachedCursorH or 13) or 0)
+	local sb, ch = d.scrollBar, d.clipArea:GetHeight()
+	local th = d.editBox:GetHeight() + (d.editBox:GetText():sub(-1) == "\n" and (d.cachedCursorH or 13) or 0)
 	sb:SetMinMaxValues(0, th > ch and th-ch or 0)
 	sb:SetWindowRange(ch)
 	sb:SetStepsPerPage(math.min(5,math.ceil(ch/18)))
@@ -187,7 +180,6 @@ end
 
 local function CreateTextArea(name, parent, outerTemplate, id)
 	local area, d = CreateFrame("Frame", name, parent, outerTemplate, id)
-	if area.SetHyperlinksEnabled then area:SetHyperlinksEnabled(true) end
 	local sb = XU:Create("ScrollBar", nil, area)
 	sb:SetPoint("TOPRIGHT")
 	sb:SetPoint("BOTTOMRIGHT")
@@ -199,7 +191,6 @@ local function CreateTextArea(name, parent, outerTemplate, id)
 	ec:SetPoint("BOTTOMRIGHT", sb, "BOTTOMLEFT")
 	ec:SetScript("OnSizeChanged", int.OnSizeChanged)
 	ec:EnableMouse(1)
-	if ec.SetHyperlinkPropagateToParent then ec:SetHyperlinkPropagateToParent(true) end
 	ec:SetScript("OnMouseDown", int.OnClick)
 	local input = CreateFrame("EditBox", type(name) == "string" and name .. "EB" or nil, ec)
 	input:SetSize(1, 1)

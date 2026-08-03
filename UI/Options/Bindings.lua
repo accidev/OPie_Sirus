@@ -9,15 +9,16 @@ local OBC_Profile = XU:Create("DropDown", nil, frame)
 local bindSet = XU:Create("DropDown", nil, frame)
 	bindSet:SetPoint("LEFT", OBC_Profile, "RIGHT", 44, 0)
 	bindSet:SetWidth(300)
-local bindLines, bindLines2, bindZone, bindZoneOrigin = {}, {}, CreateFrame("Frame", nil, frame) do
-	if bindZone.SetClipsChildren then bindZone:SetClipsChildren(true) end
-	bindZone:SetHitRectInsets(0, -22, 0, 0)
+local bindLines, bindLines2, bindClip, bindZone, bindZoneOrigin = {}, {}, CreateFrame("ScrollFrame", nil, frame) do
+	bindClip:SetHitRectInsets(0, -22, 0, 0)
+	bindZone = CreateFrame("Frame", nil, bindClip)
+	bindClip:SetScrollChild(bindZone)
 	bindZoneOrigin = CreateFrame("Frame", nil, bindZone)
 	bindZoneOrigin:SetHeight(1)
 	bindZoneOrigin:SetPoint("TOPLEFT")
 	bindZoneOrigin:SetPoint("TOPRIGHT")
 	bindZoneOrigin:Hide()
-	bindZone.clipContainer, bindZone.bindingContainerFrame = bindZone, frame
+	bindZone.clipContainer, bindZone.bindingContainerFrame = bindClip, frame
 	for i=1,19 do
 		local bind = config.createBindingButton(bindZone, 170)
 		bind:SetPoint("TOPLEFT", bindZoneOrigin, "TOPLEFT", 220, 22-24*i)
@@ -34,18 +35,22 @@ local bindLines, bindLines2, bindZone, bindZoneOrigin = {}, {}, CreateFrame("Fra
 		bind.warn:SetPoint("RIGHT", bind, "LEFT", -3, 0)
 		bindLines[i], bind.label, bindLines2[i] = bind, label, bind2
 	end
-	bindZone:SetPoint("TOP", OBC_Profile, "BOTTOM", 0, -4)
-	bindZone:SetPoint("LEFT", 15, 0)
-	bindZone:SetPoint("RIGHT", -30, 0)
-	bindZone:SetHeight((#bindLines-1)*24+3)
+	bindClip:SetPoint("TOP", OBC_Profile, "BOTTOM", 0, -4)
+	bindClip:SetPoint("LEFT", 15, 0)
+	bindClip:SetPoint("RIGHT", -30, 0)
+	bindClip:SetHeight((#bindLines-1)*24+3)
+	bindZone:SetSize(1, #bindLines*24+3)
+	bindClip:SetScript("OnSizeChanged", function(self)
+		bindZone:SetWidth(self:GetWidth() or 1)
+	end)
 end
 local bindZoneBar = XU:Create("ScrollBar", nil, frame)
-	bindZoneBar:SetPoint("TOPLEFT", bindZone, "TOPRIGHT", 1, 14)
-	bindZoneBar:SetPoint("BOTTOMLEFT", bindZone, "BOTTOMRIGHT", 1, -10)
+	bindZoneBar:SetPoint("TOPLEFT", bindClip, "TOPRIGHT", 1, 14)
+	bindZoneBar:SetPoint("BOTTOMLEFT", bindClip, "BOTTOMRIGHT", 1, -10)
 	bindZoneBar:SetWindowRange(#bindLines-1)
 	bindZoneBar:SetStepsPerPage(#bindLines-5, 6)
-	bindZoneBar:SetCoverTarget(bindZone)
-	bindZoneBar:SetWheelScrollTarget(bindZone)
+	bindZoneBar:SetCoverTarget(bindClip)
+	bindZoneBar:SetWheelScrollTarget(bindClip)
 
 local ringBindings = {map={}, name=L"Ring Bindings"}
 function ringBindings:refresh()
@@ -258,7 +263,7 @@ local function updatePanelContent()
 	local csv = bindZoneBar:GetValue()
 	local csPartial = csv % 1
 	local csBase = csv - csPartial
-	bindZoneOrigin:SetPoint("TOPLEFT", 0, csPartial*24)
+	bindClip:SetVerticalScroll(csPartial*24)
 	for i=1,#bindLines do
 		local j, e, e2 = csBase+i, bindLines[i], bindLines2[i]
 		if j > m then

@@ -258,7 +258,7 @@ do -- config.bind
 		end
 		pre3, bind = (bind or ""):match('^%s*(!*)%s*(%S.*)$')
 		bind = bind and KR:UnescapeCmdOptionsValue(bind):gsub("[^%-]+$", specialSymbolMap)
-		local bindText = bind and bind ~= "" and GetBindingText(bind)
+		local bindText = bind and bind ~= "" and GetBindingText(bind, "KEY_")
 		self.hasSetBinding = not not (hasBinding or bindText)
 		return self:SetText((pre or "") .. (pre2 or "") .. (pre3 or "") .. (bindText or L"Not bound") .. (post or ""))
 	end
@@ -267,7 +267,7 @@ do -- config.bind
 			alternateFrame:Hide()
 		else
 			alternateFrame.apiFrame, alternateFrame.owner = self:GetParent(), self
-			alternateFrame.caption:SetFormattedText(L"Press %s to save.", NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER") .. "|r")
+			alternateFrame.caption:SetFormattedText(L"Press %s to save.", NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER", "KEY_") .. "|r")
 			alternateFrame.input:SetText(bind or "")
 			alternateFrame:SetParent(self)
 			alternateFrame:SetFrameLevel(self:GetFrameLevel()+10)

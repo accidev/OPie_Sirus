@@ -598,7 +598,7 @@ do -- Editor UI
 	end)
 	eb:SetScript("OnTabPressed", function(self)
 		local p = self:GetParent()
-		if p and type(p.OnTabPressed) then
+		if p and type(p.OnTabPressed) == "function" then
 			p:OnTabPressed()
 		end
 	end)

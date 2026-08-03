@@ -89,7 +89,7 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 	re.paNextID, re.paSlot, re.paLock, re.paCount = 36000, newtable, newtable, 0
 	re.cndLockNext, re.cndLockMap, re.cndLockRes, re.cndLockCount = 36000, newtable, newtable, 0
 	re.pendingNotify, re.nextNotifyId = newtable, 45000
-	re.SH, re.KR = sabtHost, ext.Kindred:compatible(1,0):seclib()
+	re.SH, re.KR, re.sabtHost = sabtHost, ext.Kindred:compatible(1,0):seclib(), sabtHost
 	core:SetAttribute("execID", 1e3)
 	local function uniqueName(s)
 		local bni, bn = 1 repeat
@@ -860,7 +860,7 @@ function AB:NotifyObservers(ident, data)
 	assert(type(ident) == "string", 'Syntax: ActionBook:NotifyObservers("identifier"[, data])')
 	assert(actionCreators[ident] or observers[ident] ~= nil, "Identifier %q is not registered", ident)
 	notifyCount = (notifyCount + 1) % 4503599627370495
-	for i=ident == "*" or not observers[ident] and 1 or 2, 1, -1 do
+	for i=(ident == "*" or not observers[ident]) and 1 or 2, 1, -1 do
 		for k,v in pairs(observers[i == 1 and "*" or ident]) do
 			securecall(k, v, ident, data)
 		end

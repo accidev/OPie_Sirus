@@ -6,22 +6,6 @@ do
 	local mt = getmetatable(tx)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx then
-		if idx.SetGradient then
-			local orig = idx.SetGradient
-			idx.SetGradient = function(self, orient, c1, c2, ...)
-				if type(c1) == "table" then
-					local r1, g1, b1, a1 = c1.r or 0, c1.g or 0, c1.b or 0, c1.a or 1
-					local r2, g2, b2, a2 = c2.r or 0, c2.g or 0, c2.b or 0, c2.a or 1
-					if self.SetGradientAlpha then
-						self:SetGradientAlpha(orient, r1, g1, b1, a1, r2, g2, b2, a2)
-					else
-						orig(self, orient, r1, g1, b1, r2, g2, b2)
-					end
-				else
-					orig(self, orient, c1, c2, ...)
-				end
-			end
-		end
 		if not idx.SetTextureSliceMargins  then idx.SetTextureSliceMargins  = function() end end
 		if not idx.GetTextureSliceMargins  then idx.GetTextureSliceMargins  = function() return 0, 0, 0, 0 end end
 		if not idx.SetTexelSnappingBias    then idx.SetTexelSnappingBias    = function() end end

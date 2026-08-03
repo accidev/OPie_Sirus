@@ -132,7 +132,7 @@ local function adjustBindingID(scope, id)
 	return false, id - prefixLength, prefixLength
 end
 function subBindings.allowWheel(btn)
-	return btn:GetID() <= 2 and not subBindings.scope
+	return math.abs(btn:GetID()) <= 2 and not subBindings.scope
 end
 function subBindings:refresh(scope)
 	local ringName = scope and PC:GetRingInfo(scope)

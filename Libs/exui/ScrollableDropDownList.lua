@@ -83,7 +83,7 @@ local getFreeBlock do
 end
 
 function int:OnEntryClick()
-	local d = getWidgetData(self:GetParent():GetParent(), ScrollableBlockData)
+	local d = getWidgetData(self:GetParent():GetParent():GetParent(), ScrollableBlockData)
 	local entrySelect, arg1 = d.entrySelect, d.dataList[self:GetID()]
 	PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON)
 	CloseDropDownMenus()

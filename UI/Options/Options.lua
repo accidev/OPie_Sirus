@@ -318,6 +318,7 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 	end
 	beam:SetScript("OnSizeChanged", OPC_UpdateViewport)
 	beam:SetScript("OnShow", OPC_UpdateViewport)
+	controlViewport:SetScript("OnSizeChanged", OPC_UpdateViewport)
 end
 do -- customized widgets
 	local function onMenuOptionToggle(_, option, owner, checked)

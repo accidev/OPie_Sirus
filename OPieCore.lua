@@ -169,7 +169,7 @@ local OR_RingBindingProxy do -- + Click dispatcher
 		POL_RUN_ONOPEN_ON_SWITCH, POL_RUN_ONOPEN_ON_REOPEN, POL_JUMP_COUNT_LIMIT = true, true, 50
 		POL_SWITCHED_FAST_ACTION, POL_SWICHED_FAST_ACTION_MOTION = true, true
 		collections, ctokens, rotation, rtokens, fcIgnore, rotationMode, emptyTable = newtable(), newtable(), newtable(), newtable(), newtable(), newtable(), newtable()
-		modState, modLockState, sizeSq, bindProxy, sliceProxy, overProxy = "", nil, 16*9001^2, self:GetFrameRef("bindProxy"), self:GetFrameRef("sliceBindProxy"), self:GetFrameRef("overBindProxy")
+		modState, modLockState, sizeSq, bindProxy, sliceProxy, overProxy = "", nil, 2^30, self:GetFrameRef("bindProxy"), self:GetFrameRef("sliceBindProxy"), self:GetFrameRef("overBindProxy")
 		ALL_MODIFIERS = "ALT-CTRL-SHIFT-META-"
 		lowCH = self:GetFrameRef("lowCH")
 		sliceBindState, visitedSlices, buttonBindings = newtable(), newtable(), newtable()

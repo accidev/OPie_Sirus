@@ -7,6 +7,21 @@ end
 local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, CallObjectScript = XU:GetImpl()
 
 local TextArea, TextAreaData, int = {}, {}, {}
+local function syncExtent(d)
+	local cw, ch = d.clipArea:GetWidth(), d.clipArea:GetHeight()
+	if not (cw and cw > 0 and ch and ch > 0) then return end
+	if math.abs(d.editBox:GetWidth() - cw) > 0.5 then
+		d.editBox:SetWidth(cw)
+	end
+	local m = d.measure
+	m:SetWidth(cw)
+	m:SetSpacing(d.spacingTarget or 0)
+	m:SetText(d.editBox:GetText() or "")
+	local th = math.max(ch, m:GetStringHeight() + 4)
+	if math.abs(d.editBox:GetHeight() - th) > 0.5 then
+		d.editBox:SetHeight(th)
+	end
+end
 local TextAreaProps = {
 	api=TextArea,
 	spacingTarget=0,
@@ -107,6 +122,7 @@ function TextArea:SetText(text)
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
 	d.editBox:SetText(text)
 	d.editFS:SetText(text)
+	int.OnSizeChanged(d.clipArea)
 end
 
 function int.alwaysHasStickyFocus()
@@ -161,10 +177,7 @@ function int:OnScrollValueChanged(nv)
 end
 function int:OnSizeChanged()
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
-	local cw = d.clipArea:GetWidth()
-	if cw and cw > 0 and math.abs(d.editBox:GetWidth() - cw) > 0.5 then
-		d.editBox:SetWidth(cw)
-	end
+	syncExtent(d)
 	if d.holdScroll then return end
 	local sb, ch = d.scrollBar, d.clipArea:GetHeight()
 	local th = d.editBox:GetHeight() + (d.editBox:GetText():sub(-1) == "\n" and (d.cachedCursorH or 13) or 0)
@@ -203,8 +216,14 @@ local function CreateTextArea(name, parent, outerTemplate, id)
 	input:SetScript("OnCursorChanged", int.OnCursorChanged)
 	input:SetScript("OnSizeChanged", int.OnSizeChanged)
 	input:SetScript("OnShow", int.OnShow)
+	local measure = area:CreateFontString(nil, "BACKGROUND", "GameFontHighlight")
+	measure:SetPoint("TOPLEFT")
+	measure:SetJustifyH("LEFT")
+	measure:SetJustifyV("TOP")
+	measure:Hide()
 	d = newWidgetData(area, TextAreaData, TextAreaProps, input)
 	d.clipArea, d.scrollBar, d.editBox, d.editFS, d.cursorTex = ec, sb, input, input:GetRegions()
+	d.measure = measure
 	setWidgetData(input, TextAreaData, d)
 	setWidgetData(sb, TextAreaData, d)
 	setWidgetData(ec, TextAreaData, d)

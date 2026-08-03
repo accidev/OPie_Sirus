@@ -287,7 +287,7 @@ local edFrame = CreateFrame("Frame") do
 		if iid then
 			GameTooltip:SetOwner(w, "ANCHOR_NONE")
 			GameTooltip:SetPoint("TOPRIGHT", w, "TOPLEFT", -4, 4)
-			GameTooltip:SetItemByID(iid)
+			GameTooltip:SetHyperlink("item:" .. iid)
 			GameTooltip:Show()
 		end
 	end

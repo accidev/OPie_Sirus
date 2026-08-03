@@ -751,7 +751,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 			GameTooltip:AddLine(L"Override Icon", 1,1,1)
 			GameTooltip:AddLine(L"Specify an icon by entering an icon file name, texture path, atlas name, or a known ability name.", nc.r, nc.g, nc.b, 1)
 			if self:IsSearchPossible() then
-				GameTooltip:AddLine((L"Press %s to search"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ALT-ENTER") .. "|r"), nc.r, nc.g, nc.b, 1)
+				GameTooltip:AddLine((L"Press %s to search"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ALT-ENTER", "KEY_") .. "|r"), nc.r, nc.g, nc.b, 1)
 			else
 				local at = HIGHLIGHT_FONT_COLOR_CODE .. "IconFileNames |cff606060<|cff40a0ffhttps://townlong-yak.com/addons/iconfilenames|r>|r|r"
 				GameTooltip:AddLine((L"Install and enable %s to search by file name."):format(at), nc.r, nc.g, nc.b, 1)
@@ -957,9 +957,9 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 			i:SetVertexColor(0.90, 0.90, 0.90)
 			tip:SetFrameStrata("TOOLTIP")
 			tip:SetOwner(s, "ANCHOR_BOTTOM")
-			tip:AddLine((L"Press %s to search"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ENTER") .. "|r"))
-			tip:AddLine((L"%s to search within current results"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("CTRL-ENTER") .. "|r"), nil, nil, nil, true)
-			tip:AddLine((L"%s to cancel"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ESCAPE") .. "|r"), true)
+			tip:AddLine((L"Press %s to search"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ENTER", "KEY_") .. "|r"))
+			tip:AddLine((L"%s to search within current results"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("CTRL-ENTER", "KEY_") .. "|r"), nil, nil, nil, true)
+			tip:AddLine((L"%s to cancel"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ESCAPE", "KEY_") .. "|r"), true)
 			tip:Show()
 		end)
 		s:SetScript("OnEditFocusLost", function(s)

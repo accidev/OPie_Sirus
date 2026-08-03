@@ -81,7 +81,7 @@ local GetAllIcons do
 end
 function LookupIconName(fid)
 	LookupIconName = nil
-	if select(5, GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED"
+	if select(6, GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED"
 	   and not IsAddOnLoaded("IconFileNames") then
 		LoadAddOn("IconFileNames")
 	end

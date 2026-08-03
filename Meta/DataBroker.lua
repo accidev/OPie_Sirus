@@ -75,11 +75,9 @@ do -- category
 	end
 	function EV.ADDON_LOADED()
 		if LDB or checkLDB() or LDB then
+			LDB.RegisterCallback("opie.databroker.launcher", "LibDataBroker_DataObjectCreated", onRegister)
 			registerSelf()
 			onRegister()
-			if waiting then
-				LDB.RegisterCallback("opie.databroker.launcher", "LibDataBroker_DataObjectCreated", onRegister)
-			end
 			return "remove"
 		end
 	end

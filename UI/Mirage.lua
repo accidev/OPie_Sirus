@@ -267,7 +267,7 @@ function Indicator:SetCount(count)
 	getWidgetData(self, IndicatorData).count:SetText(count or "")
 end
 function Indicator:SetBinding(binding)
-	binding = binding and GetBindingText(binding, 1) or ""
+	binding = binding and GetBindingText(binding, "KEY_", 1) or ""
 	getWidgetData(self, IndicatorData).key:SetText(binding)
 end
 function Indicator:SetCooldown(remain, duration, usableCharge)

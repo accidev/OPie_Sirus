@@ -203,11 +203,10 @@ do -- OPie:OptionsSlider
 		local thumbTex = s:GetThumbTexture()
 		thumbTex:SetSize(10, 18)
 		thumbTex:SetVertexColor(0.16, 0.66, 1.00)
-		-- создаём Thumb-frame вручную для OnEnter/OnLeave hover эффекта
 		if not s.Thumb then
 			local th = CreateFrame("Frame", nil, s)
 			th:SetSize(14, 20)
-			th:SetPoint("CENTER")
+			th:SetPoint("CENTER", thumbTex, "CENTER")
 			th:EnableMouse(true)
 			s.Thumb = th
 		end

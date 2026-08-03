@@ -878,7 +878,7 @@ do -- M:ShowFrameOverlay(self, overlayFrame)
 	end
 end
 do -- M:Show{Prompt,Alert,Copy}Overlay(...)
-	local promptFrame, promptInfo = CreateFrame("Frame"), {} do
+	local promptFrame, promptInfo, promptTextChanged = CreateFrame("Frame"), {} do
 		promptFrame:SetSize(400, 130)
 		promptInfo.title = promptFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 		promptInfo.prompt = promptFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -901,9 +901,11 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 			end
 			promptFrame:Hide()
 		end)
-		promptInfo.editBox:SetScript("OnTextChanged", function(self)
-			promptInfo.accept:SetEnabled(promptInfo.callback == nil or promptInfo.callback(self, self:GetText() or "", false, promptInfo.owner))
-		end)
+		promptTextChanged = function(self)
+			local cb = promptInfo.callback
+			promptInfo.accept:SetEnabled(type(cb) ~= "function" or cb(self, self:GetText() or "", false, promptInfo.owner))
+		end
+		promptInfo.editBox:SetScript("OnTextChanged", promptTextChanged)
 		promptInfo.accept:SetScript("OnClick", function()
 			local callback, text = promptInfo.callback, promptInfo.editBox:GetText() or ""
 			if callback == nil or callback(promptInfo.editBox, text, true, promptInfo.owner) then
@@ -924,6 +926,8 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 		editBox:SetScript("OnTextChanged", nil)
 		editBox:SetText(editText)
 		editBox:HighlightText(0, #editText)
+		editBox:SetScript("OnTextChanged", promptTextChanged)
+		promptTextChanged(editBox)
 		editBox:SetShown(editBoxWidth ~= false)
 		editBox:SetWidth(math.max(40, math.min(1, editBoxWidth or 0.50) * 380))
 		promptFrame:SetHeight(55 + math.max(20, promptInfo.prompt:GetStringHeight()) + (editBoxWidth ~= false and 30 or 0) + ((explainText or "") ~= "" and 20 or 0))

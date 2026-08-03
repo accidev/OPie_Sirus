@@ -5,14 +5,15 @@ local GFX = ([[Interface\AddOns\%s\gfx\]]):format(ADDON)
 local GameTooltip = T.NotGameTooltip or GameTooltip
 
 local frame = TS:CreateOptionsPanel("OPie", nil, {
-	forceRootVersion=true,
-	selfBrandedRoot=true,
-	tabText="|T" .. GFX .. "home:13:13:0:-2|t " .. L"Overview"
+	forceRootVersion = true,
+	selfBrandedRoot = true,
+	tabText = "|T" .. GFX .. "home:13:13:0:-2|t " .. L "Overview"
 })
 frame.version:SetText(PC:GetVersion() or "")
 T.ConfigHomePanel = frame
 
-local navView = CreateFrame("Frame", nil, frame) do
+local navView = CreateFrame("Frame", nil, frame)
+do
 	navView:SetPoint("TOPLEFT")
 	navView:SetPoint("BOTTOMRIGHT")
 	local function onNavClick(self)
@@ -72,14 +73,14 @@ local navView = CreateFrame("Frame", nil, frame) do
 		oy = oy - 60
 	end
 
-	makeNav(1, L"Options", L"Customize OPie's appearance and behavior.")
-	makeNav(2, L"Ring Bindings", L"Customize OPie ring and in-ring key bindings.")
-	makeNav(3, L"Custom Rings", L"Edit existing rings, or create your own custom OPie rings.")
+	makeNav(1, L "Options", L "Customize OPie's appearance and behavior.")
+	makeNav(2, L "Ring Bindings", L "Customize OPie ring and in-ring key bindings.")
+	makeNav(3, L "Custom Rings", L "Edit existing rings, or create your own custom OPie rings.")
 
 	oy = oy - 6
 	local ch = navView:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	ch:SetPoint("TOPLEFT", 26, oy)
-	ch:SetText(L"Credits")
+	ch:SetText(L "Credits")
 	local chBar = TS.Fill(navView, "ARTWORK", nil, SKIN.accent)
 	chBar:SetSize(3, 14)
 	chBar:SetPoint("RIGHT", ch, "LEFT", -7, -1)
@@ -116,7 +117,8 @@ local navView = CreateFrame("Frame", nil, frame) do
 	end
 	securecall(T.CreditsData, vh, li)
 
-	local urlBox = CreateFrame("EditBox", nil, navView) do
+	local urlBox = CreateFrame("EditBox", nil, navView)
+	do
 		urlBox:SetHeight(22)
 		urlBox:SetPoint("BOTTOMLEFT", 106, 14)
 		urlBox:SetPoint("BOTTOMRIGHT", -16, 14)
@@ -132,7 +134,9 @@ local navView = CreateFrame("Frame", nil, frame) do
 			end
 			self:SetCursorPosition(0)
 		end)
-		urlBox:SetScript("OnMouseUp", function(self) self:HighlightText() end)
+		urlBox:SetScript("OnMouseUp", function(self)
+			self:HighlightText()
+		end)
 		urlBox:SetScript("OnEscapePressed", urlBox.ClearFocus)
 		urlBox:SetScript("OnEnterPressed", urlBox.ClearFocus)
 	end
@@ -155,7 +159,7 @@ local navView = CreateFrame("Frame", nil, frame) do
 		tex:SetTexture(icon)
 		local function activate()
 			bg:SetTexture(SKIN.accentDim[1], SKIN.accentDim[2], SKIN.accentDim[3], SKIN.accentDim[4])
-			for i=1,#edge do
+			for i = 1, #edge do
 				edge[i]:SetTexture(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3], 1)
 			end
 			urlBox.url = url
@@ -166,12 +170,12 @@ local navView = CreateFrame("Frame", nil, frame) do
 			activate()
 			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
 			GameTooltip:AddLine(title)
-			GameTooltip:AddLine(L"Copy the URL shown above and visit it using a web browser.", 1, 1, 1, true)
+			GameTooltip:AddLine(L "Copy the URL shown above and visit it using a web browser.", 1, 1, 1, true)
 			GameTooltip:Show()
 		end)
 		b:SetScript("OnLeave", function()
 			bg:SetTexture(SKIN.btn[1], SKIN.btn[2], SKIN.btn[3], SKIN.btn[4])
-			for i=1,#edge do
+			for i = 1, #edge do
 				edge[i]:SetTexture(SKIN.edge[1], SKIN.edge[2], SKIN.edge[3], 1)
 			end
 			config.ui.HideTooltip(b)
@@ -183,23 +187,27 @@ local navView = CreateFrame("Frame", nil, frame) do
 		end)
 		return b
 	end
-	makeLink(GFX .. "discord.tga", "https://discord.gg/wRPF8CCpNV", L"Report an Issue")
-	makeLink(GFX .. "boosty.tga", "https://boosty.to/accidev", L"Donate")
+	makeLink(GFX .. "discord.tga", "https://discord.gg/wRPF8CCpNV", L "Report an Issue")
+	makeLink(GFX .. "boosty.tga", "https://boosty.to/accidev", L "Donate")
 	urlBox.url = "https://discord.gg/wRPF8CCpNV"
 	urlBox:SetText(urlBox.url)
 
-	local svWarning = CreateFrame("Button", nil, navView) do
+	local svWarning = CreateFrame("Button", nil, navView)
+	do
 		svWarning:SetSize(300, 18)
 		svWarning:SetPoint("BOTTOMLEFT", 18, 50)
 		svWarning:SetNormalFontObject(GameFontRed)
 		svWarning:SetHighlightFontObject(GameFontHighlight)
-		svWarning:SetScript("OnClick", function() config.checkSVState(frame, true) end)
+		svWarning:SetScript("OnClick", function()
+			config.checkSVState(frame, true)
+		end)
 		svWarning:SetScript("OnShow", function()
 			if config.checkSVState(frame) then
 				svWarning:Hide()
 			end
 		end)
-		svWarning:SetText("|TInterface/EncounterJournal/UI-EJ-WarningTextIcon:0|t " .. L"Any changes you make now will not be saved.")
+		svWarning:SetText("|TInterface/EncounterJournal/UI-EJ-WarningTextIcon:0|t " ..
+							  L "Any changes you make now will not be saved.")
 		local fs = svWarning:GetFontString()
 		fs:ClearAllPoints()
 		fs:SetPoint("LEFT")

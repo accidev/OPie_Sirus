@@ -1,38 +1,44 @@
 ﻿local _, T = ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 
 local EV, WR = T.Evie, T.Ware
 local AB = T.ActionBook:compatible(2, 31)
-local KR = T.ActionBook:compatible("Kindred", 1,33)
-local RW = T.ActionBook:compatible("Rewire", 1,40)
+local KR = T.ActionBook:compatible("Kindred", 1, 33)
+local RW = T.ActionBook:compatible("Rewire", 1, 40)
 assert(EV and WR and AB and KR and RW and 1, "Incompatible library bundle")
 local playerClassLocal, playerClass = UnitClass("player")
 
-local stringArgCache = {} do
+local stringArgCache = {}
+do
 	local empty = {}
-	setmetatable(stringArgCache, {__index=function(t,k)
-		if k then
-			local at
-			for s in k:gmatch("[^/]+") do
-				s = s:match("^%s*(%S.-)%s*$")
-				if s then
-					at = at or {}
-					at[#at + 1] = KR:UnescapeCmdOptionsValue(s)
+	setmetatable(stringArgCache, {
+		__index = function(t, k)
+			if k then
+				local at
+				for s in k:gmatch("[^/]+") do
+					s = s:match("^%s*(%S.-)%s*$")
+					if s then
+						at = at or {}
+						at[#at + 1] = KR:UnescapeCmdOptionsValue(s)
+					end
 				end
+				at = at or empty
+				t[k] = at
+				return at
 			end
-			at = at or empty
-			t[k] = at
-			return at
+			return empty
 		end
-		return empty
-	end})
+	})
 end
 
 securecall(function() -- zone:Zone/Sub Zone
 	local function onZoneUpdate()
 		local cz
-		for i=1,4 do
-			local z = (i == 1 and GetRealZoneText or i == 2 and GetSubZoneText or i == 3 and GetZoneText or GetMinimapZoneText)()
+		for i = 1, 4 do
+			local z = (i == 1 and GetRealZoneText or i == 2 and GetSubZoneText or i == 3 and GetZoneText or
+						  GetMinimapZoneText)()
 			if z and z ~= "" then
 				cz = (cz and (cz .. "/") or "") .. z:gsub("%s*[,/%[%]][[,/%[%]]%s]*", " ")
 			end
@@ -50,36 +56,35 @@ securecall(function() -- me:Player Name/Class
 end)
 securecall(function() -- form:token
 	local GetSpellName = GetSpellInfo
-	local map, curCnd, pending =
-		playerClass == "DRUID" and {
-			[GetSpellName(40120) or 1]="/flight",
-			[GetSpellName(33943) or 1]="/flight",
-			[GetSpellName(1066) or 1]="/aquatic",
-			[GetSpellName(783) or 1]="/travel",
-			[GetSpellName(24858) or 1]="/moon/moonkin",
-			[GetSpellName(768) or 1]="/cat",
-			[GetSpellName(171745) or 1]="/cat",
-			[GetSpellName(5487) or 1]="/bear",
-			[GetSpellName(9634) or 1]="/bear",
-			[GetSpellName(114282) or 1]="/treant",
-			[GetSpellName(210053) or 1]="/stag",
-		} or
-		playerClass == "WARRIOR" and {
-			[GetSpellName(197690) or 1]="/defensive",
-			[GetSpellName(386164) or 1]="/battle",
-			[GetSpellName(386196) or 1]="/berserker",
-			[GetSpellName(386208) or 1]="/defensive",
-			[GetSpellName(2457) or 1]="/battle",
-			[GetSpellName(71) or 1]="/defensive",
-			[GetSpellName(2458) or 1]="/berserker",
-		}
+	local map, curCnd, pending = playerClass == "DRUID" and {
+		[GetSpellName(40120) or 1] = "/flight",
+		[GetSpellName(33943) or 1] = "/flight",
+		[GetSpellName(1066) or 1] = "/aquatic",
+		[GetSpellName(783) or 1] = "/travel",
+		[GetSpellName(24858) or 1] = "/moon/moonkin",
+		[GetSpellName(768) or 1] = "/cat",
+		[GetSpellName(171745) or 1] = "/cat",
+		[GetSpellName(5487) or 1] = "/bear",
+		[GetSpellName(9634) or 1] = "/bear",
+		[GetSpellName(33891) or 1] = "/tree/treant",
+		[GetSpellName(114282) or 1] = "/treant",
+		[GetSpellName(210053) or 1] = "/stag"
+	} or playerClass == "WARRIOR" and {
+		[GetSpellName(197690) or 1] = "/defensive",
+		[GetSpellName(386164) or 1] = "/battle",
+		[GetSpellName(386196) or 1] = "/berserker",
+		[GetSpellName(386208) or 1] = "/defensive",
+		[GetSpellName(2457) or 1] = "/battle",
+		[GetSpellName(71) or 1] = "/defensive",
+		[GetSpellName(2458) or 1] = "/berserker"
+	}
 	if map then
 		KR:SetAliasConditional("stance", "form")
 		local function syncForm()
 			local GetSpellName, s = GetSpellInfo, ""
-			for i=1,10 do
+			for i = 1, 10 do
 				local _, name = GetShapeshiftFormInfo(i)
-				s = ("%s[form:%d] %d%s;"):format(s, i,i, map[name] or "")
+				s = ("%s[form:%d] %d%s;"):format(s, i, i, map[name] or "")
 			end
 			if curCnd ~= s then
 				KR:SetStateConditionalDriver("form", s, true)
@@ -99,7 +104,10 @@ securecall(function() -- form:token
 end)
 securecall(function() -- instance:arena/bg/ratedbg/lfr/raid/scenario + outland/northrend/...
 	local mapTypes = {
-		party="dungeon", pvp="battleground/bg", ratedbg="ratedbg/rgb", none="world",
+		party = "dungeon",
+		pvp = "battleground/bg",
+		ratedbg = "ratedbg/rgb",
+		none = "world"
 	}
 	local function syncInstance()
 		local _, itype, did = GetInstanceInfo()
@@ -164,10 +172,10 @@ securecall(function() -- ready:spell name/spell id/item name/item id
 		if not args or args == "" then
 			return (gcS == 0 and gcL == 0)
 		end
-		
+
 		local at = stringArgCache[args]
 		local gcE = gcS and gcL and (gcS + gcL) or math.huge
-		for i=1,#at do
+		for i = 1, #at do
 			local rc = at[i]
 			local cdS, cdL, _cdA = GetSpellCooldown(rc)
 			if cdL == nil then
@@ -181,7 +189,7 @@ securecall(function() -- ready:spell name/spell id/item name/item id
 				return true
 			end
 		end
-		
+
 		return false
 	end)
 end)
@@ -190,22 +198,25 @@ securecall(function() -- have:item name/id
 		if not args or args == "" then
 			return false
 		end
-		
+
 		local at, GetItemCount = stringArgCache[args], GetItemCount
-		for i=1,#at do
+		for i = 1, #at do
 			if (GetItemCount(at[i]) or 0) > 0 then
 				return true
 			end
 		end
-		
+
 		return false
 	end)
 end)
 securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cleanse
 	local conditionalFilter = {
-		selfbuff="HELPFUL", selfdebuff="HARMFUL",
-		ownbuff="HELPFUL PLAYER", owndebuff="HARMFUL PLAYER",
-		buff="HELPFUL", debuff="HARMFUL",
+		selfbuff = "HELPFUL",
+		selfdebuff = "HARMFUL",
+		ownbuff = "HELPFUL PLAYER",
+		owndebuff = "HARMFUL PLAYER",
+		buff = "HELPFUL",
+		debuff = "HARMFUL"
 	}
 	local function checkAura(name, args, target)
 		target = (name == "selfbuff" or name == "selfdebuff") and "player" or target or "target"
@@ -213,12 +224,12 @@ securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cle
 			return false
 		end
 		local at, filter = stringArgCache[args], conditionalFilter[name]
-		for i=1, 100 do
+		for i = 1, 100 do
 			local an = UnitAura(target, i, filter)
 			if not an then
 				return false
 			end
-			for j=1, #at do
+			for j = 1, #at do
 				if strcmputf8i(an, at[j]) == 0 then
 					return true
 				end
@@ -238,7 +249,13 @@ securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cle
 	end)
 end)
 securecall(function() -- combo:count
-	local power, powerMap = 4, {[265]=7, [267]=14, [258]=13, PALADIN=9, MONK=12}
+	local power, powerMap = 4, {
+		[265] = 7,
+		[267] = 14,
+		[258] = 13,
+		PALADIN = 9,
+		MONK = 12
+	}
 	local defaultPower = powerMap[playerClass] or 4
 	KR:SetNonSecureConditional("combo", function(_name, args)
 		local pow = power == 4 and GetComboPoints("player", "target") or UnitPower("player", power)
@@ -251,15 +268,23 @@ securecall(function() -- combo:count
 end)
 securecall(function() -- near:oid/cid
 	local argCache, nearValue, nearGroup, holdGroup, holdExpire = {}
-	local GROUP_HOLD_TIME = {["tww-herb-overload"]=5, ["tww-mine-overload"]=5, ["mid-herb-overload"]=5, ["mid-mine-overload"]=5}
-	local typePrefix, groups = {GameObject="o", Creature="c"}, {}
+	local GROUP_HOLD_TIME = {
+		["tww-herb-overload"] = 5,
+		["tww-mine-overload"] = 5,
+		["mid-herb-overload"] = 5,
+		["mid-mine-overload"] = 5
+	}
+	local typePrefix, groups = {
+		GameObject = "o",
+		Creature = "c"
+	}, {}
 	for k, v in pairs({
 		["herb-overload"] = "o375245/o381199/o381213/o356536/o381202/o381210/o381196/o381205/o375242/o375244/o381214/o381201/o381200/o381212/o375246/o381198/o381203/o381197/o381211/o375243/o381204/o390141/o390140/o390142/o390139/o398761/o398760/o398759/o398762/o398767/o398764/o398765/o398766/o407696/o407688/o407698/o407693",
 		["mine-overload"] = "o381516/o375235/o375234/o381515/o381517/o375238/o375239/o381518/o381519/o375240/o390137/o390138/o407669/o407668",
 		["tww-herb-overload"] = "o414327/o414329/o414326/o414328/o414325/o414337/o414339/o454053/o454008/o414338/o454084/o414336/o414335/o454066/o454079/o454069/o454074/o423363/o454082/o454067/o423368/o454077/o423364/o423366/o423367/o454072/o454064/o454006/o454050/o414332/o414331/o414330",
 		["tww-mine-overload"] = "o413886/o413895/o413905/o430351/o430335/o430352/o413900/o413883/o413890/o413902/o413892/o413884",
 		["mid-herb-overload"] = "o516967/o516966/o516965/o516964/o516963//o516979/o516980/o516981/o516982/o516983//o516973/o516974/o516975/o516976/o516977//o516968/o516969/o516970/o516971/o516972",
-		["mid-mine-overload"] = "o523284/o523294/o523303//o523287/o523293/o523301//o523285/o523291/o523299//o523286/o523292/o523300",
+		["mid-mine-overload"] = "o523284/o523294/o523303//o523287/o523293/o523301//o523285/o523291/o523299//o523286/o523292/o523300"
 	}) do
 		for e in v:gmatch("[^/]+") do
 			groups[e] = k
@@ -297,7 +322,7 @@ securecall(function() -- near:oid/cid
 			local ht = not oid and GROUP_HOLD_TIME[nearGroup]
 			if ht then
 				holdGroup, holdExpire = nearGroup, GetTime() + ht
-				EV.After(ht+1/128, checkNearHoldExpire)
+				EV.After(ht + 1 / 128, checkNearHoldExpire)
 			elseif oid then
 				holdGroup, holdExpire = nil
 			end
@@ -308,7 +333,7 @@ securecall(function() -- near:oid/cid
 end)
 securecall(function() -- race:token
 	local map, _, raceToken = {
-		Scourge="Scourge/Undead/Forsaken",
+		Scourge = "Scourge/Undead/Forsaken"
 	}, UnitRace("player")
 	KR:SetStateConditionalValue("race", map[raceToken] or raceToken)
 end)
@@ -316,35 +341,43 @@ securecall(function() -- professions
 	local ct, ot, syncProfInner = {}, {}
 	local GetSpellName = GetSpellInfo
 	local map = {
-		[GetSpellName(3908) or ""]="tail",
-		[GetSpellName(2108) or ""]="lw",
-		[GetSpellName(2018) or ""]="bs",
-		[GetSpellName(2259) or ""]="alch",
-		[GetSpellName(4036) or ""]="engi",
-		[GetSpellName(7411) or ""]="ench",
-		[GetSpellName(2366) or ""]="herb",
-		[GetSpellName(2575) or ""]="mine",
-		[GetSpellName(8613) or ""]="skin",
-		[GetSpellName(2550) or ""]="cook",
-		[GetSpellName(3273) or ""]="faid",
-		[GetSpellName(7620) or ""]="fish",
-		[GetSpellName(20221) or ""]="gobeng",
-		[GetSpellName(20222) or ""]="gobeng",
-		[GetSpellName(20220) or ""]="nomeng",
-		[GetSpellName(20219) or ""]="nomeng",
+		[GetSpellName(3908) or ""] = "tail",
+		[GetSpellName(2108) or ""] = "lw",
+		[GetSpellName(2018) or ""] = "bs",
+		[GetSpellName(2259) or ""] = "alch",
+		[GetSpellName(4036) or ""] = "engi",
+		[GetSpellName(7411) or ""] = "ench",
+		[GetSpellName(2366) or ""] = "herb",
+		[GetSpellName(2575) or ""] = "mine",
+		[GetSpellName(8613) or ""] = "skin",
+		[GetSpellName(2550) or ""] = "cook",
+		[GetSpellName(3273) or ""] = "faid",
+		[GetSpellName(7620) or ""] = "fish",
+		[GetSpellName(20221) or ""] = "gobeng",
+		[GetSpellName(20222) or ""] = "gobeng",
+		[GetSpellName(20220) or ""] = "nomeng",
+		[GetSpellName(20219) or ""] = "nomeng"
 	}
 	local spellIDProfs = {
-		[264636]="cook3",
-		[264620]="tail3", [264626]="tail6",
-		[271662]="fish5",
-		[264588]="lw6", [264590]="lw7",
-		[264479]="eng2", [264481]="eng3", [264483]="eng4", [264485]="eng5", [264488]="eng6", [264490]="eng7", [310542]="eng9",
+		[264636] = "cook3",
+		[264620] = "tail3",
+		[264626] = "tail6",
+		[271662] = "fish5",
+		[264588] = "lw6",
+		[264590] = "lw7",
+		[264479] = "eng2",
+		[264481] = "eng3",
+		[264483] = "eng4",
+		[264485] = "eng5",
+		[264488] = "eng6",
+		[264490] = "eng7",
+		[310542] = "eng9"
 		-- eng8 is in sync code, because factions
 	}
-	map[""]=nil
+	map[""] = nil
 	syncProfInner = function()
 		local idx, wasCollapsed
-		for i=1,GetNumSkillLines() do
+		for i = 1, GetNumSkillLines() do
 			local text, isHeader, isExpanded = GetSkillLineInfo(i)
 			if isHeader and text == TRADE_SKILLS then
 				idx, wasCollapsed = i, not isExpanded
@@ -352,10 +385,12 @@ securecall(function() -- professions
 				break
 			end
 		end
-		if not idx then return end
-		local j, text, isHeader, _, curSkill = idx+1
+		if not idx then
+			return
+		end
+		local j, text, isHeader, _, curSkill = idx + 1
 		repeat
-			j, text, isHeader, _, curSkill = j+1, GetSkillLineInfo(j)
+			j, text, isHeader, _, curSkill = j + 1, GetSkillLineInfo(j)
 			local skey = map[text]
 			if skey and not isHeader then
 				ct[skey] = curSkill
@@ -367,19 +402,22 @@ securecall(function() -- professions
 	end
 	local function syncProf()
 		ct, ot = ot, ct
-		for k in pairs(ct) do ct[k] = nil end
+		for k in pairs(ct) do
+			ct[k] = nil
+		end
 		syncProfInner()
 		for sid, cnd in pairs(spellIDProfs) do
 			ct[cnd] = GetSpellInfo(GetSpellInfo(sid) or "\1") and 1 or nil
 		end
-		ct["eng8"] = GetSpellInfo(GetSpellInfo(UnitFactionGroup("player") == "Horde" and 265807 or 264492) or "\1") and 1 or nil
-		for k,v in pairs(ct) do
+		ct["eng8"] = GetSpellInfo(GetSpellInfo(UnitFactionGroup("player") == "Horde" and 265807 or 264492) or "\1") and
+						 1 or nil
+		for k, v in pairs(ct) do
 			if ot[k] ~= v then
 				KR:SetThresholdConditionalValue(k, v)
 				ot[k] = v
 			end
 		end
-		for k,v in pairs(ot) do
+		for k, v in pairs(ot) do
 			if ct[k] ~= v then
 				KR:SetThresholdConditionalValue(k, false)
 				ot[k] = nil
@@ -392,7 +430,9 @@ securecall(function() -- professions
 	for _, v in pairs(spellIDProfs) do
 		KR:SetThresholdConditionalValue(v, false)
 	end
-	for alias, real in ("tailoring:tail leatherworking:lw alchemy:alch engineering:engi enchanting:ench jewelcrafting:jc blacksmithing:bs inscription:scri herbalism:herb archaeology:arch cooking:cook fishing:fish firstaid:faid mining:mine skinning:skin"):gmatch("(%a+):(%a+)") do
+	for alias, real in
+		("tailoring:tail leatherworking:lw alchemy:alch engineering:engi enchanting:ench jewelcrafting:jc blacksmithing:bs inscription:scri herbalism:herb archaeology:arch cooking:cook fishing:fish firstaid:faid mining:mine skinning:skin"):gmatch(
+			"(%a+):(%a+)") do
 		KR:SetAliasConditional(alias, real)
 	end
 	EV.PLAYER_LOGIN, EV.CHAT_MSG_SKILL = syncProf, syncProf
@@ -411,21 +451,24 @@ securecall(function() -- pet:stable id; havepet:stable id
 			end
 			return
 		end
-		for k in pairs(pt) do pt[k] = nil end
+		for k in pairs(pt) do
+			pt[k] = nil
+		end
 		local o, hpo
-		for i=1,NUM_PET_STABLE_SLOTS or 5 do
+		for i = 1, NUM_PET_STABLE_SLOTS or 5 do
 			local _, n, _, r, spN, spID = GetStablePetInfo(i)
 			if n and r then
 				local stk = specTokenSuf[spID or spN]
 				local k = n == r and n or (n .. "/" .. r)
-				pt[k] = (pt[k] or ("[pet:" .. n .. (n ~= r and ",pet:" .. r .. "] " or "] ") .. k)) .. "/" .. i .. (stk or "")
+				pt[k] = (pt[k] or ("[pet:" .. n .. (n ~= r and ",pet:" .. r .. "] " or "] ") .. k)) .. "/" .. i ..
+							(stk or "")
 				hpo = (hpo and hpo .. "/" .. i or i)
 			end
 		end
 		for k, v in pairs(pt) do
 			o = k:match("/") and (v .. (o and "; " .. o or "")) or ((o and o .. "; " or "") .. v)
 		end
-		KR:SetStateConditionalDriver("pet","[nopet]; " .. (o and o .. "; 0" or " 0"), true)
+		KR:SetStateConditionalDriver("pet", "[nopet]; " .. (o and o .. "; 0" or " 0"), true)
 		KR:SetStateConditionalValue("havepet", tostring(hpo or ""))
 		noPendingSync = true
 		return (e == "PLAYER_LOGIN" or e == "PLAYER_REGEN_ENABLED") and "remove"
@@ -443,7 +486,9 @@ end)
 securecall(function() -- visual
 	local f = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
 	f:SetAttribute("EvaluateMacroConditional", 'return false')
-	KR:SetSecureExternalConditional("visual", f, function() return true end)
+	KR:SetSecureExternalConditional("visual", f, function()
+		return true
+	end)
 end)
 securecall(function() -- coven:kyrian/venthyr/fae/necro
 	KR:SetStateConditionalValue("coven", false)
@@ -521,7 +566,9 @@ securecall(function() -- bar:id (future-aware)
 
 	local currentFutureID, currentBarState
 	local function hintBarCommand(slash, _unparsed, clause, _target, _, _, _, speculationID)
-		if (clause or "") == "" then return end
+		if (clause or "") == "" then
+			return
+		end
 		if slash == CMD_SWAP then
 			local a, b = clause:match("(%d+)%s+(%d+)")
 			a, b = tonumber(a), tonumber(b)
@@ -546,7 +593,7 @@ securecall(function() -- bar:id (future-aware)
 		if am == nil then
 			am = {}
 			for d in cv:gmatch("%s*(%d*)[^/]*/*") do
-				am[d ~= "" and d+0 or 0] = true
+				am[d ~= "" and d + 0 or 0] = true
 			end
 			am[0] = nil
 			argCache[cv] = next(am) and am or false
@@ -559,8 +606,12 @@ securecall(function() -- bar:id (future-aware)
 	if RW:IsPyrolysisActive() and type(CMD_SWAP) == "string" and RW:GetCommandFlags(CMD_SWAP) then
 		RW:RegisterCommandEx(CMD_SWAP, RW:GetCommandFlags(CMD_SWAP), f)
 	end
-	if type(CMD_SET) == "string" then RW:SetCommandHint(CMD_SET, math.huge, hintBarCommand) end
-	if type(CMD_SWAP) == "string" then RW:SetCommandHint(CMD_SWAP, math.huge, hintBarCommand) end
+	if type(CMD_SET) == "string" then
+		RW:SetCommandHint(CMD_SET, math.huge, hintBarCommand)
+	end
+	if type(CMD_SWAP) == "string" then
+		RW:SetCommandHint(CMD_SWAP, math.huge, hintBarCommand)
+	end
 	KR:SetSecureExternalConditional("bar", f, hintBarCondition)
 end)
 securecall(function() -- anyflyable
@@ -573,10 +624,22 @@ securecall(function() -- uslot:(slot token)
 	KR:SetStateConditionalValue("uslot", false)
 	local state, noPendingSync, slots = "", 1, {}
 	for tk, sk in pairs({
-		head="HEADSLOT", neck="NECKSLOT", shoulders="SHOULDERSLOT", shirt="SHIRTSLOT", chest="CHESTSLOT",
-		waist="WAISTSLOT", legs="LEGSSLOT", feet="FEETSLOT", wrist="WRISTSLOT", hands="HANDSSLOT",
-		finger1="FINGER0SLOT", finger2="FINGER1SLOT", trinket1="TRINKET0SLOT", trinket2="TRINKET1SLOT",
-		back="BACKSLOT", tabard="TABARDSLOT",
+		head = "HEADSLOT",
+		neck = "NECKSLOT",
+		shoulders = "SHOULDERSLOT",
+		shirt = "SHIRTSLOT",
+		chest = "CHESTSLOT",
+		waist = "WAISTSLOT",
+		legs = "LEGSSLOT",
+		feet = "FEETSLOT",
+		wrist = "WRISTSLOT",
+		hands = "HANDSSLOT",
+		finger1 = "FINGER0SLOT",
+		finger2 = "FINGER1SLOT",
+		trinket1 = "TRINKET0SLOT",
+		trinket2 = "TRINKET1SLOT",
+		back = "BACKSLOT",
+		tabard = "TABARDSLOT"
 	}) do
 		local ok, slot = pcall(GetInventorySlotInfo, sk)
 		slots[tk] = ok and slot or nil
@@ -622,9 +685,9 @@ securecall(function() -- encount:(e-{id}/token)
 	KR:SetStateConditionalValue("encount", false)
 	KR:SetAliasConditional("encounter", "encount")
 	local CV_ENCOUNT_STATE, state, enTokens = "actionbook-encount-state", nil, {
-		[3135]="dimensius/ff-mount",
-		[2837]="shadowcrown/ff-mount",
-		[2839]="rashanan/ff-mount",
+		[3135] = "dimensius/ff-mount",
+		[2837] = "shadowcrown/ff-mount",
+		[2839] = "rashanan/ff-mount"
 	}
 	local function setEncounterState(newstate)
 		state = newstate
@@ -694,7 +757,7 @@ securecall(function() -- Managed role units
 	]==]
 	local function SpawnHeader(key, ...)
 		local h = CreateFrame("Frame", nil, nil, "SecureGroupHeaderTemplate")
-		for i=1,40 do
+		for i = 1, 40 do
 			local c = CreateFrame("Frame", nil, h, "SecureFrameTemplate")
 			h:SetAttribute("child" .. i, c)
 			SecureHandlerSetFrameRef(mh, "u" .. i, c)
@@ -718,13 +781,14 @@ securecall(function() -- Managed role units
 		h:SetAttribute("showPlayer", false)
 		h:SetAttribute("groupingOrder", "1,2,3,4,5,6,7,8")
 		h:SetAttribute("sortMethod", "NAME")
-		for i=1, select("#", ...), 2 do
+		for i = 1, select("#", ...), 2 do
 			local k, v = select(i, ...)
 			h:SetAttribute(k, v)
 		end
 		return h
 	end
-	local ph = CreateFrame("Frame", nil, nil, "SecureGroupHeaderTemplate") do
+	local ph = CreateFrame("Frame", nil, nil, "SecureGroupHeaderTemplate")
+	do
 		local c = CreateFrame("Frame", nil, ph, "SecureFrameTemplate")
 		ph:SetAttribute("child1", c)
 		SecureHandlerWrapScript(c, "OnAttributeChanged", mh, [=[-- MRU_Player_Change
@@ -748,9 +812,9 @@ securecall(function() -- Managed role units
 		ph:SetAttribute("nameList", (UnitName("player")))
 		ph:Show()
 	end
-	SpawnHeader("tank", "roleFilter","TANK"):Show()
-	SpawnHeader("mtank", "roleFilter","MAINTANK"):Show()
-	SpawnHeader("assist", "roleFilter","MAINASSIST"):Show()
-	SpawnHeader("healer", "roleFilter","HEALER"):Show()
-	SpawnHeader("dps", "roleFilter","DAMAGER"):Show()
+	SpawnHeader("tank", "roleFilter", "TANK"):Show()
+	SpawnHeader("mtank", "roleFilter", "MAINTANK"):Show()
+	SpawnHeader("assist", "roleFilter", "MAINASSIST"):Show()
+	SpawnHeader("healer", "roleFilter", "HEALER"):Show()
+	SpawnHeader("dps", "roleFilter", "DAMAGER"):Show()
 end)

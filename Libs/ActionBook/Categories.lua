@@ -1,23 +1,32 @@
 local _, T = ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 
-local AB = T.ActionBook:compatible(2,21)
-local RW = T.ActionBook:compatible("Rewire", 1,27)
-local IM = T.ActionBook:compatible("Imp", 1,8)
+local AB = T.ActionBook:compatible(2, 21)
+local RW = T.ActionBook:compatible("Rewire", 1, 27)
+local IM = T.ActionBook:compatible("Imp", 1, 8)
 local EV = T.Evie
 assert(AB and RW and IM and EV and 1, "Incompatible library bundle")
 local L = T.ActionBook.L
 local mark = {}
-local spellRankFilter = {maxOnly=true}
+local spellRankFilter = {
+	maxOnly = true
+}
 T.SpellRankFilter = spellRankFilter
 
-local function icmp(a,b)
-	return strcmputf8i(a,b) < 0
+local function icmp(a, b)
+	return strcmputf8i(a, b) < 0
 end
 local function getContainerItemLootState(bag, slot)
 	local name, _, _, _, readable, lootable = GetContainerItemInfo(bag, slot)
-	if not name then return nil end
-	return {isReadable = readable, hasLoot = lootable}
+	if not name then
+		return nil
+	end
+	return {
+		isReadable = readable,
+		hasLoot = lootable
+	}
 end
 local function isItemInteresting(tf, testIdx, bag, slot, iid)
 	if testIdx == 2 then
@@ -35,7 +44,7 @@ do
 				add(at, sid)
 			end
 		elseif st == "FLYOUT" then
-			for j=1,select(3,GetFlyoutInfo(sid)) do
+			for j = 1, select(3, GetFlyoutInfo(sid)) do
 				local asid, _osid, ik = GetFlyoutSlotInfo(sid, j)
 				if (not ik) == (not knownFilter) then
 					procSpellBookEntry(add, at, knownFilter, sourceKnown, true, ik and "SPELL" or "FUTURESPELL", asid)
@@ -45,15 +54,15 @@ do
 	end
 	local GENERAL_TAB = 1
 	local WRATH_SKIP_TABS = {
-		["Спутники"]              = true,
+		["Спутники"] = true,
 		["Транспортные средства"] = true,
-		["Транспорт"]             = true,
-		["Питомец"]               = true,
-		["Питомцы"]               = true,
-		["Companions"]            = true,
-		["Mounts"]                = true,
-		["Pet"]                   = true,
-		["Pets"]                  = true,
+		["Транспорт"] = true,
+		["Питомец"] = true,
+		["Питомцы"] = true,
+		["Companions"] = true,
+		["Mounts"] = true,
+		["Pet"] = true,
+		["Pets"] = true
 	}
 	local function isSkippedTab(index, name, icon)
 		if index == GENERAL_TAB or icon == nil or WRATH_SKIP_TABS[name] then
@@ -61,24 +70,27 @@ do
 		end
 		return type(icon) == "string" and icon:lower():find("achievement_guild", 1, true) ~= nil
 	end
-	local isSpecHeaderName do
+	local isSpecHeaderName
+	do
 		local prefixes, seen = {}, {}
 		local localized, cls = UnitClass("player")
 		local function addPrefix(n)
 			if type(n) == "string" and n ~= "" and not seen[n] then
-				seen[n], prefixes[#prefixes+1] = true, n .. " - "
+				seen[n], prefixes[#prefixes + 1] = true, n .. " - "
 			end
 		end
 		addPrefix(localized)
 		addPrefix(LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[cls])
 		addPrefix(LOCALIZED_CLASS_NAMES_FEMALE and LOCALIZED_CLASS_NAMES_FEMALE[cls])
 		function isSpecHeaderName(...)
-			for i=1,select("#", ...) do
+			for i = 1, select("#", ...) do
 				local name = select(i, ...)
 				if type(name) == "string" then
-					for j=1,#prefixes do
+					for j = 1, #prefixes do
 						local p = prefixes[j]
-						if name:sub(1, #p) == p then return true end
+						if name:sub(1, #p) == p then
+							return true
+						end
 					end
 				end
 			end
@@ -91,11 +103,13 @@ do
 	end
 	local function collectTopRanks()
 		local top = {}
-		for i=1,GetNumSpellTabs()+12 do
+		for i = 1, GetNumSpellTabs() + 12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
-			if not ofs then break end
+			if not ofs then
+				break
+			end
 			if not isSkippedTab(i, tabName, ico) then
-				for j=ofs+1, ofs+c do
+				for j = ofs + 1, ofs + c do
 					local bookName, rank = spellBookRank(j)
 					if bookName and rank and rank > (top[bookName] or 0) then
 						top[bookName] = rank
@@ -111,12 +125,14 @@ do
 			SetCVar("showAllSpellRanks", "1")
 		end
 		local top = spellRankFilter.maxOnly and collectTopRanks()
-		for i=1,GetNumSpellTabs()+12 do
+		for i = 1, GetNumSpellTabs() + 12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
-			if not ofs then break end
+			if not ofs then
+				break
+			end
 			local isSkipped = isSkippedTab(i, tabName, ico)
 			if not isSkipped then
-				for j=ofs+1, ofs+c do
+				for j = ofs + 1, ofs + c do
 					local tex = GetSpellTexture(j, "spell")
 					if tex and type(tex) == "string" then
 						local _, sid = GetSpellBookItemInfo(j, "spell")
@@ -128,26 +144,33 @@ do
 							if not isSpecHeader and not isLowRank then
 								mark[sid] = 1
 								local t2 = tex
-								AB:SetSpellIconOverride(sid, function() return t2 end)
-								if name then AB:SetSpellIconOverride(name, function() return t2 end) end
+								AB:SetSpellIconOverride(sid, function()
+									return t2
+								end)
+								if name then
+									AB:SetSpellIconOverride(name, function()
+										return t2
+									end)
+								end
 								if not isSkipped then
 									add("spell", sid)
 								end
 							end
 						end
 					end
+				end
 			end
-		end
 		end
 		if asv and asv ~= "1" then
 			SetCVar("showAllSpellRanks", asv)
 		end
 	end
-	local flyoutRing, flyoutOwner, staleRing = {}, {}, {} do
+	local flyoutRing, flyoutOwner, staleRing = {}, {}, {}
+	do
 		local function syncFlyout(fid, aid)
 			local col, ni = {}, 1
 			local _, _, slots = GetFlyoutInfo(fid)
-			for i=1, slots or 0 do
+			for i = 1, slots or 0 do
 				local sid, _osid, known = GetFlyoutSlotInfo(fid, i)
 				if sid and known then
 					local said = AB:GetActionSlot("spell", sid)
@@ -165,7 +188,9 @@ do
 		end
 		local function createFlyout(fid)
 			fid = tonumber(fid)
-			if not (fid and GetFlyoutInfo(fid)) then return end
+			if not (fid and GetFlyoutInfo(fid)) then
+				return
+			end
 			local aid = flyoutRing[fid]
 			if not aid then
 				aid = syncFlyout(fid)
@@ -177,7 +202,7 @@ do
 			fid = tonumber(fid)
 			local name = fid and GetFlyoutInfo(fid)
 			local _, _, icon = fid and GetSpellInfo(fid)
-			return L"Spell flyout", name or tostring(fid), icon, nil, nil, nil, "collection"
+			return L "Spell flyout", name or tostring(fid), icon, nil, nil, nil, "collection"
 		end
 		AB:RegisterActionType("opie.flyout", createFlyout, describeFlyout, 1)
 		AB:AddObserver("internal.collection.preopen", function(_, _, aid)
@@ -193,7 +218,7 @@ do
 			end
 		end
 	end
-	AB:AugmentCategory(L"General abilities", function(_, add)
+	AB:AugmentCategory(L "General abilities", function(_, add)
 		local _, _, ofs, count = GetSpellTabInfo(GENERAL_TAB)
 		for j = (ofs or 0) + 1, (ofs or 0) + (count or 0) do
 			local tex = GetSpellTexture(j, "spell")
@@ -201,54 +226,58 @@ do
 				local _, sid = GetSpellBookItemInfo(j, "spell")
 				if sid and sid > 0 and not IsPassiveSpell(sid) and not C_SpellBook.IsSpellHiddenForUI(sid) then
 					local name, t2 = GetSpellInfo(sid), tex
-					AB:SetSpellIconOverride(sid, function() return t2 end)
+					AB:SetSpellIconOverride(sid, function()
+						return t2
+					end)
 					if name then
-						AB:SetSpellIconOverride(name, function() return t2 end)
+						AB:SetSpellIconOverride(name, function()
+							return t2
+						end)
 					end
 					add(GetFlyoutInfo(sid) and "opie.flyout" or "spell", sid)
 				end
 			end
 		end
 	end)
-	AB:AugmentCategory(L"Abilities", function(_, add)
+	AB:AugmentCategory(L "Abilities", function(_, add)
 		wipe(mark)
 		addSpells(add, true)
 		wipe(mark)
 	end)
 	local _, cl = UnitClass("player")
 	if cl == "HUNTER" or cl == "WARLOCK" then
-		AB:AugmentCategory(L"Pet abilities", function(_, add)
-		wipe(mark)
-		for i=1,HasPetSpells() or 0 do
-			local spellType, id = GetSpellBookItemInfo(i, "pet")
-			if spellType == "PETACTION" then
-				id = nil
-			elseif not id or id == 0 then
-				local name, rank = GetSpellBookItemName(i, "pet")
-				if name then
-					local link = GetSpellLink(name, rank)
-					id = tonumber(link and link:match("|Hspell:(%d+)"))
+		AB:AugmentCategory(L "Pet abilities", function(_, add)
+			wipe(mark)
+			for i = 1, HasPetSpells() or 0 do
+				local spellType, id = GetSpellBookItemInfo(i, "pet")
+				if spellType == "PETACTION" then
+					id = nil
+				elseif not id or id == 0 then
+					local name, rank = GetSpellBookItemName(i, "pet")
+					if name then
+						local link = GetSpellLink(name, rank)
+						id = tonumber(link and link:match("|Hspell:(%d+)"))
+					end
+				end
+				if id and id > 0 and not IsPassiveSpell(id) and not mark[id] then
+					mark[id] = true
+					add("petspell", id)
 				end
 			end
-			if id and id > 0 and not IsPassiveSpell(id) and not mark[id] then
-				mark[id] = true
-				add("petspell", id)
+			for s in ("attack stay follow assist defend passive"):gmatch("%S+") do
+				add("petspell", s)
 			end
-		end
-		for s in ("attack stay follow assist defend passive"):gmatch("%S+") do
-			add("petspell", s)
-		end
-		wipe(mark)
+			wipe(mark)
 		end)
 	end
 end
-AB:AugmentCategory(L"Items", function(_, add)
+AB:AugmentCategory(L "Items", function(_, add)
 	wipe(mark)
 	local ns, giid = GetContainerNumSlots, GetContainerItemID
-	for t=0,2 do
+	for t = 0, 2 do
 		local tf = t == 0 and GetItemSpell or t == 1 and IsEquippableItem or getContainerItemLootState
-		for bag=0,4 do
-			for slot=1, ns(bag) do
+		for bag = 0, 4 do
+			for slot = 1, ns(bag) do
 				local iid = giid(bag, slot)
 				if iid and not mark[iid] and isItemInteresting(tf, t, bag, slot, iid) then
 					add("item", iid)
@@ -256,7 +285,7 @@ AB:AugmentCategory(L"Items", function(_, add)
 				end
 			end
 		end
-		for slot=INVSLOT_FIRST_EQUIPPED, t < 2 and INVSLOT_LAST_EQUIPPED or -10 do
+		for slot = INVSLOT_FIRST_EQUIPPED, t < 2 and INVSLOT_LAST_EQUIPPED or -10 do
 			local iid = GetInventoryItemID("player", slot)
 			if iid and not mark[iid] and tf(iid) then
 				add("item", iid)
@@ -265,8 +294,10 @@ AB:AugmentCategory(L"Items", function(_, add)
 		end
 	end
 end)
-AB:AugmentCategory(L"Equipped", function(_, add)
-	for w in ("head neck shoulders back chest tabard shirt wrist hands waist legs feet finger1 finger2 trinket1 trinket2"):gmatch("%S+") do
+AB:AugmentCategory(L "Equipped", function(_, add)
+	for w in
+		("head neck shoulders back chest tabard shirt wrist hands waist legs feet finger1 finger2 trinket1 trinket2"):gmatch(
+			"%S+") do
 		add("peq", w)
 	end
 end)
@@ -275,14 +306,18 @@ local function registerCompanionIconOverrides()
 		local _, _, sid, icon = GetCompanionInfo("MOUNT", i)
 		if sid and sid > 0 and icon then
 			local ic = icon
-			AB:SetSpellIconOverride(sid, function() return ic end)
+			AB:SetSpellIconOverride(sid, function()
+				return ic
+			end)
 		end
 	end
 	for i = 1, GetNumCompanions("CRITTER") do
 		local _, _, sid, icon = GetCompanionInfo("CRITTER", i)
 		if sid and sid > 0 and icon then
 			local ic = icon
-			AB:SetSpellIconOverride(sid, function() return ic end)
+			AB:SetSpellIconOverride(sid, function()
+				return ic
+			end)
 		end
 	end
 end
@@ -296,13 +331,15 @@ end
 do
 	AB:AugmentCategory(COMPANIONS, function(_, add)
 		local seen = {}
-		for i=1, GetNumCompanions("CRITTER") do
+		for i = 1, GetNumCompanions("CRITTER") do
 			local _, _, sid, icon = GetCompanionInfo("CRITTER", i)
 			if sid and sid > 0 and not seen[sid] then
 				seen[sid] = true
 				if icon then
 					local ic = icon
-					AB:SetSpellIconOverride(sid, function() return ic end)
+					AB:SetSpellIconOverride(sid, function()
+						return ic
+					end)
 				end
 				add("spell", sid)
 			end
@@ -310,47 +347,51 @@ do
 	end)
 end
 do
-	AB:AugmentCategory(L"Mounts", function(_, add)
+	AB:AugmentCategory(L "Mounts", function(_, add)
 		local n2name, n2icon, sids = {}, {}, {}
-		for i=1, GetNumCompanions("MOUNT") do
+		for i = 1, GetNumCompanions("MOUNT") do
 			local _, name, sid, icon = GetCompanionInfo("MOUNT", i)
 			if sid and sid > 0 and not n2name[sid] then
 				n2name[sid] = name or ""
 				n2icon[sid] = icon
-				sids[#sids+1] = sid
+				sids[#sids + 1] = sid
 			end
 		end
-		table.sort(sids, function(a,b) return icmp(n2name[a], n2name[b]) end)
-		for i=1,#sids do
+		table.sort(sids, function(a, b)
+			return icmp(n2name[a], n2name[b])
+		end)
+		for i = 1, #sids do
 			local sid = sids[i]
 			local icon = n2icon[sid]
 			if icon then
 				local ic = icon
-				AB:SetSpellIconOverride(sid, function() return ic end)
+				AB:SetSpellIconOverride(sid, function()
+					return ic
+				end)
 			end
 			add("spell", sid)
 		end
 	end)
 end
-AB:AugmentCategory(L"Macros", function(_, add)
+AB:AugmentCategory(L "Macros", function(_, add)
 	add("imptext", "")
 	local n, ni = {}, 1
 	for name in RW:GetNamedMacros() do
 		n[ni], ni = name, ni + 1
 	end
 	table.sort(n, icmp)
-	for i=1,#n do
+	for i = 1, #n do
 		add("macro", n[i])
 	end
 end)
 do
 	local profCatName = TRADE_SKILLS or "Professions"
 	local PROF_SECONDARY = {
-		["Горное дело"]    = {"Выплавка металлов"},
+		["Горное дело"] = {"Выплавка металлов"},
 		["Ювелирное дело"] = {"Просеивание"},
-		["Начертание"]     = {"Просеивание"},
-		["Наложение чар"]  = {"Распыление"},
-		["Кулинария"]      = {"Костер", "Разведение костра"},
+		["Начертание"] = {"Просеивание"},
+		["Наложение чар"] = {"Распыление"},
+		["Кулинария"] = {"Костер", "Разведение костра"}
 	}
 	AB:AugmentCategory(profCatName, function(_, add)
 		local profSkills, inProfsHeader = {}, false
@@ -368,7 +409,9 @@ do
 		local secondaryNames = {}
 		for profName, list in pairs(PROF_SECONDARY) do
 			if profSkills[profName] then
-				for _, sn in ipairs(list) do secondaryNames[sn] = true end
+				for _, sn in ipairs(list) do
+					secondaryNames[sn] = true
+				end
 			end
 		end
 
@@ -376,12 +419,15 @@ do
 		local secSpells, secIcons = {}, {}
 		for i = 1, GetNumSpellTabs() do
 			local _, _, ofs, count = GetSpellTabInfo(i)
-			if not ofs then break end
+			if not ofs then
+				break
+			end
 			for j = ofs + 1, ofs + count do
 				local link, tradeLink = GetSpellLink(j, "spell")
 				local isTradeLink = (link and link:find("|Htrade:")) or (tradeLink and tradeLink:find("|Htrade:"))
-				local sid = (link and (tonumber(link:match("|Hspell:(%d+)")) or tonumber(link:match("|Htrade:(%d+)"))))
-				         or (tradeLink and tonumber(tradeLink:match("|Htrade:(%d+)")))
+				local sid =
+					(link and (tonumber(link:match("|Hspell:(%d+)")) or tonumber(link:match("|Htrade:(%d+)")))) or
+						(tradeLink and tonumber(tradeLink:match("|Htrade:(%d+)")))
 				if sid and sid > 0 then
 					local spellName = GetSpellInfo(sid)
 					local tex = spellName and GetSpellTexture(j, "spell")
@@ -402,7 +448,11 @@ do
 
 		for name, sid in pairs(profSpells) do
 			local ic = profIcons[name]
-			if ic then AB:SetSpellIconOverride(sid, function() return ic end) end
+			if ic then
+				AB:SetSpellIconOverride(sid, function()
+					return ic
+				end)
+			end
 			add("spell", sid)
 		end
 		for profName, list in pairs(PROF_SECONDARY) do
@@ -411,7 +461,11 @@ do
 					local sid = secSpells[secName]
 					if sid then
 						local ic = secIcons[secName]
-						if ic then AB:SetSpellIconOverride(sid, function() return ic end) end
+						if ic then
+							AB:SetSpellIconOverride(sid, function()
+								return ic
+							end)
+						end
 						add("spell", sid)
 					end
 				end
@@ -420,36 +474,43 @@ do
 	end)
 end
 do
-	AB:AugmentCategory(L"Equipment sets", function(_, add)
-		for _,id in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+	AB:AugmentCategory(L "Equipment sets", function(_, add)
+		for _, id in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
 			add("equipmentset", (C_EquipmentSet.GetEquipmentSetInfo(id)))
 		end
 	end)
 end
-AB:AugmentCategory(L"Raid markers", function(_, add)
-	for i=0,8 do
+AB:AugmentCategory(L "Raid markers", function(_, add)
+	for i = 0, 8 do
 		add("raidmark", i)
 	end
 end)
 if WORLD_RAID_MARKER_ORDER then
-	AB:AugmentCategory(L"Raid world markers", function(_, add)
-		for i=0,#WORLD_RAID_MARKER_ORDER do
+	AB:AugmentCategory(L "Raid world markers", function(_, add)
+		for i = 0, #WORLD_RAID_MARKER_ORDER do
 			add("worldmark", i)
 		end
 	end)
 end
-AB:AugmentCategory(L"Toys", function(_, add)
-	if not ToyBox or not ToyBox.PagingFrame then return end
+AB:AugmentCategory(L "Toys", function(_, add)
+	if not ToyBox or not ToyBox.PagingFrame then
+		return
+	end
 	wipe(mark)
 	local maxPages = ToyBox.PagingFrame:GetMaxPages()
 	local origPage = ToyBox.PagingFrame:GetCurrentPage()
 	local wasShown = ToyBox:IsShown()
-	if not wasShown then ToyBox:Show() end
+	if not wasShown then
+		ToyBox:Show()
+	end
 	for page = 1, maxPages do
-		if page ~= origPage then ToyBox.PagingFrame:SetCurrentPage(page) end
+		if page ~= origPage then
+			ToyBox.PagingFrame:SetCurrentPage(page)
+		end
 		for b = 1, 18 do
-			local btn = _G["ToyBoxIconsFrameSpellButton"..b]
-			if btn and btn.spellID and btn.spellID > 0 and not mark[btn.spellID] and btn.itemID and PlayerHasToy(btn.itemID) then
+			local btn = _G["ToyBoxIconsFrameSpellButton" .. b]
+			if btn and btn.spellID and btn.spellID > 0 and not mark[btn.spellID] and btn.itemID and
+				PlayerHasToy(btn.itemID) then
 				mark[btn.spellID] = 1
 				add("spell", btn.spellID)
 			end
@@ -458,29 +519,41 @@ AB:AugmentCategory(L"Toys", function(_, add)
 	if maxPages > 1 and origPage ~= maxPages then
 		ToyBox.PagingFrame:SetCurrentPage(origPage)
 	end
-	if not wasShown then ToyBox:Hide() end
+	if not wasShown then
+		ToyBox:Hide()
+	end
 	wipe(mark)
 end)
 do
-	AB:AddActionToCategory(L"Miscellaneous", "imptext", "")
+	AB:AddActionToCategory(L "Miscellaneous", "imptext", "")
 end
 do
-	AB:AddCategoryAlias("Miscellaneous", L"Miscellaneous")
+	AB:AddCategoryAlias("Miscellaneous", L "Miscellaneous")
 end
 do
 	local function registerSpellIcons()
 		for i = 1, GetNumSpellTabs() do
 			local _, _, ofs, c = GetSpellTabInfo(i)
-			if not ofs then break end
+			if not ofs then
+				break
+			end
 			for j = ofs + 1, ofs + c do
 				local tex = GetSpellTexture(j, "spell")
 				if tex and type(tex) == "string" then
 					local _, sid = GetSpellBookItemInfo(j, "spell")
 					if sid and sid > 0 then
 						local t2, name = tex, GetSpellInfo(sid)
-						AB:SetSpellIconOverride(sid, function() return t2 end)
-						if name then AB:SetSpellIconOverride(name, function() return t2 end) end
-						RW:SetSpellCastableChecker(sid, function() return true end)
+						AB:SetSpellIconOverride(sid, function()
+							return t2
+						end)
+						if name then
+							AB:SetSpellIconOverride(name, function()
+								return t2
+							end)
+						end
+						RW:SetSpellCastableChecker(sid, function()
+							return true
+						end)
 					end
 				end
 			end
@@ -491,8 +564,14 @@ do
 				local _, sid = GetSpellBookItemInfo(i, "pet")
 				if sid and sid > 0 then
 					local t2, name = tex, GetSpellInfo(sid)
-					AB:SetSpellIconOverride(sid, function() return t2 end)
-					if name then AB:SetSpellIconOverride(name, function() return t2 end) end
+					AB:SetSpellIconOverride(sid, function()
+						return t2
+					end)
+					if name then
+						AB:SetSpellIconOverride(name, function()
+							return t2
+						end)
+					end
 				end
 			end
 		end
@@ -505,9 +584,11 @@ do
 	end
 end
 do
-	local panels = {"character", "reputation", "currency", "spellbook", "talents", "achievements", "quests", "groupfinder", "collections", "adventureguide", "store", "guild", "map", "social", "calendar", "macro", "options", "gamemenu"}
-	AB:AugmentCategory(L"UI panels", function(_, add)
-		for i=1,#panels do
+	local panels = {"character", "reputation", "currency", "spellbook", "talents", "achievements", "quests",
+					"groupfinder", "collections", "adventureguide", "store", "guild", "map", "social", "calendar",
+					"macro", "options", "gamemenu"}
+	AB:AugmentCategory(L "UI panels", function(_, add)
+		for i = 1, #panels do
 			i = panels[i]
 			if select(2, AB:GetActionListDescription("uipanel", i)) then
 				add("uipanel", i)

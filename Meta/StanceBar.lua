@@ -1,18 +1,24 @@
 local _, T = ...
 local EV, frame, pendingValue = T.Evie, ShapeshiftBarFrame, nil
-if not frame then return end
+if not frame then
+	return
+end
 local keeper, parent = CreateFrame("Frame"), frame:GetParent()
 keeper:Hide()
 
 local function SetStanceBarVisibility(_, hidden, ringID)
-	if ringID ~= nil then return false end
+	if ringID ~= nil then
+		return false
+	end
 	hidden = hidden ~= false
 	if InCombatLockdown() then
 		pendingValue = hidden
 		return
 	end
 	frame:SetParent(hidden and keeper or parent)
-	if hidden == false and frame:IsShown() then frame:Show() end
+	if hidden == false and frame:IsShown() then
+		frame:Show()
+	end
 	pendingValue = nil
 end
 

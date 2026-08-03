@@ -1,5 +1,7 @@
 local MAJ, REV, _, T = 1, 34, ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 local KR, EV, WR = {}, T.Evie, T.Ware
 assert(EV and WR and 1, "Incompatible library bundle")
 
@@ -8,8 +10,9 @@ local function assert(condition, err, ...)
 end
 
 local rtgsub = string.rtgsub
-local core     = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
-local coreEnvW = WR.GetRestrictedEnvironment(core) do
+local core = CreateFrame("Frame", nil, nil, "SecureHandlerStateTemplate")
+local coreEnvW = WR.GetRestrictedEnvironment(core)
+do
 	core:Hide(core)
 	coreEnvW.sandbox = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
 	local watchProxy = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
@@ -448,7 +451,8 @@ core:SetAttribute("UpdateStateConditional", [=[-- Kindred:UpdateStateConditional
 		owner:Run(RefreshDrivers, name)
 	end
 ]=])
-core:SetAttribute("SetStateConditionalDriver", [=[-- Kindred:SetStateConditionalDriver("name", "driverExpr", isFullyNative)
+core:SetAttribute("SetStateConditionalDriver",
+	[=[-- Kindred:SetStateConditionalDriver("name", "driverExpr", isFullyNative)
 	local name, driverExpr, isFullyNative = ...
 	if type(name) ~= "string" or type(driverExpr) ~= "string" then
 		return owner:CallMethod("throw", 'Syntax: ("SetStateConditionalDriver", "name", "driverExpr"[, isFullyNative])')
@@ -502,7 +506,8 @@ core:SetAttribute("ResolveUnit", [=[-- Kindred:ResolveUnit("unit"[, futureID])
 core:SetAttribute("PokeConditional", [=[-- Kindred:PokeConditional("name")
 	owner:Run(RefreshDrivers, (...))
 ]=])
-core:SetAttribute("RegisterBindingDriver", [=[-- Kindred:RegisterBindingDriver(*target*, "button", "options", priority[, *notify*])
+core:SetAttribute("RegisterBindingDriver",
+	[=[-- Kindred:RegisterBindingDriver(*target*, "button", "options", priority[, *notify*])
 	local target, notify, button, options, priority = self:GetFrameRef("RegisterBindingDriver-target"), self:GetFrameRef("RegisterBindingDriver-notify"), ...
 	self:SetAttribute("frameref-RegisterStateDriver-target", nil)
 	self:SetAttribute("frameref-RegisterStateDriver-notify", nil)
@@ -541,9 +546,9 @@ core:SetAttribute("ComputeConditionalLock", [=[-- Kindred:ComputeConditionalLock
 	local bind, clickButton, modState = ...
 	if not modState then
 		modState = modHoldMap[(IsLeftAltKeyDown() and 2 or 1) + (IsRightAltKeyDown() and 2 or 0)] ..
-		           modHoldMap[(IsLeftShiftKeyDown() and 2 or 1) + (IsRightShiftKeyDown() and 2 or 0)] ..
-		           modHoldMap[(IsLeftControlKeyDown() and 2 or 1) + (IsRightControlKeyDown() and 2 or 0)] ..
-		           modHoldMap[(IsModifiedClick("LMETA-X") and 2 or 1) + (IsModifiedClick("RMETA-X") and 2 or 0)]
+				   modHoldMap[(IsLeftShiftKeyDown() and 2 or 1) + (IsRightShiftKeyDown() and 2 or 0)] ..
+				   modHoldMap[(IsLeftControlKeyDown() and 2 or 1) + (IsRightControlKeyDown() and 2 or 0)] ..
+				   modHoldMap[(IsModifiedClick("LMETA-X") and 2 or 1) + (IsModifiedClick("RMETA-X") and 2 or 0)]
 	end
 	if clickButton == nil or clickButton == true then
 		clickButton = SecureCmdOptionParse("[btn:1] 1; [btn:2] 2; [btn:3] 3; [btn:4] 4; [btn:5] 5; 1")
@@ -604,10 +609,10 @@ core:SetAttribute("_onstate-lockdown", [[-- Kindred:SyncLockdownState
 core:SetAttribute("_onstate-mod", [[-- Kindred:SyncModifierState
 	if not newstate then return end
 	newstate = newstate ~= "on" and 0 or 0
-	         + (IsLeftAltKeyDown() and 1 or 0) + (IsRightAltKeyDown() and 2 or 0)
-	         + (IsLeftShiftKeyDown() and 4 or 0) + (IsRightShiftKeyDown() and 8 or 0)
-	         + (IsLeftControlKeyDown() and 16 or 0) + (IsRightControlKeyDown() and 32 or 0)
-	         + (IsModifiedClick("LMETA-X") and 64 or 0) + (IsModifiedClick("RMETA-X") and 128 or 0)
+			 + (IsLeftAltKeyDown() and 1 or 0) + (IsRightAltKeyDown() and 2 or 0)
+			 + (IsLeftShiftKeyDown() and 4 or 0) + (IsRightShiftKeyDown() and 8 or 0)
+			 + (IsLeftControlKeyDown() and 16 or 0) + (IsRightControlKeyDown() and 32 or 0)
+			 + (IsModifiedClick("LMETA-X") and 64 or 0) + (IsModifiedClick("RMETA-X") and 128 or 0)
 	if newstate > 0 then
 		self:SetAttribute("state-mod", nil)
 	end
@@ -631,10 +636,11 @@ EV.PLAYER_REGEN_DISABLED, EV.PLAYER_REGEN_ENABLED = syncLockdown, syncLockdown
 function core:throw(err)
 	return error(err, 2)
 end
-local PackDefer, ClearDefer do
+local PackDefer, ClearDefer
+do
 	local execQueue, cPack = {}
 	local function execPack()
-		return KR[cPack[1]](KR, unpack(cPack, 3, 2+cPack[2]))
+		return KR[cPack[1]](KR, unpack(cPack, 3, 2 + cPack[2]))
 	end
 	function PackDefer(key, method, ...)
 		execQueue[key] = {method, select("#", ...), ...}
@@ -645,7 +651,7 @@ local PackDefer, ClearDefer do
 		end
 	end
 	function EV:PLAYER_REGEN_ENABLED()
-		for k,v in pairs(execQueue) do
+		for k, v in pairs(execQueue) do
 			cPack, execQueue[k] = v, nil
 			securecall(execPack)
 		end
@@ -654,21 +660,36 @@ local PackDefer, ClearDefer do
 end
 
 local soEscapeSeqToLiteral = WR.GetBackingRestrictedTable(coreEnvW).soEscapeSeqToLiteral
-local SetExternalShadow, RunShadowAttribute, WipeShadowFuture do
-	local ShadowEnvironment, ShadowRun do
-		local fcache, _R, _ENV, _FRAME = {}, {next=rtable.next, pairs=rtable.pairs, newtable=function(...) return {...} end}, {}, {}
-		local _shadow = {__index=function(t,k)
-			local v = _ENV[t] and _ENV[t][k]
-			if v == nil then
-				v = _R[k] or _G[k]
-			elseif type(v) == "userdata" then
-				v = IsFrameHandle(v) and ShadowEnvironment(GetFrameHandleFrame(v)) or setmetatable({}, {__index=v})
-				t[k] = v
+local SetExternalShadow, RunShadowAttribute, WipeShadowFuture
+do
+	local ShadowEnvironment, ShadowRun
+	do
+		local fcache, _R, _ENV, _FRAME = {}, {
+			next = rtable.next,
+			pairs = rtable.pairs,
+			newtable = function(...)
+				return {...}
 			end
-			return v
-		end}
+		}, {}, {}
+		local _shadow = {
+			__index = function(t, k)
+				local v = _ENV[t] and _ENV[t][k]
+				if v == nil then
+					v = _R[k] or _G[k]
+				elseif type(v) == "userdata" then
+					v = IsFrameHandle(v) and ShadowEnvironment(GetFrameHandleFrame(v)) or setmetatable({}, {
+						__index = v
+					})
+					t[k] = v
+				end
+				return v
+			end
+		}
 		function ShadowRun(self, f, ...)
-			local v = fcache[f] or loadstring(("-- shadow:%s\nreturn function(self, ...)\n%s\nend"):format(tostring(f):match("^[%s%-]*([^\n]*)"), f))()
+			local v = fcache[f] or
+						  loadstring(
+					("-- shadow:%s\nreturn function(self, ...)\n%s\nend"):format(tostring(f):match("^[%s%-]*([^\n]*)"),
+						f))()
 			fcache[f] = setfenv(v, _ENV[self])
 			return securecall(v, self, ...)
 		end
@@ -680,7 +701,13 @@ local SetExternalShadow, RunShadowAttribute, WipeShadowFuture do
 			return ShadowRun(self, c, ...)
 		end
 		function ShadowEnvironment(h)
-			local e = _ENV[h] or setmetatable({owner={Run=ShadowRun, GetAttribute=ShadowGetAttribute, RunAttribute=ShadowRunAttribute}}, _shadow)
+			local e = _ENV[h] or setmetatable({
+				owner = {
+					Run = ShadowRun,
+					GetAttribute = ShadowGetAttribute,
+					RunAttribute = ShadowRunAttribute
+				}
+			}, _shadow)
 			_ENV[h], _ENV[e], _ENV[e.owner], _FRAME[e.owner] = e, GetManagedEnvironment(h), e, h
 			return e.owner, e
 		end
@@ -703,61 +730,93 @@ end
 
 function KR:ClearConditional(name)
 	assert(type(name) == "string", 'Syntax: Kindred:ClearConditional("name")')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "ClearConditional", name) end
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "ClearConditional", name)
+	end
 	coreEnvW.cndAlias[name], coreEnvW.cndType[name], coreEnvW.cndState[name], coreEnvW.cndInsecure[name] = nil
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 end
 function KR:SetStateConditionalValue(name, value)
-	if type(value) == "boolean" then value = value and "*" or "" end
-	assert(type(name) == "string" and type(value) == "string", 'Syntax: Kindred:SetStateConditionalValue("name", "value")')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetStateConditionalValue", name, value) end
+	if type(value) == "boolean" then
+		value = value and "*" or ""
+	end
+	assert(type(name) == "string" and type(value) == "string",
+		'Syntax: Kindred:SetStateConditionalValue("name", "value")')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetStateConditionalValue", name, value)
+	end
 	WR.RunAttribute(coreEnvW, "UpdateStateConditional", name, value, "*")
 end
 function KR:SetThresholdConditionalValue(name, value)
-	assert(type(name) == "string" and (value == false or type(value) == "number"), 'Syntax: Kindred:SetThresholdConditionalValue("name", value or false)')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetThresholdConditionalValue", name, value) end
+	assert(type(name) == "string" and (value == false or type(value) == "number"),
+		'Syntax: Kindred:SetThresholdConditionalValue("name", value or false)')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetThresholdConditionalValue", name, value)
+	end
 	WR.RunAttribute(coreEnvW, "UpdateThresholdConditional", name, value)
 end
 function KR:SetStateConditionalDriver(name, driverOptionExpr, isFullyNative)
-	assert(type(name) == "string" and type(driverOptionExpr) == "string", 'Syntax: Kindred:SetStateConditionalDriver("name", "driverOptionExpr"[, isFullyNative])')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetStateConditionalDriver", name, driverOptionExpr, isFullyNative) end
+	assert(type(name) == "string" and type(driverOptionExpr) == "string",
+		'Syntax: Kindred:SetStateConditionalDriver("name", "driverOptionExpr"[, isFullyNative])')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetStateConditionalDriver", name, driverOptionExpr, isFullyNative)
+	end
 	WR.RunAttribute(coreEnvW, "SetStateConditionalDriver", name, driverOptionExpr, not not isFullyNative)
 end
 function KR:SetSecureExecConditional(name, snippet)
-	assert(type(name) == "string" and type(snippet) == "string", 'Syntax: Kindred:SetSecureExecConditional("name", "snippet")')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetSecureExecConditional", name, snippet) end
+	assert(type(name) == "string" and type(snippet) == "string",
+		'Syntax: Kindred:SetSecureExecConditional("name", "snippet")')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetSecureExecConditional", name, snippet)
+	end
 	coreEnvW.cndType[name], coreEnvW.cndState[name] = "srun", snippet
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 end
 function KR:SetSecureExternalConditional(name, handler, hint)
-	assert(type(name) == "string" and type(handler) == "table" and handler[0] and type(hint) == "function", 'Syntax: Kindred:SetSecureExternalConditional("name", handlerFrame, hintFunc)')
-	assert(handler.IsProtected and select(2,handler:IsProtected()) and handler:GetAttribute("EvaluateMacroConditional"), "Handler frame must be explicitly protected; must have EvaluateMacroConditional attribute set")
-	if InCombatLockdown() then return PackDefer(name, "SetSecureExternalConditional", name, handler, hint) end
+	assert(type(name) == "string" and type(handler) == "table" and handler[0] and type(hint) == "function",
+		'Syntax: Kindred:SetSecureExternalConditional("name", handlerFrame, hintFunc)')
+	assert(
+		handler.IsProtected and select(2, handler:IsProtected()) and handler:GetAttribute("EvaluateMacroConditional"),
+		"Handler frame must be explicitly protected; must have EvaluateMacroConditional attribute set")
+	if InCombatLockdown() then
+		return PackDefer(name, "SetSecureExternalConditional", name, handler, hint)
+	end
 	coreEnvW.cndType[name], coreEnvW.cndState[name] = handler and "srun", handler
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 	SetExternalShadow(name, hint)
 end
 function KR:SetNonSecureConditional(name, handler)
-	assert(type(name) == "string" and type(handler) == "function", 'Syntax: Kindred:SetNonSecureConditional("name", handlerFunc)')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetNonSecureConditional", name, handler) end
+	assert(type(name) == "string" and type(handler) == "function",
+		'Syntax: Kindred:SetNonSecureConditional("name", handlerFunc)')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetNonSecureConditional", name, handler)
+	end
 	coreEnvW.cndType[name], coreEnvW.cndInsecure[name], coreEnvW.cndState[name] = "irun", true
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 	SetExternalShadow(name, handler)
 end
 function KR:SetAliasConditional(name, aliasFor)
-	assert(type(name) == "string" and type(aliasFor) == "string", 'Syntax: Kindred:SetAliasConditional("name", "aliasFor")')
-	if InCombatLockdown() or ClearDefer(name) then return PackDefer(name, "SetAliasConditional", name, aliasFor) end
+	assert(type(name) == "string" and type(aliasFor) == "string",
+		'Syntax: Kindred:SetAliasConditional("name", "aliasFor")')
+	if InCombatLockdown() or ClearDefer(name) then
+		return PackDefer(name, "SetAliasConditional", name, aliasFor)
+	end
 	coreEnvW.cndAlias[name] = aliasFor
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 end
 function KR:SetAliasUnit(alias, unit)
-	assert(type(alias) == "string" and (type(unit) == "string" or unit == nil), 'Syntax: Kindred:SetAliasUnit("alias", "unit" or nil)')
-	if InCombatLockdown() or ClearDefer("_alias-" .. alias) then return PackDefer("_alias-" .. alias, "SetAliasUnit", alias, unit) end
+	assert(type(alias) == "string" and (type(unit) == "string" or unit == nil),
+		'Syntax: Kindred:SetAliasUnit("alias", "unit" or nil)')
+	if InCombatLockdown() or ClearDefer("_alias-" .. alias) then
+		return PackDefer("_alias-" .. alias, "SetAliasUnit", alias, unit)
+	end
 	WR.RunAttribute(coreEnvW, "SetAliasUnit", alias, unit)
 end
 function KR:PokeConditional(name)
 	assert(type(name) == "string", 'Syntax: Kindred:PokeConditional("name")')
-	if InCombatLockdown() or ClearDefer("_poke-" .. name) then return PackDefer("_poke-" .. name, "PokeConditional", name) end
+	if InCombatLockdown() or ClearDefer("_poke-" .. name) then
+		return PackDefer("_poke-" .. name, "PokeConditional", name)
+	end
 	WR.Run(coreEnvW, coreEnvW.RefreshDrivers, name)
 end
 
@@ -778,26 +837,36 @@ function KR:ClearFuture(_futureID)
 end
 
 function KR:RegisterStateDriver(frame, state, values)
-	assert(type(frame) == "table" and type(state) == "string" and (values == nil or type(values) == "string"), 'Syntax: Kindred:RegisterStateDriver(frame, "state"[, "values"])')
+	assert(type(frame) == "table" and type(state) == "string" and (values == nil or type(values) == "string"),
+		'Syntax: Kindred:RegisterStateDriver(frame, "state"[, "values"])')
 	local dkey = "_sd-" .. #state .. ":" .. state .. tostring(frame)
-	if InCombatLockdown() or ClearDefer(dkey) then return PackDefer(dkey, "RegisterStateDriver", frame, state, values) end
+	if InCombatLockdown() or ClearDefer(dkey) then
+		return PackDefer(dkey, "RegisterStateDriver", frame, state, values)
+	end
 	core:SetFrameRef("RegisterStateDriver-frame", frame)
 	WR.RunAttribute(coreEnvW, "RegisterStateDriver", state, values or "")
 end
 function KR:RegisterBindingDriver(target, button, options, priority, notify)
-	assert(type(target) == "table" and type(button) == "string" and type(options) == "string", 'Syntax: Kindred:RegisterBindingDriver(targetButton, "button", "options", priority, notifyFrame)')
-	assert(not notify or type(notify) == "table" and notify:IsProtected(), "If specified, notifyFrame must be a protected frame.")
+	assert(type(target) == "table" and type(button) == "string" and type(options) == "string",
+		'Syntax: Kindred:RegisterBindingDriver(targetButton, "button", "options", priority, notifyFrame)')
+	assert(not notify or type(notify) == "table" and notify:IsProtected(),
+		"If specified, notifyFrame must be a protected frame.")
 	assert(type(priority or 0) == "number", "Binding priority must be a number")
 	local dkey = "_bd-" .. #button .. ":" .. button .. tostring(target)
-	if InCombatLockdown() or ClearDefer(dkey) then return PackDefer(dkey, "RegisterBindingDriver", target, button, options, priority, notify) end
+	if InCombatLockdown() or ClearDefer(dkey) then
+		return PackDefer(dkey, "RegisterBindingDriver", target, button, options, priority, notify)
+	end
 	core:SetOptFrameRef("RegisterBindingDriver-notify", notify)
 	core:SetFrameRef("RegisterBindingDriver-target", target)
 	WR.RunAttribute(coreEnvW, "RegisterBindingDriver", button, options, priority or 0)
 end
 function KR:UnregisterBindingDriver(target, button)
-	assert(type(target) == "table" and type(button) == "string", 'Syntax: Kindred:UnregisterBindingDriver(targetButton, "button")')
+	assert(type(target) == "table" and type(button) == "string",
+		'Syntax: Kindred:UnregisterBindingDriver(targetButton, "button")')
 	local dkey = "_bd-" .. #button .. ":" .. button .. tostring(target)
-	if InCombatLockdown() or ClearDefer(dkey) then return PackDefer(dkey, "UnregisterBindingDriver", target, button) end
+	if InCombatLockdown() or ClearDefer(dkey) then
+		return PackDefer(dkey, "UnregisterBindingDriver", target, button)
+	end
 	core:SetFrameRef("UnregisterBindingDriver-target", target)
 	WR.RunAttribute(coreEnvW, "UnregisterBindingDriver", button)
 end
@@ -816,4 +885,6 @@ end
 KR:SetAliasConditional("modifier", "mod")
 KR:SetAliasConditional("button", "btn")
 
-T.Kindred = {compatible=KR.compatible}
+T.Kindred = {
+	compatible = KR.compatible
+}

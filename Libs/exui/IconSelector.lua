@@ -4,7 +4,8 @@ local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, Cal
 
 local SOLID = "Interface\\Buttons\\WHITE8X8"
 local HOLD_HOVER_HINT_DURATION, ICON_FILE_NAMES, LookupIconName = 0.2, nil
-local resolveTexturePath do
+local resolveTexturePath
+do
 	local probe
 	function resolveTexturePath(path)
 		probe = probe or CreateFrame("Frame"):CreateTexture()
@@ -14,25 +15,26 @@ local resolveTexturePath do
 end
 local IconSelector, IconSelectorData, internal = {}, {}, {}
 local IconSelectorProps = {
-	api=IconSelector,
-	scripts={"OnIconSelect", "OnEditFocusGained", "OnEditFocusLost"},
-	lastVisibleIcon=-1,
-	selectedAsset=nil,
-	viewIndexOffset=0,
-	firstAsset=nil,
-	firstAssetValue=nil,
-	columns=14,
-	rows=7,
-	cellWidth=36,
-	cellHeight=36,
-	pendingGridSync=true,
-	manualInputHintText="",
+	api = IconSelector,
+	scripts = {"OnIconSelect", "OnEditFocusGained", "OnEditFocusLost"},
+	lastVisibleIcon = -1,
+	selectedAsset = nil,
+	viewIndexOffset = 0,
+	firstAsset = nil,
+	firstAssetValue = nil,
+	columns = 14,
+	rows = 7,
+	cellWidth = 36,
+	cellHeight = 36,
+	pendingGridSync = true,
+	manualInputHintText = ""
 }
 AddObjectMethods({"IconSelector"}, IconSelectorProps)
 
 function IconSelector:SetSelectedAsset(asset)
 	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
-	assert(asset == nil or type(asset) == "string" or type(asset) == "number", 'Syntax: IconSelector:SetSelectedAsset(asset)')
+	assert(asset == nil or type(asset) == "string" or type(asset) == "number",
+		'Syntax: IconSelector:SetSelectedAsset(asset)')
 	d.selectedAsset = asset
 	internal.RenderView(d, d.viewIndexOffset)
 	internal.SyncHintText(d)
@@ -40,7 +42,8 @@ end
 function IconSelector:SetFirstAsset(value, overrideAsset)
 	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
 	local asset = overrideAsset or value
-	assert(asset == nil or type(asset) == "number" or type(asset) == "string", 'Syntax: IconSelector:SetFirstAsset(value[, overrideAsset])')
+	assert(asset == nil or type(asset) == "number" or type(asset) == "string",
+		'Syntax: IconSelector:SetFirstAsset(value[, overrideAsset])')
 	d.firstAssetValue, d.firstAsset = value, asset
 	internal.RenderView(d, d.viewIndexOffset)
 end
@@ -52,9 +55,9 @@ function IconSelector:SetManualInputHintText(text)
 end
 function IconSelector:SetGridSize(rows, cols)
 	local d = assert(getWidgetData(self, IconSelectorData), "Invalid object type")
-	assert(type(rows) == "number" and rows > 0 and rows % 1 == 0
-	   and type(cols) == "number" and cols > 0 and cols % 1 == 0
-	     , 'Syntax: IconSelector:SetGridSize(rows, cols)')
+	assert(
+		type(rows) == "number" and rows > 0 and rows % 1 == 0 and type(cols) == "number" and cols > 0 and cols % 1 == 0,
+		'Syntax: IconSelector:SetGridSize(rows, cols)')
 	d.pendingGridSync, d.rows, d.columns = true, rows, cols
 	if d.proto.super.IsShown(d.self) then
 		internal.ConfigureIconGrid(d)
@@ -68,22 +71,26 @@ function IconSelector:IsSearchPossible()
 	return not not (ICON_FILE_NAMES or LookupIconName and LookupIconName(0) or ICON_FILE_NAMES)
 end
 
-local GetAllIcons do
+local GetAllIcons
+do
 	function GetAllIcons()
 		local a = {}
 		local n = GetNumMacroIcons and GetNumMacroIcons() or 0
 		for i = 1, n do
 			local icon = GetMacroIconInfo(i)
-			if icon then a[#a+1] = icon end
+			if icon then
+				a[#a + 1] = icon
+			end
 		end
-		GetAllIcons = function() return a end
+		GetAllIcons = function()
+			return a
+		end
 		return a
 	end
 end
 function LookupIconName(fid)
 	LookupIconName = nil
-	if select(6, GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED"
-	   and not IsAddOnLoaded("IconFileNames") then
+	if select(6, GetAddOnInfo("IconFileNames")) == "DEMAND_LOADED" and not IsAddOnLoaded("IconFileNames") then
 		LoadAddOn("IconFileNames")
 	end
 	ICON_FILE_NAMES = _G.ICON_FILE_NAMES
@@ -98,7 +105,7 @@ function internal:OnHide()
 end
 function internal:OnIconClick(_button, _down)
 	local d, checked = getWidgetData(self:GetParent(), IconSelectorData), self:GetChecked()
-	local idx = checked and self:GetID()+d.viewIndexOffset or nil
+	local idx = checked and self:GetID() + d.viewIndexOffset or nil
 	local tex = idx and (idx == 0 and d.firstAssetValue or idx > 0 and d.iconList[idx] or nil)
 	if d.selectedButton then
 		d.selectedButton:SetChecked(nil)
@@ -160,18 +167,21 @@ function internal.CreateIconButton(parent, pool, id)
 end
 function internal:OnScroll(value, interaction)
 	local d, co = getWidgetData(self, IconSelectorData), value % 1
-	d.origin:SetPoint("TOPLEFT", 0, co*d.cellHeight)
+	d.origin:SetPoint("TOPLEFT", 0, co * d.cellHeight)
 	internal.RenderView(d, (value - co) * d.columns, true)
 	if interaction and d.hoverIconLT then
 		internal.SyncHintText(d)
 	end
 end
 function internal.RenderView(d, value, allowSkip)
-	if allowSkip and d.viewIndexOffset == value then return end
+	if allowSkip and d.viewIndexOffset == value then
+		return
+	end
 	local icons, icontex, sel, selectedButton = d.pool, d.iconList, d.selectedAsset
-	for i=0, d.lastVisibleIcon do
+	for i = 0, d.lastVisibleIcon do
 		local w = icons[i]
-		local tex = i == 0 and value == 0 and (d.firstAsset or "Interface/Icons/INV_Misc_QuestionMark") or icontex[i+value]
+		local tex = i == 0 and value == 0 and (d.firstAsset or "Interface/Icons/INV_Misc_QuestionMark") or
+						icontex[i + value]
 		if tex then
 			if w.shownAsset ~= tex then
 				w.tex:SetTexture(tex)
@@ -194,16 +204,16 @@ end
 function internal.ConfigureIconGrid(d)
 	local sb, pool, icontex, origin = d.scrollBar, d.pool, d.iconList, d.origin
 	local rows, cols, cw, ch = d.rows, d.columns, d.cellWidth, d.cellHeight
-	sb:SetStepsPerPage(rows, math.min(math.max(1, rows-2), 5))
+	sb:SetStepsPerPage(rows, math.min(math.max(1, rows - 2), 5))
 	sb:SetWindowRange(rows)
-	sb:SetMinMaxValues(0, math.ceil((#icontex-cols*rows)/cols))
-	d.self:SetSize(42+cols*cw, 40+ch*rows)
-	local usedIcons = cols*rows - 1
-	for i=0, usedIcons do
+	sb:SetMinMaxValues(0, math.ceil((#icontex - cols * rows) / cols))
+	d.self:SetSize(42 + cols * cw, 40 + ch * rows)
+	local usedIcons = cols * rows - 1
+	for i = 0, usedIcons do
 		local w = pool[i] or internal.CreateIconButton(d.clipRoot, d.pool, i)
-		w:SetPoint("TOPLEFT", origin, (i % cols)*cw, - ch*math.floor(i / cols))
+		w:SetPoint("TOPLEFT", origin, (i % cols) * cw, -ch * math.floor(i / cols))
 	end
-	for i=usedIcons+1, d.lastVisibleIcon do
+	for i = usedIcons + 1, d.lastVisibleIcon do
 		pool[i]:Hide()
 	end
 	d.lastVisibleIcon, d.pendingGridSync = usedIcons, nil
@@ -216,7 +226,7 @@ function internal:OnShow()
 	end
 	d.scrollBar:SetValue(0, true)
 	local p = d.self:GetParent()
-	d.self:SetFrameLevel(math.max(d.self:GetFrameLevel(), p and p:GetFrameLevel()+200))
+	d.self:SetFrameLevel(math.max(d.self:GetFrameLevel(), p and p:GetFrameLevel() + 200))
 	local kbf = GetCurrentKeyBoardFocus()
 	if kbf then
 		kbf:ClearFocus()
@@ -226,7 +236,8 @@ function internal.SyncHintText(d)
 	if d.manualInput:HasFocus() then
 		d.manualInputHint:Hide()
 		d.manualInputFS:Show()
-	elseif d.hoverIcon and (d.hoverIcon.IsMouseMotionFocus and d.hoverIcon:IsMouseMotionFocus() or d.hoverIcon:IsMouseOver()) then
+	elseif d.hoverIcon and
+		(d.hoverIcon.IsMouseMotionFocus and d.hoverIcon:IsMouseMotionFocus() or d.hoverIcon:IsMouseOver()) then
 		d.manualInputHint:Show()
 		local idx = d.hoverIcon:GetID() + d.viewIndexOffset
 		local asset = idx == 0 and d.firstAsset or d.iconList[idx]
@@ -255,11 +266,8 @@ function internal:OnEnterPressed()
 	end
 	if text:match("%S") then
 		local nt = tonumber(text) or 0
-		local path = resolveTexturePath(text) or
-		             resolveTexturePath("Interface\\Icons\\" .. text) or
-		             (C_Texture.GetAtlasInfo(text) and text) or
-		             (nt > 0 and nt) or
-		             select(3, GetSpellInfo(text))
+		local path = resolveTexturePath(text) or resolveTexturePath("Interface\\Icons\\" .. text) or
+						 (C_Texture.GetAtlasInfo(text) and text) or (nt > 0 and nt) or select(3, GetSpellInfo(text))
 		if not path then
 			return self:HighlightText()
 		end
@@ -280,7 +288,7 @@ function internal.FilterIcons(d, query, _editbox)
 	else
 		local t, ni, p, smatch = {}, 1, nf:gsub(" +", ".*"), nf.match
 		local ot = nf:match(of or "") and d.iconList or GetAllIcons()
-		for i=1, #ot do
+		for i = 1, #ot do
 			local fn = ICON_FILE_NAMES[ot[i]]
 			if fn and smatch(fn, p) then
 				t[ni], ni = ot[i], ni + 1
@@ -292,7 +300,7 @@ function internal.FilterIcons(d, query, _editbox)
 end
 function internal.SetIconList(d, iconList, filter, viewIndexOffset)
 	d.iconList, d.filter, d.viewIndexOffset = iconList, filter, viewIndexOffset or d.viewIndexOffset
-	d.scrollBar:SetMinMaxValues(0, math.ceil((#d.iconList-d.columns*d.rows)/d.columns))
+	d.scrollBar:SetMinMaxValues(0, math.ceil((#d.iconList - d.columns * d.rows) / d.columns))
 end
 
 local function CreateIconSelector(name, parent, outerTemplate, id)
@@ -302,7 +310,7 @@ local function CreateIconSelector(name, parent, outerTemplate, id)
 	local panelBG = f:CreateTexture(nil, "BACKGROUND", nil, -7)
 	panelBG:SetTexture(0.043, 0.047, 0.055, 0.98)
 	panelBG:SetAllPoints()
-	for i=1,4 do
+	for i = 1, 4 do
 		local e = f:CreateTexture(nil, "BACKGROUND", nil, -6)
 		e:SetTexture(0.21, 0.23, 0.27, 1)
 		if i < 3 then
@@ -327,7 +335,7 @@ local function CreateIconSelector(name, parent, outerTemplate, id)
 	t:SetScript("OnShow", internal.OnShow)
 	setWidgetData(t, IconSelectorData, d)
 	t, d.clipRoot = CreateFrame("Frame", nil, t), t
-	t:SetSize(1,1)
+	t:SetSize(1, 1)
 	t:SetPoint("TOPLEFT")
 	t:Hide()
 	t, d.origin = XU:Create("ScrollBar", nil, f), t

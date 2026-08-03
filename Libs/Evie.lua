@@ -1,10 +1,13 @@
 local Evie, easy, next, securecall, pcall, _, T = {}, newproxy(true), next, securecall, pcall, ...
 local frame, listeners, locked, easy_mt = CreateFrame("Frame"), {}, {}, getmetatable(easy)
 
-local isCustomEvent do
+local isCustomEvent
+do
 	local isValid = C_EventUtils and C_EventUtils.IsEventValid
 	function isCustomEvent(event)
-		if not (isValid and frame.RegisterCustomEvent) then return false end
+		if not (isValid and frame.RegisterCustomEvent) then
+			return false
+		end
 		local ok, valid = pcall(isValid, event)
 		return ok and not valid
 	end
@@ -15,7 +18,9 @@ local function Register(event, func, depth)
 	end
 	local lock = locked[event]
 	if lock == true then
-		locked[event] = {[func] = 1}
+		locked[event] = {
+			[func] = 1
+		}
 	elseif lock then
 		lock[func] = 1
 	else
@@ -68,7 +73,10 @@ local _ctAfter = C_Timer and C_Timer.After or function(sec, fn)
 	local f, e = CreateFrame("Frame"), 0
 	f:SetScript("OnUpdate", function(self, dt)
 		e = e + dt
-		if e >= sec then self:SetScript("OnUpdate", nil) fn() end
+		if e >= sec then
+			self:SetScript("OnUpdate", nil)
+			fn()
+		end
 	end)
 end
 easy_mt.__call, easy_mt.__index, Evie.raw, Evie.After = Raise, Evie, Evie, _ctAfter

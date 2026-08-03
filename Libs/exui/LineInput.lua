@@ -6,10 +6,13 @@ local FIELD_BG, FIELD_EDGE, FIELD_FOCUS = {0.075, 0.082, 0.096, 1}, {0.21, 0.23,
 
 local LineInput, LineInputData = {}, {}, {}
 local LineInputProps = {
-	api=LineInput,
-	style='common',
-	tipL=0, tipR=0, tipT=0, tipB = 0,
-	scripts={"OnEditFocusGained", "OnEditFocusLost"},
+	api = LineInput,
+	style = 'common',
+	tipL = 0,
+	tipR = 0,
+	tipT = 0,
+	tipB = 0,
+	scripts = {"OnEditFocusGained", "OnEditFocusLost"}
 }
 AddObjectMethods({"LineInput"}, LineInputProps)
 
@@ -20,7 +23,7 @@ local function adjustPlaceholderVisibility(self)
 end
 local function paintFieldEdge(d, focused)
 	local c = focused and FIELD_FOCUS or FIELD_EDGE
-	for i=1,4 do
+	for i = 1, 4 do
 		d.edge[i]:SetTexture(c[1], c[2], c[3], c[4])
 	end
 end
@@ -37,7 +40,8 @@ end
 function LineInput:SetTextInsets(left, right, top, bottom)
 	local d = assert(getWidgetData(self, LineInputData), 'invalid object type')
 	left, right, top, bottom = tonumber(left or 0), tonumber(right or 0), tonumber(top or 0), tonumber(bottom or 0)
-	assert(type(left) == 'number' and type(right) == 'number' and type(top) == 'number' and type(bottom) == 'number', 'Syntax: LineInput:SetTextInsets(left, right, top, bottom)')
+	assert(type(left) == 'number' and type(right) == 'number' and type(top) == 'number' and type(bottom) == 'number',
+		'Syntax: LineInput:SetTextInsets(left, right, top, bottom)')
 	d.tipL, d.tipR, d.tipT, d.tipB = left, right, top, bottom
 	local common = d.style == 'common'
 	d.proto.super.SetTextInsets(self, left + (common and 0 or 2), right, top, bottom)
@@ -78,7 +82,7 @@ end
 local function onEditFocusLost(self, ...)
 	adjustPlaceholderVisibility(self)
 	paintFieldEdge(getWidgetData(self, LineInputData), false)
-	self:HighlightText(0,0)
+	self:HighlightText(0, 0)
 	return CallObjectScript(self, "OnEditFocusLost", ...)
 end
 local function CreateLineInput(name, parent, outerTemplate, id)
@@ -101,7 +105,7 @@ local function CreateLineInput(name, parent, outerTemplate, id)
 	d.bg = input:CreateTexture(nil, "BACKGROUND", nil, -3)
 	d.bg:SetTexture(FIELD_BG[1], FIELD_BG[2], FIELD_BG[3], FIELD_BG[4])
 	d.edge = {}
-	for i=1,4 do
+	for i = 1, 4 do
 		local e = input:CreateTexture(nil, "BACKGROUND", nil, -2)
 		d.edge[i] = e
 		if i < 3 then

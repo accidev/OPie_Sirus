@@ -47,7 +47,7 @@ jobs:
         run: |
           mkdir -p release/OPie_Sirus
           git archive HEAD | tar -x -C release/OPie_Sirus
-          rm -rf release/OPie_Sirus/.github release/OPie_Sirus/.gitignore release/OPie_Sirus/.gitattributes
+          rm -rf release/OPie_Sirus/.github release/OPie_Sirus/.gitignore release/OPie_Sirus/.gitattributes release/OPie_Sirus/.luacheckrc
           test -f release/OPie_Sirus/OPie_Sirus.toc
           cd release
           zip -r -9 "../OPie_Sirus-v${VERSION}.zip" OPie_Sirus

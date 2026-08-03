@@ -5,9 +5,9 @@ local assert, getWidgetData, newWidgetData, _setWidgetData, AddObjectMethods, Ca
 
 local DropDown, DropDownData, internal = {}, {}, {}
 local DropDownProps = {
-	api=DropDown,
-	scripts={"OnHide"},
-	pulseAnim=nil,
+	api = DropDown,
+	scripts = {"OnHide"},
+	pulseAnim = nil
 }
 AddObjectMethods({"DropDown"}, DropDownProps)
 
@@ -19,7 +19,7 @@ function DropDown:Pulse()
 	if not d.pulseAnim then
 		local tex = d.bg
 		local atl, l, sl = tex:GetAtlas(), tex:GetDrawLayer()
-		local r = tex:GetParent():CreateTexture(nil, l, nil, (sl or 0)+1)
+		local r = tex:GetParent():CreateTexture(nil, l, nil, (sl or 0) + 1)
 		r:SetAllPoints(tex)
 		r[atl and "SetAtlas" or "SetTexture"](r, atl or tex:GetTexture())
 		r:SetTexCoord(tex:GetTexCoord())
@@ -31,7 +31,7 @@ function DropDown:Pulse()
 		ag:SetScript("OnLoop", internal.OnPulseLoop)
 		local aa = ag:CreateAnimation("Alpha")
 		aa:SetTarget(r)
-		aa:SetDuration(1/3)
+		aa:SetDuration(1 / 3)
 		aa:SetFromAlpha(1)
 		aa:SetToAlpha(0)
 		aa:SetSmoothing("IN_OUT")
@@ -43,7 +43,9 @@ end
 
 function internal.OnPulseLoop(self, ls)
 	local d = ls == "FORWARD" and getWidgetData(self:GetParent(), DropDownData)
-	if not d then return end
+	if not d then
+		return
+	end
 	local cl = (d.pulseCyclesLeft or 1) - 1
 	d.pulseCyclesLeft = cl > 0 and cl or nil
 	if cl <= 0 then
@@ -75,16 +77,20 @@ local function prepArrowTexture(p, m, r, g, b)
 	tex:SetVertexColor(r, g, b)
 	return tex
 end
-local function nop() end
-local nopTex = {SetWidth=nop, Hide=nop}
+local function nop()
+end
+local nopTex = {
+	SetWidth = nop,
+	Hide = nop
+}
 local function CreateDropDown(name, parent, outerTemplate, id)
 	local f, d, t = CreateFrame("Button", name, parent, outerTemplate, id)
 	f:SetSize(120, 32)
-	f:SetHitRectInsets(20,18,4,8)
+	f:SetHitRectInsets(20, 18, 4, 8)
 	f:SetText(" ")
 	f:SetNormalFontObject(GameFontHighlightSmall)
 	f:SetDisabledFontObject(GameFontDisableSmall)
-	f:SetPushedTextOffset(0,0)
+	f:SetPushedTextOffset(0, 0)
 	f:SetScript("OnHide", internal.OnDropHide)
 	prepArrowTexture(f, "NormalTexture", 0.62, 0.65, 0.72)
 	prepArrowTexture(f, "PushedTexture", 0.16, 0.66, 1.00)
@@ -95,7 +101,7 @@ local function CreateDropDown(name, parent, outerTemplate, id)
 	t:SetTexture(0.115, 0.125, 0.145, 1)
 	t:SetPoint("TOPLEFT", 8, -1)
 	t:SetPoint("BOTTOMRIGHT", -8, 7)
-	for i=1,4 do
+	for i = 1, 4 do
 		local e = f:CreateTexture(nil, "BACKGROUND", nil, -2)
 		e:SetTexture(0.21, 0.23, 0.27, 1)
 		if i < 3 then

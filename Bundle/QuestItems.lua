@@ -14,22 +14,35 @@ local function getContainerItemQuestInfo(bag, slot)
 	end
 end
 do
-	local include, filtered do
+	local include, filtered
+	do
 		local function have1()
 			return true, false, false, 4
 		end
 		include = {
-			[21746]=have1, -- lucky red envelope
-			[33634]=true, [35797]=true, [37888]=true, [37860]=true, [37859]=true, [37815]=true, [46847]=true, [47030]=true, [39213]=true, [42986]=true, [49278]=true,
-			[37586]=have1, -- handful of treats [hallow's end]
+			[21746] = have1, -- lucky red envelope
+			[33634] = true,
+			[35797] = true,
+			[37888] = true,
+			[37860] = true,
+			[37859] = true,
+			[37815] = true,
+			[46847] = true,
+			[47030] = true,
+			[39213] = true,
+			[42986] = true,
+			[49278] = true,
+			[37586] = have1 -- handful of treats [hallow's end]
 		}
 		filtered = {}
 		for i in ("33634 35797 37888 37860 37859 37815 46847 47030 39213 42986 49278"):gmatch("%d+") do
-			include[i+0] = true
+			include[i + 0] = true
 		end
 	end
 	disItems = {}
-	setmetatable(exclude, {__index={}})
+	setmetatable(exclude, {
+		__index = {}
+	})
 	function IsQuestItem(iid, bag, slot)
 		if exclude[iid] or not iid then
 			return false
@@ -37,8 +50,10 @@ do
 			return true, false, disItems[iid]
 		end
 		local tinc, rcat
-		local inc, ff, isQuest, startQuestId, isQuestActive = include[iid], filtered[iid], getContainerItemQuestInfo(bag, slot)
-		isQuest = iid and ((isQuest and GetItemSpell(iid)) or (inc == true) or (startQuestId and not isQuestActive and not C_QuestLog.IsQuestFlaggedCompleted(startQuestId)))
+		local inc, ff, isQuest, startQuestId, isQuestActive = include[iid], filtered[iid],
+			getContainerItemQuestInfo(bag, slot)
+		isQuest = iid and ((isQuest and GetItemSpell(iid)) or (inc == true) or
+					  (startQuestId and not isQuestActive and not C_QuestLog.IsQuestFlaggedCompleted(startQuestId)))
 		if ff then
 			isQuest, startQuestId, isQuestActive, rcat = ff(iid)
 		end
@@ -47,11 +62,10 @@ do
 			isQuest, startQuestId, isQuestActive, rcat = inc(iid)
 		elseif tinc then
 			isQuest = not ff or isQuest
-			for i=tinc == "number" and 1 or #inc, 1, -1 do
+			for i = tinc == "number" and 1 or #inc, 1, -1 do
 				local qid, wq = tinc == "number" and inc or inc[i]
 				wq, qid = qid < 0, qid < 0 and -qid or qid
-				if C_QuestLog.IsQuestFlaggedCompleted(qid) or
-				   wq and not C_QuestLog.IsOnQuest(qid) then
+				if C_QuestLog.IsQuestFlaggedCompleted(qid) or wq and not C_QuestLog.IsOnQuest(qid) then
 					return false
 				end
 			end
@@ -64,8 +78,11 @@ do
 	end
 end
 local colId, current, changed, pendingChanges
-local collection, inring, tokItemID, ctok = {__embed=true}, {}, {}, 0
-local addSlice, sortQICollection do
+local collection, inring, tokItemID, ctok = {
+	__embed = true
+}, {}, {}, 0
+local addSlice, sortQICollection
+do
 	local tokCat, colOrder = {}, {}
 	function addSlice(tok, cat, at, ...)
 		if inring[tok] then
@@ -74,7 +91,7 @@ local addSlice, sortQICollection do
 			local slot = AB:GetActionSlot(at, ...)
 			if slot then
 				inring[tok], tokCat[tok] = current, cat
-				collection[#collection+1], collection[tok], changed = tok, slot, true
+				collection[#collection + 1], collection[tok], changed = tok, slot, true
 				if at == "item" or at == "disenchant" then
 					tokItemID[tok] = ...
 				end
@@ -93,7 +110,7 @@ local addSlice, sortQICollection do
 		return colOrder[a] < colOrder[b]
 	end
 	function sortQICollection()
-		for i=1, #collection do
+		for i = 1, #collection do
 			colOrder[collection[i]] = i
 		end
 		for k in pairs(tokCat) do
@@ -105,11 +122,11 @@ local addSlice, sortQICollection do
 	end
 end
 local function scanQuests(i)
-	for i=i or 1, GetNumQuestLogEntries() do
+	for i = i or 1, GetNumQuestLogEntries() do
 		local _, _, _, _, isHeader, isCollapsed, isComplete, _, qid = GetQuestLogTitle(i)
 		if isHeader and isCollapsed then
 			ExpandQuestHeader(i)
-			return scanQuests(i+1), CollapseQuestHeader(i)
+			return scanQuests(i + 1), CollapseQuestHeader(i)
 		elseif questItems[qid] and not isComplete then
 			for _, iid in ipairs(questItems[qid]) do
 				if not exclude[iid] and IsQuestItemF(iid) then
@@ -128,17 +145,18 @@ local function syncRing(_, event, upId)
 
 	local ns = GetContainerNumSlots
 	local giid = GetContainerItemID
-	for bag=0,4 do
-		for slot=1, ns(bag) or 0 do
+	for bag = 0, 4 do
+		for slot = 1, ns(bag) or 0 do
 			local iid = giid(bag, slot)
 			local include, startsQuestMark, qiCat = IsQuestItem(iid, bag, slot)
 			if include then
-				local tok = addSlice("OPbQIi" .. iid, qiCat or 2, disItems and disItems[iid] and "disenchant" or "item", iid)
+				local tok = addSlice("OPbQIi" .. iid, qiCat or 2, disItems and disItems[iid] and "disenchant" or "item",
+					iid)
 				ORI:SetQuestHint(tok, startsQuestMark)
 			end
 		end
 	end
-	for i=0,INVSLOT_LAST_EQUIPPED do
+	for i = 0, INVSLOT_LAST_EQUIPPED do
 		local tok = "OPbQIi" .. (GetInventoryItemID("player", i) or 0)
 		if inring[tok] then
 			inring[tok] = current
@@ -147,11 +165,13 @@ local function syncRing(_, event, upId)
 	scanQuests()
 
 	local freePos, oldCount = 1, #collection
-	for i=freePos, oldCount do
+	for i = freePos, oldCount do
 		local v = collection[i]
-		collection[freePos], freePos, collection[v], inring[v] = collection[i], freePos + (inring[v] == current and 1 or 0), (inring[v] == current and collection[v] or nil), inring[v] == current and current or nil
+		collection[freePos], freePos, collection[v], inring[v] = collection[i],
+			freePos + (inring[v] == current and 1 or 0), (inring[v] == current and collection[v] or nil),
+			inring[v] == current and current or nil
 	end
-	for i=oldCount,freePos,-1 do
+	for i = oldCount, freePos, -1 do
 		collection[i] = nil
 	end
 	changed, ctok = changed or freePos <= oldCount, current
@@ -167,7 +187,7 @@ local function syncRing(_, event, upId)
 		pendingChanges = nil
 	end
 end
-colId = AB:CreateActionSlot(nil,nil, "collection",collection)
+colId = AB:CreateActionSlot(nil, nil, "collection", collection)
 AB:AddObserver("internal.collection.preopen", syncRing)
 function EV.PLAYER_REGEN_DISABLED()
 	syncRing(nil, "internal.collection.preopen", colId)
@@ -178,12 +198,14 @@ local function createQI(name)
 end
 local function describeQI(name)
 	if name == 1 then
-		return L"Quest Items", L"Quest Items", ([[Interface\AddOns\%s\gfx\opie_ring_icon]]):format(ADDON), nil, nil, nil, "collection"
+		return L "Quest Items", L "Quest Items", ([[Interface\AddOns\%s\gfx\opie_ring_icon]]):format(ADDON), nil, nil,
+			nil, "collection"
 	end
 end
 AB:RegisterActionType("opie.autoquest", createQI, describeQI, 1)
 
-local edFrame = CreateFrame("Frame") do
+local edFrame = CreateFrame("Frame")
+do
 	edFrame:Hide()
 	local clipRoot = CreateFrame("ScrollFrame", nil, edFrame)
 	clipRoot:SetPoint("TOPLEFT", 0, -2)
@@ -192,27 +214,28 @@ local edFrame = CreateFrame("Frame") do
 	clipContent:SetSize(1, 26)
 	clipRoot:SetScrollChild(clipContent)
 	local clipOrigin = CreateFrame("Frame", nil, clipContent)
-	clipOrigin:SetSize(0,1)
+	clipOrigin:SetSize(0, 1)
 	clipOrigin:SetPoint("TOPLEFT")
 	local bar = XU:Create("ScrollBar", nil, edFrame)
 	bar:SetPoint("TOPRIGHT", -1, 0)
 	bar:SetPoint("BOTTOMRIGHT", -1, 0)
 	bar:SetCoverTarget(clipRoot)
 
-	local rows, controller, idList, numRowsPV, visibleRange = {}, {}, {}, 2, 0 do
+	local rows, controller, idList, numRowsPV, visibleRange = {}, {}, {}, 2, 0
+	do
 		clipRoot:SetScript("OnSizeChanged", function(self)
 			clipOrigin:SetWidth(self:GetWidth() or clipOrigin:GetWidth() or 0)
-			visibleRange = (self:GetHeight()+2)/26
+			visibleRange = (self:GetHeight() + 2) / 26
 			numRowsPV = 1 + math.ceil(visibleRange)
-			clipContent:SetSize(self:GetWidth() or 1, 26*numRowsPV)
+			clipContent:SetSize(self:GetWidth() or 1, 26 * numRowsPV)
 			bar:SetWindowRange(visibleRange)
-			bar:SetStepsPerPage(math.max(1,numRowsPV-5))
-			bar:SetMinMaxValues(0, controller:GetNumRows()-visibleRange)
+			bar:SetStepsPerPage(math.max(1, numRowsPV - 5))
+			bar:SetMinMaxValues(0, controller:GetNumRows() - visibleRange)
 			bar:SetShown(select(2, bar:GetMinMaxValues()) > 0)
 			controller:SetOffset(bar:GetValue(), nil)
 		end)
 		edFrame:SetScript("OnMouseWheel", function(_, delta)
-			bar:Step(-delta*math.max(1, math.ceil(numRowsPV/4)), true)
+			bar:Step(-delta * math.max(1, math.ceil(numRowsPV / 4)), true)
 		end)
 		bar:SetScript("OnValueChanged", function(_, nv, isInternal)
 			controller:SetOffset(nv, isInternal)
@@ -226,8 +249,8 @@ local edFrame = CreateFrame("Frame") do
 
 	function controller:NewRow(idx)
 		local x, t = CreateFrame("Button", nil, clipContent, nil, idx)
-		x:SetPoint("TOPLEFT", clipOrigin, 0, 26 - 26*idx)
-		x:SetPoint("TOPRIGHT", clipOrigin, 0, 26 - 26*idx)
+		x:SetPoint("TOPLEFT", clipOrigin, 0, 26 - 26 * idx)
+		x:SetPoint("TOPRIGHT", clipOrigin, 0, 26 - 26 * idx)
 		x:SetHeight(24)
 		x:SetText(" ")
 		x:SetNormalFontObject(GameFontNormalMed2)
@@ -235,7 +258,7 @@ local edFrame = CreateFrame("Frame") do
 		t = x:CreateTexture(nil, "ARTWORK")
 		t:SetPoint("LEFT", 34, 0)
 		t:SetTexture("Interface/Icons/Temp")
-		t:SetSize(24,24)
+		t:SetSize(24, 24)
 		t, x.Icon = x:GetFontString(), t
 		t:ClearAllPoints()
 		t:SetPoint("LEFT", 64, 0)
@@ -247,7 +270,7 @@ local edFrame = CreateFrame("Frame") do
 		t:SetSize(16, 16)
 		t:SetPoint("LEFT", 4, 0)
 		local checkBox = t
-		for i=1,4 do
+		for i = 1, 4 do
 			local e = x:CreateTexture(nil, "ARTWORK", nil, 1)
 			e:SetTexture(TS.SKIN.edge[1], TS.SKIN.edge[2], TS.SKIN.edge[3], 1)
 			if i < 3 then
@@ -312,14 +335,14 @@ local edFrame = CreateFrame("Frame") do
 	controller.OnRowLeave = config.ui.HideTooltip
 	function controller:SetOffset(nv, _isInternal)
 		local fv = nv % 1
-		clipRoot:SetVerticalScroll(26*fv)
-		local ofs, hadPendingGIIR = nv-fv, false
-		for i=1, numRowsPV do
+		clipRoot:SetVerticalScroll(26 * fv)
+		local ofs, hadPendingGIIR = nv - fv, false
+		for i = 1, numRowsPV do
 			local w = rows[i] or controller:NewRow(i)
 			controller:SetRow(w, i + ofs)
 			rows[i], hadPendingGIIR = w, hadPendingGIIR or w and w.pendingItemID
 		end
-		for i=numRowsPV+1, #rows do
+		for i = numRowsPV + 1, #rows do
 			rows[i]:Hide()
 		end
 		edFrame[hadPendingGIIR and "RegisterEvent" or "UnregisterEvent"](edFrame, "GET_ITEM_INFO_RECEIVED")
@@ -330,7 +353,7 @@ local edFrame = CreateFrame("Frame") do
 
 	function controller.CheckPendingItemIDs()
 		local allDone = 1
-		for i=1, numRowsPV do
+		for i = 1, numRowsPV do
 			local pid = rows[i].pendingItemID
 			local n = pid and GetItemInfo(pid)
 			allDone = allDone and (n or not pid)
@@ -346,7 +369,7 @@ local edFrame = CreateFrame("Frame") do
 	end
 	function controller:SaveState()
 		local clone = {}
-		for k,v in pairs(exclude) do
+		for k, v in pairs(exclude) do
 			clone[k] = v
 		end
 		config.undo:push("opie.autoquest.state", controller.RestoreState, 1, clone)
@@ -356,11 +379,11 @@ local edFrame = CreateFrame("Frame") do
 			controller:SaveState()
 		end
 		wipe(exclude)
-		for k,v in pairs(clone) do
+		for k, v in pairs(clone) do
 			exclude[k] = v
 		end
 	end
-	
+
 	function edFrame:SetAction(owner, _action)
 		local op = edFrame:GetParent()
 		if op and op ~= owner and type(op.OnEditorRelease) == "function" then
@@ -375,17 +398,17 @@ local edFrame = CreateFrame("Frame") do
 			wipe(idList)
 			syncRing(nil, "internal.collection.preopen", colId)
 			for iid, ex in pairs(exclude) do
-				idList[ni], ni = ex and iid, ex and ni+1 or ni
+				idList[ni], ni = ex and iid, ex and ni + 1 or ni
 			end
 			table.sort(idList)
-			for i=#collection,1,-1 do
+			for i = #collection, 1, -1 do
 				local iid = tokItemID[collection[i]]
-				idList[nj], nj = iid, iid and nj-1 or nj
+				idList[nj], nj = iid, iid and nj - 1 or nj
 			end
-			for i=nj < 0 and ni-nj-1 or 0, 1+nj, -1 do
-				idList[i] = idList[i+nj]
+			for i = nj < 0 and ni - nj - 1 or 0, 1 + nj, -1 do
+				idList[i] = idList[i + nj]
 			end
-			bar:SetMinMaxValues(0, #idList-visibleRange)
+			bar:SetMinMaxValues(0, #idList - visibleRange)
 		end
 		edFrame:Show()
 		edFrame:GetLeft()
@@ -407,7 +430,6 @@ local edFrame = CreateFrame("Frame") do
 	end
 	AB:RegisterEditorPanel("opie.autoquest", edFrame)
 end
-
 
 local function excludeItemID(iid)
 	if iid > 0 then

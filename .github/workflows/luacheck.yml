@@ -1,20 +1,11 @@
 name: Luacheck
 
 on:
-  push:
-    paths:
-      - '**.lua'
-      - '.luacheckrc'
-      - '.github/workflows/luacheck.yml'
   pull_request:
-    paths:
-      - '**.lua'
-      - '.luacheckrc'
-      - '.github/workflows/luacheck.yml'
   workflow_dispatch:
 
 concurrency:
-  group: luacheck-${{ github.ref }}
+  group: luacheck-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:

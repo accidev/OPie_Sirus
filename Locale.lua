@@ -27,6 +27,7 @@ V =
       "World of Warcraft не удалось загрузить сохраненные переменные OPie из-за нехватки памяти. Попробуйте отключить другие аддоны.", "Вы можете отменить или вернуть предыдущие настройки позже.", "Вы можете использовать расширенные макро условия; см. %s.", "Вы должны включить опцию %s для этого кольца в настройках OPie для использования быстрых действий.", "Ваш персонаж не может использовать это в данный момент.", "по умолчанию", "Адаптация", "Благодарности", "Отблагодарить", "Поддержать дальнейшую разработку можно здесь:",
       "%s — автор оригинального аддона.", "%s — адаптация для World of Warcraft 3.3.5a.", "%s — оптимизация под Sirus.", "Только высший ранг", "Метки на местности",
       "Боевой пропуск", "Открыть боевой пропуск", "Открыть задания", "Завершить ежедневные задания", "Завершить все задания", "Собрать награды",
+      "Обзор",
     } or nil
 
 K = V and {
@@ -53,6 +54,7 @@ K = V and {
       "World of Warcraft could not load OPie's saved variables due to a lack of memory. Try disabling other addons.", "You can cancel or revert to previous settings later.", "You may use extended conditionals; see %s for details.", "You must enable a %s interaction for this ring in OPie options to use quick actions.", "Your character currently cannot use this.", "default", "Adaptation", "Credits", "Donate", "You can support further development by visiting:",
       "%s — author of the original addon.", "%s — adaptation for World of Warcraft 3.3.5a.", "%s — optimization for Sirus.", "Highest ranks only", "World Markers",
       "Battle Pass", "Open Battle Pass", "Open quests", "Complete daily quests", "Complete all quests", "Collect rewards",
+      "Overview",
 }
 
 local L = K and {}

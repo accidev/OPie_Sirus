@@ -178,7 +178,31 @@ do -- OPie:OptionsSlider
 		-- MinimalSliderTemplate не существует в WotLK 3.3.5; создаём без него
 		local s, d, t = CreateFrame("Slider", name, parent, outerTemplate, id)
 		s:SetOrientation("HORIZONTAL")
-		s:SetThumbTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+		s:SetHeight(20)
+		local track = s:CreateTexture(nil, "BACKGROUND", nil, -3)
+		track:SetTexture(0.115, 0.125, 0.145, 1)
+		track:SetHeight(6)
+		track:SetPoint("LEFT")
+		track:SetPoint("RIGHT")
+		for i=1,4 do
+			local e = s:CreateTexture(nil, "BACKGROUND", nil, -2)
+			e:SetTexture(0.21, 0.23, 0.27, 1)
+			if i < 3 then
+				e:SetHeight(1)
+				e:SetPoint("LEFT", track, "LEFT")
+				e:SetPoint("RIGHT", track, "RIGHT")
+				e:SetPoint(i == 1 and "TOP" or "BOTTOM", track, i == 1 and "TOP" or "BOTTOM")
+			else
+				e:SetWidth(1)
+				e:SetPoint("TOP", track, "TOP")
+				e:SetPoint("BOTTOM", track, "BOTTOM")
+				e:SetPoint(i == 3 and "LEFT" or "RIGHT", track, i == 3 and "LEFT" or "RIGHT")
+			end
+		end
+		s:SetThumbTexture("Interface\\Buttons\\WHITE8X8")
+		local thumbTex = s:GetThumbTexture()
+		thumbTex:SetSize(10, 18)
+		thumbTex:SetVertexColor(0.16, 0.66, 1.00)
 		-- создаём Thumb-frame вручную для OnEnter/OnLeave hover эффекта
 		if not s.Thumb then
 			local th = CreateFrame("Frame", nil, s)

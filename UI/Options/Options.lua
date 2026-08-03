@@ -58,16 +58,11 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 	sbTrack:SetPoint("BOTTOMLEFT", controlViewport, "BOTTOMRIGHT", 3, 0)
 	sbTrack:SetWidth(14)
 	sbTrack:Hide()
-	do local t = sbTrack:CreateTexture(nil, "BACKGROUND")
-		t:SetAllPoints() t:SetTexture(0.08, 0.08, 0.08, 0.9) end
+	TS.Box(sbTrack, "BACKGROUND", nil, {0.075, 0.082, 0.096, 0.9})
 	local sbThumb = CreateFrame("Button", nil, sbTrack)
-	sbThumb:SetWidth(10)
-	do
-		local t = sbThumb:CreateTexture(nil, "ARTWORK")
-		t:SetAllPoints() t:SetTexture(0.55, 0.55, 0.55, 0.95)
-		local hl = sbThumb:CreateTexture(nil, "HIGHLIGHT")
-		hl:SetAllPoints() hl:SetTexture(0.75, 0.75, 0.75, 0.5)
-	end
+	sbThumb:SetWidth(8)
+	TS.Box(sbThumb, "ARTWORK", nil, {0.26, 0.28, 0.33, 1})
+	TS.Box(sbThumb, "HIGHLIGHT", nil, {0.16, 0.66, 1.00, 0.5})
 	local function doScroll(val)
 		val = math.max(0, math.min(scrollMax, val))
 		scrollOffset = val
@@ -246,13 +241,20 @@ local widgetControl, optionControl = {}, {} do -- Widget construction
 	end
 	function build.section(v, ofsY, halfpoint, rowHeight, rframe)
 		local fs = controlContainer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-		ofsY = (halfpoint or ofsY ~= 0 or rframe ~= controlContainer) and ofsY-10-rowHeight or ofsY
+		ofsY = (halfpoint or ofsY ~= 0 or rframe ~= controlContainer) and ofsY-14-rowHeight or ofsY
 		fs:SetPoint("TOPLEFT", rframe, "TOPLEFT", 16, ofsY)
 		fs:SetText(v.caption)
-		return fs, ofsY-20, false, 0
+		local bar = TS.Fill(controlContainer, "ARTWORK", nil, TS.SKIN.accent)
+		bar:SetSize(3, 14)
+		bar:SetPoint("RIGHT", fs, "LEFT", -7, -1)
+		local rule = TS.Fill(controlContainer, "ARTWORK", nil, TS.SKIN.line)
+		rule:SetHeight(1)
+		rule:SetPoint("LEFT", fs, "RIGHT", 10, -1)
+		rule:SetWidth(math.max(1, 554 - fs:GetStringWidth()))
+		return fs, ofsY-22, false, 0
 	end
 	function build.navi(v, ofsY, halfpoint, rowHeight, rframe)
-		local b = CreateFrame("Button", nil, controlContainer, "UIPanelButtonTemplate")
+		local b = TS:StyleButton(CreateFrame("Button", nil, controlContainer, "UIPanelButtonTemplate"))
 		b:SetSize(250, 24)
 		b:SetPoint("TOPLEFT", rframe, halfpoint and 316 or 16, ofsY-3)
 		b:SetText(v.caption)

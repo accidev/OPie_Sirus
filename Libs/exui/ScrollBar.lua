@@ -4,7 +4,22 @@ local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, Cal
 
 local HOLD_ACTION_DELAY, PAGE_DELAY, STEPPER_REPEAT_DELAY = 0.15, 0.25, 1/3
 local MIN_ANIMATION_FRAMERATE, ANIMATION_TARGET_DURATION = 45, 0.2
-local STYLES, DEFAULT_STYLE = {}, "common" do
+local STYLES, DEFAULT_STYLE = {}, "flat" do
+	STYLES.flat = {
+		trackWidth = 10, stepperReserve = 0, thumbMinSize = 20,
+		trackTop = {"c", 0xe6131518},
+		trackMid = {"c", 0xe6131518},
+		trackBot = {"c", 0xe6131518},
+		trackBack = {"c", 0xe6131518},
+		thumb = {w=8, midOfsAbsolute=true, midOfsT=3, midOfsB=3},
+		thumbTop = {"c", 0xff424854, h=3},
+		thumbMid = {"c", 0xff424854},
+		thumbBot = {"c", 0xff424854, h=3},
+		thumbTopH = {"c", 0xff29a8ff, h=3},
+		thumbMidH = {"c", 0xff29a8ff},
+		thumbBotH = {"c", 0xff29a8ff, h=3},
+		step = {w=0, h=0},
+	}
 	STYLES.common = {
 		trackWidth = 20, stepperReserve = 18.5, stepperMarginY = 1, stepperTrack = true, thumbMinSize=16,
 		trackTop = {"t", "Interface/PaperDollInfoFrame/UI-Character-ScrollBar", tc={2/64, 29/64, 0/256, 32/256}, w=22, h=22/27*32},

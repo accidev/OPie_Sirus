@@ -85,7 +85,7 @@ function CallSetRing(msg, ...)
 	RK:SetRing(...)
 end
 local function CreateButton(parent, width)
-	local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+	local btn = TS:StyleButton(CreateFrame("Button", nil, parent, "UIPanelButtonTemplate"))
 	btn:SetWidth(width or 150)
 	return btn
 end
@@ -262,37 +262,63 @@ newRing = CreateFrame("Frame") do
 	end)
 end
 
+local SLICE_ROW_PITCH, SLICE_ROW_POOL, SLICE_ROW_RESERVE = 34, 30, 46
 ringContainer = CreateFrame("Frame", nil, panel) do
 	ringContainer:SetPoint("TOP", ringDropDown, "BOTTOM", 75, 0)
 	ringContainer:SetPoint("BOTTOM", panel, 0, 6)
-	ringContainer:SetPoint("LEFT", panel, 50, 0)
+	ringContainer:SetPoint("LEFT", panel, 66, 0)
 	ringContainer:SetPoint("RIGHT", panel, -10, 0)
-	XU:Create("Backdrop", ringContainer, {edgeFile="Interface/Tooltips/UI-Tooltip-Border", tile=true, edgeSize=14, edgeColor=0x7f7f7f})
+	TS.Outline(ringContainer, "BORDER", nil, TS.SKIN.line)
 	local function UpdateOnShow(self) self:SetScript("OnUpdate", nil) api.refreshDisplay() end
 	ringContainer:SetScript("OnHide", function(self) if self:IsShown() then self:SetScript("OnUpdate", UpdateOnShow) end end)
-	do -- up/down arrow buttons: ringContainer.prev and ringContainer.next
-		local prev, next = CreateFrame("Button", nil, ringContainer), CreateFrame("Button", nil, ringContainer)
-		prev:SetSize(22, 22) next:SetSize(22, 22)
-		next:SetPoint("TOPRIGHT", ringContainer, "TOPLEFT", 2, 0)
-		prev:SetPoint("RIGHT", next, "LEFT", 4, 0)
-		prev:SetNormalTexture("Interface/ChatFrame/UI-ChatIcon-ScrollUp-Up")
-		prev:SetPushedTexture("Interface/ChatFrame/UI-ChatIcon-ScrollUp-Down")
-		prev:SetDisabledTexture("Interface/ChatFrame/UI-ChatIcon-ScrollUp-Disabled")
-		prev:SetHighlightTexture("Interface/Buttons/UI-Common-MouseHilight")
-		next:SetNormalTexture("Interface/ChatFrame/UI-ChatIcon-ScrollDown-Up")
-		next:SetPushedTexture("Interface/ChatFrame/UI-ChatIcon-ScrollDown-Down")
-		next:SetDisabledTexture("Interface/ChatFrame/UI-ChatIcon-ScrollDown-Disabled")
-		next:SetHighlightTexture("Interface/Buttons/UI-Common-MouseHilight")
-		next:SetID(1) prev:SetID(-1)
-		local function handler(self) api.scrollSliceList(self:GetID()) end
-		next:SetScript("OnClick", handler) prev:SetScript("OnClick", handler)
-		ringContainer.prev, ringContainer.next = prev, next
+	do -- slice list scrollbar
+		local top = CreateFrame("Frame", nil, ringContainer)
+		top:SetSize(22, 22)
+		top:SetPoint("TOPRIGHT", ringContainer, "TOPLEFT", -16, 0)
+		ringContainer.listTop = top
+		local track = CreateFrame("Frame", nil, ringContainer)
+		track:SetWidth(10)
+		track:SetPoint("TOPRIGHT", ringContainer, "TOPLEFT", -44, -3)
+		track:SetPoint("BOTTOMRIGHT", ringContainer, "BOTTOMLEFT", -44, 3)
+		track:Hide()
+		TS.Box(track, "BACKGROUND", nil, {0.075, 0.082, 0.096, 0.9})
+		local thumb = CreateFrame("Button", nil, track)
+		thumb:SetWidth(10)
+		TS.Box(thumb, "ARTWORK", nil, {0.26, 0.28, 0.33, 1})
+		TS.Box(thumb, "HIGHLIGHT", nil, {0.16, 0.66, 1.00, 0.5})
+		local function dragTo(cy)
+			local top, h, th = track:GetTop(), track:GetHeight(), thumb:GetHeight()
+			local span = top and h - th or 0
+			if span <= 0 then return end
+			api.setSliceScroll((top - th/2 - cy) / span)
+		end
+		thumb:SetScript("OnMouseDown", function(self, button)
+			if button ~= "LeftButton" then return end
+			self:SetScript("OnUpdate", function()
+				dragTo(select(2, GetCursorPosition()) / self:GetEffectiveScale())
+			end)
+		end)
+		thumb:SetScript("OnMouseUp", function(self)
+			self:SetScript("OnUpdate", nil)
+		end)
+		track:SetScript("OnMouseDown", function(_, button)
+			if button == "LeftButton" then
+				dragTo(select(2, GetCursorPosition()) / track:GetEffectiveScale())
+			end
+		end)
+		track:SetScript("OnSizeChanged", function() api.updateSliceScroll() end)
+		track:EnableMouse(true)
+		track:EnableMouseWheel(true)
+		track:SetScript("OnMouseWheel", function(_, delta)
+			api.scrollSliceList(delta > 0 and -1 or 1)
+		end)
+		ringContainer.scrollTrack, ringContainer.scrollThumb = track, thumb
 		local cap = CreateFrame("Frame", nil, ringContainer)
-		cap:SetPoint("TOPLEFT", ringContainer, "TOPLEFT", -38, 0)
+		cap:SetPoint("TOPLEFT", ringContainer, "TOPLEFT", -60, 0)
 		cap:SetPoint("BOTTOMRIGHT", ringContainer, "BOTTOMLEFT", -1, 0)
+		cap:EnableMouseWheel(true)
 		cap:SetScript("OnMouseWheel", function(_, delta)
-			local b = delta == 1 and prev or next
-			if b:IsEnabled() then b:Click() end
+			api.scrollSliceList(delta > 0 and -1 or 1)
 		end)
 	end
 	ringContainer.slices = {} do
@@ -330,9 +356,9 @@ ringContainer = CreateFrame("Frame", nil, panel) do
 			dest = api.resolveSliceOffset(dest)
 			if dest ~= source then api.moveSlice(source, dest) end
 		end
-		for i=0,11 do
+		for i=0,SLICE_ROW_POOL-1 do
 			local ico = createIconButton(nil, ringContainer, i)
-			ico:SetPoint("TOP", ringContainer.prev, "BOTTOMRIGHT", -2, -34*i)
+			ico:SetPoint("TOP", ringContainer.listTop, "BOTTOMRIGHT", -2, -SLICE_ROW_PITCH*i)
 			ico:SetScript("OnClick", onClick)
 			ico:RegisterForDrag("LeftButton")
 			ico:SetScript("OnDragStart", dragStart)
@@ -380,8 +406,17 @@ ringContainer = CreateFrame("Frame", nil, panel) do
 			GameTooltip:Show()
 		end)
 		b:SetScript("OnLeave", config.ui.HideTooltip)
-		b:SetPoint("TOP", ringContainer.slices[12], "BOTTOM", 0, -2)
+		b:SetPoint("TOP", ringContainer.slices[1], "BOTTOM", 0, -2)
 	end
+	ringContainer.visibleSlices = 12
+	ringContainer:SetScript("OnSizeChanged", function(self)
+		local h = self:GetHeight() or 0
+		local n = math.max(1, math.min(SLICE_ROW_POOL, math.floor((h - SLICE_ROW_RESERVE) / SLICE_ROW_PITCH)))
+		if n ~= self.visibleSlices then
+			self.visibleSlices = n
+			api.refreshSliceRows()
+		end
+	end)
 end
 ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	ringDetail:SetAllPoints()
@@ -409,13 +444,13 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	tex:SetTexture(1,0.82,0, 0.5)
 	ringDetail.scope = XU:Create("DropDown", nil, ringDetail)
 	ringDetail.scope:SetPoint("TOPLEFT", 250, -37)
-	ringDetail.scope:SetWidth(300)
+	ringDetail.scope:SetWidth(272)
 	ringDetail.scope.label = ringDetail.scope:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	ringDetail.scope.label:SetPoint("TOPLEFT", ringDetail, "TOPLEFT", 10, -47)
 	ringDetail.scope.label:SetText(L"Make this ring available to:")
 	ringDetail.binding = config.createBindingButton(ringDetail)
 	ringDetail.bindingContainerFrame = panel
-	ringDetail.binding:SetPoint("TOPLEFT", 267, -68) ringDetail.binding:SetWidth(265)
+	ringDetail.binding:SetPoint("TOPLEFT", 267, -68) ringDetail.binding:SetWidth(247)
 	function ringDetail:SetBinding(bind) return api.setRingBinding(bind or false) end
 	function ringDetail:OnBindingAltClick() self:ToggleAlternateEditor(api.getRingBinding()) end
 	ringDetail.binding.label = ringDetail.scope:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -423,7 +458,7 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	ringDetail.binding.label:SetText(L"Binding:")
 	do -- ringDetail.rotation
 		local t, s, sliderLeftMargin, centerLine = nil, XU:Create("OPie:OptionsSlider", nil, ringDetail)
-		s:SetWidth(250)
+		s:SetWidth(218)
 		s:SetPoint("TOPLEFT", 270-sliderLeftMargin, -95)
 		s:SetMinMaxValues(0, 345)
 		s:SetValueStep(15)
@@ -438,7 +473,7 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 		ringDetail.rotation, s.label = s, t
 	end
 	ringDetail.opportunistCA = TS:CreateOptionsCheckButton(nil, ringDetail)
-	ringDetail.opportunistCA:SetPoint("TOPLEFT", 266, -118)
+	ringDetail.opportunistCA:SetPoint("TOPLEFT", 160, -118)
 	if ringDetail.opportunistCA.SetMotionScriptsWhileDisabled then ringDetail.opportunistCA:SetMotionScriptsWhileDisabled(1) end
 	ringDetail.opportunistCA.Text:SetText(L"Pre-select a quick action slice")
 	ringDetail.opportunistCA:SetScript("OnEnter", config.ui.ShowControlTooltip)
@@ -488,7 +523,7 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	ringDetail.shareLabel:SetText(L"Snapshot:")
 	ringDetail.shareLabel2 = ringDetail:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmallLeft")
 	ringDetail.shareLabel2:SetPoint("TOPLEFT", ringDetail, "TOPLEFT", 270, -270)
-	ringDetail.shareLabel2:SetWidth(275)
+	ringDetail.shareLabel2:SetWidth(250)
 	ringDetail.export = CreateButton(ringDetail)
 	ringDetail.export:SetPoint("TOP", ringDetail.shareLabel2, "BOTTOM", 0, -4)
 	ringDetail.export:SetText(L"Share ring")
@@ -507,7 +542,7 @@ ringDetail = CreateFrame("Frame", nil, ringContainer) do
 	
 	local textArea = XU:Create("TextArea", "RKC_ExportInput", ringDetail)
 	textArea:SetStyle("tooltip")
-	textArea:SetSize(265, 124)
+	textArea:SetSize(246, 124)
 	textArea:Hide()
 	textArea:SetPoint("TOPLEFT", ringDetail.shareLabel2, "BOTTOMLEFT", -2, -2)
 	ringDetail.exportArea = textArea
@@ -579,7 +614,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 	sliceDetail.skipSpecs = XU:Create("DropDown", nil, sliceDetail) do
 		local s = sliceDetail.skipSpecs
 		s:SetPoint("TOPLEFT", 250, -oy)
-		s:SetWidth(300)
+		s:SetWidth(272)
 		oy = oy + 31
 		s.label = s:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		s.label:SetPoint("BOTTOMLEFT", sliceDetail, "TOPLEFT", 10, 9-oy)
@@ -587,7 +622,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 	end
 	sliceDetail.showConditional = XU:Create("LineInput", nil, sliceDetail) do
 		local c = sliceDetail.showConditional
-		c:SetWidth(260)
+		c:SetWidth(240)
 		c:SetPoint("TOPLEFT", 274, -oy)
 		oy = oy + 23
 		c.label = c:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -762,7 +797,7 @@ sliceDetail = CreateFrame("Frame", nil, ringContainer) do
 	sliceDetail.collectionDrop = XU:Create("DropDown", nil, sliceDetail) do
 		local w = sliceDetail.collectionDrop
 		w:SetPoint("TOPLEFT", 250, -oy)
-		w:SetWidth(300)
+		w:SetWidth(272)
 		w.label = w:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 		w.label:SetText(L"Display as:")
 		w.label:SetPoint("LEFT", -240, 0)
@@ -869,16 +904,11 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		s:SetPoint("TOPLEFT", 162, -3)
 		s:SetPoint("BOTTOMLEFT", 162, 3)
 		s:SetWidth(14)
-		do local t = s:CreateTexture(nil, "BACKGROUND")
-			t:SetAllPoints() t:SetTexture(0.08, 0.08, 0.08, 0.9) end
+		TS.Box(s, "BACKGROUND", nil, {0.075, 0.082, 0.096, 0.9})
 		local thumb = CreateFrame("Button", nil, s)
-		thumb:SetWidth(10)
-		do
-			local t = thumb:CreateTexture(nil, "ARTWORK")
-			t:SetAllPoints() t:SetTexture(0.55, 0.55, 0.55, 0.95)
-			local hl = thumb:CreateTexture(nil, "HIGHLIGHT")
-			hl:SetAllPoints() hl:SetTexture(0.75, 0.75, 0.75, 0.5)
-		end
+		thumb:SetWidth(8)
+		TS.Box(thumb, "ARTWORK", nil, {0.26, 0.28, 0.33, 1})
+		TS.Box(thumb, "HIGHLIGHT", nil, {0.16, 0.66, 1.00, 0.5})
 		local function updateCatThumb()
 			if catSliderMax <= 0 then thumb:Hide() return end
 			thumb:Show()
@@ -970,7 +1000,7 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 	
 	local catbg = newSlice:CreateTexture(nil, "BACKGROUND")
 	catbg:SetPoint("TOPLEFT", 2, -2) catbg:SetPoint("RIGHT", newSlice, "RIGHT", -2, 0) catbg:SetPoint("BOTTOM", 0, 2)
-	catbg:SetTexture(0,0,0, 0.65)
+	catbg:SetTexture(0.058, 0.063, 0.074, 0.96)
 	local function onCatClick(self)
 		PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
 		selectCategory(self:GetID())
@@ -1027,9 +1057,8 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 	newSlice.desc:SetJustifyV("TOP") newSlice.desc:SetJustifyH("CENTER")
 	newSlice.desc:SetText(L"Select an action by double clicking.")
 	
-	newSlice.close = CreateFrame("Button", nil, newSlice, "UIPanelCloseButton")
-	newSlice.close:SetPoint("TOPRIGHT", 3, 4)
-	newSlice.close:SetSize(30, 30)
+	newSlice.close = TS:StyleCloseButton(CreateFrame("Button", nil, newSlice, "UIPanelCloseButton"))
+	newSlice.close:SetPoint("TOPRIGHT", -2, -2)
 	newSlice.close:SetFrameLevel(newSlice:GetFrameLevel()+120)
 	newSlice.close:SetScript("OnClick", function()
 		PlaySound(SOUNDKIT.U_CHAT_SCROLL_BUTTON)
@@ -1037,28 +1066,17 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 	end)
 	TS:EscapeCallback(newSlice.close, function() api.closeActionPicker() end)
 
-	local b = newSlice.close:CreateTexture(nil, "BACKGROUND")
-	b:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Corner")
-	b:SetTexCoord(0, 0.5, 0, 0.5)
-	b:SetPoint("TOPLEFT", 4, -5) b:SetPoint("BOTTOMRIGHT", -5, 4)
-	b:SetVertexColor(0.6,0.6,0.6)
-	
 	local actSliderVal, actSliderMax, actSyncFn, actDoScroll = 0, 0, nil, nil
 	do -- custom actions scrollbar
 		local s = CreateFrame("Frame", nil, newSlice)
 		s:SetPoint("TOPRIGHT", -2, -32)
 		s:SetPoint("BOTTOMRIGHT", -2, 2)
 		s:SetWidth(14)
-		do local t = s:CreateTexture(nil, "BACKGROUND")
-			t:SetAllPoints() t:SetTexture(0.08, 0.08, 0.08, 0.9) end
+		TS.Box(s, "BACKGROUND", nil, {0.075, 0.082, 0.096, 0.9})
 		local thumb = CreateFrame("Button", nil, s)
-		thumb:SetWidth(10)
-		do
-			local t = thumb:CreateTexture(nil, "ARTWORK")
-			t:SetAllPoints() t:SetTexture(0.55, 0.55, 0.55, 0.95)
-			local hl = thumb:CreateTexture(nil, "HIGHLIGHT")
-			hl:SetAllPoints() hl:SetTexture(0.75, 0.75, 0.75, 0.5)
-		end
+		thumb:SetWidth(8)
+		TS.Box(thumb, "ARTWORK", nil, {0.26, 0.28, 0.33, 1})
+		TS.Box(thumb, "HIGHLIGHT", nil, {0.16, 0.66, 1.00, 0.5})
 		local function updateActThumb()
 			if actSliderMax <= 0 then thumb:Hide() return end
 			thumb:Show()
@@ -1117,11 +1135,11 @@ newSlice = CreateFrame("Frame", nil, ringContainer) do
 		if newSlice.disableDrag then return end
 		PlaySound(833)
 		local e, x, y = ringContainer.slices[1], GetCursorPosition()
-		if not e:GetLeft() then e = ringContainer.prev end
+		if not e:GetLeft() then e = ringContainer.listTop end
 		local scale, l, b, w, h = e:GetEffectiveScale(), e:GetRect()
 		local dy, dx = math.floor(-(y / scale - b - h-1)/(h+2)+0.5), x / scale - l
 		if dx < -w/2 or dx > 3*w/2 then return end
-		if dy < -1 or dy > (#ringContainer.slices+1) then return end
+		if dy < -1 or dy > (ringContainer.visibleSlices+1) then return end
 		api.addSlice(dy, selectedCategory(self:GetID()))
 	end
 	local function onEnter(self)
@@ -1482,12 +1500,12 @@ function api.hideSliceDetail()
 	editorHost:Clear()
 end
 function api.updateRingLine(scanForNestedRings)
-	ringContainer.prev:SetEnabled(sliceBaseIndex > 1)
-	ringContainer.next:Disable()
+	local vis = ringContainer.visibleSlices
+	sliceBaseIndex = math.max(1, math.min(math.max(1, #currentRing - vis + 1), sliceBaseIndex))
 	local onOpen, lastWidget = currentRing.onOpen
 	for i=sliceBaseIndex,#currentRing do
-		local e = ringContainer.slices[i-sliceBaseIndex+1]
-		if not e then ringContainer.next:Enable() break end
+		local e = i-sliceBaseIndex+1 <= vis and ringContainer.slices[i-sliceBaseIndex+1]
+		if not e then break end
 		local _, _, sicon, icoext = getSliceInfo(currentRing[i])
 		local ok, pt = pcall(setIcon, e.tex, currentRing[i].icon or sicon, icoext)
 		e.plainTex = ok and pt or nil
@@ -1498,9 +1516,10 @@ function api.updateRingLine(scanForNestedRings)
 		lastWidget = e
 	end
 	ringContainer.newSlice:SetPoint("TOP", lastWidget or ringContainer.slices[1], lastWidget and "BOTTOM" or "TOP", 0, -2)
-	for i=#currentRing-sliceBaseIndex+2,#ringContainer.slices do
+	for i=math.min(#currentRing-sliceBaseIndex+1, vis)+1,#ringContainer.slices do
 		ringContainer.slices[i]:Hide()
 	end
+	api.updateSliceScroll()
 	if scanForNestedRings then
 		local hasNestedCustomRings = false
 		for i=1,#currentRing do
@@ -1513,9 +1532,50 @@ function api.updateRingLine(scanForNestedRings)
 		ringDetail.export.nested:SetShown(hasNestedCustomRings)
 	end
 end
+local function sliceScrollRange()
+	local total, vis = currentRing and #currentRing or 0, ringContainer.visibleSlices
+	return total, vis, math.max(1, total - vis + 1)
+end
+function api.refreshSliceRows()
+	if currentRing then
+		api.updateRingLine()
+	end
+end
+function api.updateSliceScroll()
+	local track, thumb = ringContainer.scrollTrack, ringContainer.scrollThumb
+	local total, vis, maxBase = sliceScrollRange()
+	if total <= vis then
+		track:Hide()
+		return
+	end
+	track:Show()
+	local h = track:GetHeight() or 0
+	if h < 30 then
+		h = (ringContainer:GetHeight() or 0) - 6
+	end
+	if h < 30 then return end
+	local th = math.max(24, h * vis / total)
+	thumb:SetHeight(th)
+	thumb:ClearAllPoints()
+	thumb:SetPoint("TOP", track, "TOP", 0, -(sliceBaseIndex-1)/(maxBase-1)*(h-th))
+end
+function api.setSliceScroll(frac)
+	local _, _, maxBase = sliceScrollRange()
+	local nb = math.max(1, math.min(maxBase, math.floor(frac*(maxBase-1) + 1.5)))
+	if nb ~= sliceBaseIndex then
+		sliceBaseIndex = nb
+		api.updateRingLine()
+	else
+		api.updateSliceScroll()
+	end
+end
 function api.scrollSliceList(dir)
-	sliceBaseIndex = math.max(1,sliceBaseIndex + dir)
-	api.updateRingLine()
+	local _, _, maxBase = sliceScrollRange()
+	local nb = math.max(1, math.min(maxBase, sliceBaseIndex + dir))
+	if nb ~= sliceBaseIndex then
+		sliceBaseIndex = nb
+		api.updateRingLine()
+	end
 end
 function api.resolveSliceOffset(id)
 	return sliceBaseIndex + id
@@ -1855,7 +1915,7 @@ function api.addSlice(pos, ...)
 	else
 		pos = math.max(1, math.min(#currentRing+1, pos and (pos + sliceBaseIndex) or (#currentRing+1)))
 		table.insert(currentRing, pos, {sliceToken=AB:CreateToken(), ...})
-		sliceBaseIndex = math.min(pos, math.max(1 + pos - #ringContainer.slices, sliceBaseIndex))
+		sliceBaseIndex = math.min(pos, math.max(1 + pos - ringContainer.visibleSlices, sliceBaseIndex))
 	end
 	api.saveRing(currentRingName, currentRing)
 	api.updateRingLine(true)

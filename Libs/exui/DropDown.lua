@@ -96,23 +96,25 @@ local function CreateDropDown(name, parent, outerTemplate, id)
 		t:SetPoint("TOPLEFT", 9, 6)
 		t:SetPoint("BOTTOMRIGHT", -9, -2.5)
 	else
-		-- WotLK: 3-piece CharacterCreate-LabelFrame (matches UIDropDownMenuTemplate)
-		local tL = f:CreateTexture(nil, "BACKGROUND")
-		tL:SetTexture([[Interface\Glues\CharacterCreate\CharacterCreate-LabelFrame]])
-		tL:SetTexCoord(0, 0.1953125, 0, 1)
-		tL:SetSize(25, 64)
-		tL:SetPoint("TOPLEFT", 0, 17)
-		t = f:CreateTexture(nil, "BACKGROUND")
-		t:SetTexture([[Interface\Glues\CharacterCreate\CharacterCreate-LabelFrame]])
-		t:SetTexCoord(0.1953125, 0.8046875, 0, 1)
-		t:SetHeight(64)
-		t:SetPoint("TOPLEFT", tL, "TOPRIGHT", 0, 0)
-		t:SetPoint("TOPRIGHT", f, "TOPRIGHT", -25, 17)
-		local tR = f:CreateTexture(nil, "BACKGROUND")
-		tR:SetTexture([[Interface\Glues\CharacterCreate\CharacterCreate-LabelFrame]])
-		tR:SetTexCoord(0.8046875, 1, 0, 1)
-		tR:SetSize(25, 64)
-		tR:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 17)
+		t = f:CreateTexture(nil, "BACKGROUND", nil, -3)
+		t:SetTexture(0.115, 0.125, 0.145, 1)
+		t:SetPoint("TOPLEFT", 8, -1)
+		t:SetPoint("BOTTOMRIGHT", -8, 7)
+		for i=1,4 do
+			local e = f:CreateTexture(nil, "BACKGROUND", nil, -2)
+			e:SetTexture(0.21, 0.23, 0.27, 1)
+			if i < 3 then
+				e:SetHeight(1)
+				e:SetPoint("LEFT", t, "LEFT")
+				e:SetPoint("RIGHT", t, "RIGHT")
+				e:SetPoint(i == 1 and "TOP" or "BOTTOM", t, i == 1 and "TOP" or "BOTTOM")
+			else
+				e:SetWidth(1)
+				e:SetPoint("TOP", t, "TOP")
+				e:SetPoint("BOTTOM", t, "BOTTOM")
+				e:SetPoint(i == 3 and "LEFT" or "RIGHT", t, i == 3 and "LEFT" or "RIGHT")
+			end
+		end
 	end
 	d = newWidgetData(f, DropDownData, DropDownProps)
 	t, d.bg = f:GetFontString(), t

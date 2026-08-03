@@ -1,88 +1,194 @@
 local ADDON, T = ...
-local H, PC, TS, XU, config, L = {}, T.OPieCore, T.TenSettings, T.exUI, T.config, T.L
+local H, PC, TS, config, L = {}, T.OPieCore, T.TenSettings, T.config, T.L
+local SKIN = TS.SKIN
+local GFX = ([[Interface\AddOns\%s\gfx\]]):format(ADDON)
+local GameTooltip = T.NotGameTooltip or GameTooltip
 
 local frame = TS:CreateOptionsPanel("OPie", nil, {
 	forceRootVersion=true,
 	selfBrandedRoot=true,
-	tabText="|TInterface/Buttons/UI-HomeButton:16:18:0:-4|t"
+	tabText="|TInterface/Buttons/UI-HomeButton:14:16:0:-3|t " .. L"Overview"
 })
 frame.version:SetText(PC:GetVersion() or "")
 T.ConfigHomePanel = frame
-local oy = TS.PANEL_VIEW_MARGIN_TOP_TITLESHIFT - 16
-local t, ta = frame:CreateFontString(nil, "OVERLAY", "GameFont_Gigantic")
-t:SetTextColor(1,1,1)
-t:SetText("OPie_Sirus")
-t:SetPoint("TOP", 0, oy)
-oy, t = oy - 50, frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-t:SetPoint("TOP", 0, oy)
-t:SetText("|cffb0b0b0" .. GAME_VERSION_LABEL .. "|r " .. frame.version:GetText())
 
 local navView = CreateFrame("Frame", nil, frame) do
-	navView:SetHeight(100) -- going to overflow; it's fine
-	navView:SetPoint("TOPLEFT", 0, oy - 32)
-	navView:SetPoint("TOPRIGHT", 0, oy - 32)
+	navView:SetPoint("TOPLEFT")
+	navView:SetPoint("BOTTOMRIGHT")
 	local function onNavClick(self)
 		return H.HandleNavClick(self:GetID())
 	end
 
-	local actLineAnchor = CreateFrame("Frame", nil, navView)
-	actLineAnchor:SetPoint("TOP")
-	actLineAnchor:SetSize(500+32, 30)
-	actLineAnchor:Hide()
-	local oy, t = 0
-	local function makeActButton(id, text, w)
-		t, ta = CreateFrame("Button", nil, navView, "UIPanelButtonTemplate", id), t
-		t:SetSize(w or 160, 32)
-		t:SetNormalFontObject(GameFontNormalMed2)
-		t:SetHighlightFontObject(GameFontHighlightMed2)
-		t:SetPushedTextOffset(-1, -1)
-		t:SetText(text)
-		t:SetScript("OnClick", onNavClick)
-		if ta then
-			t:SetPoint("LEFT", ta, "RIGHT", 16, 0)
-		else
-			t:SetPoint("LEFT", actLineAnchor, "LEFT", 0, oy)
-		end
-		local fs = t:GetFontString()
-		fs:ClearAllPoints()
-		fs:SetPoint("LEFT", 9, 0)
-		fs:SetPoint("RIGHT", -9, 0)
-		fs:SetMaxLines(1)
-		fs:SetJustifyH("CENTER")
-	end
-	makeActButton(1, L"Credits")
-	makeActButton(2, L"Report an Issue", 180)
-	makeActButton(3, L"Donate")
+	local oy = TS.PANEL_VIEW_MARGIN_TOP_TITLESHIFT + 4
+	local t = navView:CreateFontString(nil, "OVERLAY", "GameFont_Gigantic")
+	t:SetTextColor(1, 1, 1)
+	t:SetText("OPie_Sirus")
+	t:SetPoint("TOPLEFT", 16, oy)
+	oy = oy - 34
+	t = navView:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+	t:SetTextColor(0.62, 0.65, 0.70)
+	t:SetText(GetAddOnMetadata(ADDON, "Notes") or "")
+	t:SetPoint("TOPLEFT", 18, oy)
+	t:SetPoint("TOPRIGHT", -16, oy)
+	t:SetJustifyH("LEFT")
+	oy = oy - 26
 
-	local function makeNav(id, title, text, y1)
-		oy, t = oy - (y1 or 40), CreateFrame("Button", nil, navView, nil, id)
-		t:SetSize(24,24)
-		t:SetPoint("TOPLEFT", 18, oy)
-		t:SetNormalFontObject(GameFontNormalLarge)
-		t:SetHighlightFontObject(GameFontHighlightLarge)
-		t:SetNormalTexture("Interface/Glues/Common/Glue-RightArrow-Button-Up")
-		t:SetPushedTexture("Interface/Glues/Common/Glue-RightArrow-Button-Down")
-		t:SetHighlightTexture("Interface/Glues/Common/Glue-RightArrow-Button-Highlight")
-		t:SetPushedTextOffset(0,0)
-		t:SetHitRectInsets(0, -150, 0, 0)
-		t:SetScript("OnClick", onNavClick)
-		t:SetText(title)
-		t, ta = t:GetFontString(), t
-		t:ClearAllPoints()
-		t:SetPoint("LEFT", ta, "RIGHT", 3, -1)
-		oy, t, ta = oy - 26, navView:CreateFontString(nil, "OVERLAY", "GameFontHighlight"), t
-		t:SetTextColor(0.85, 0.85, 0.85)
-		t:SetText(text)
-		t:SetPoint("TOPLEFT", ta, "BOTTOMLEFT", 0, -6)
-	end
-
-	makeNav(4, L"Options", L"Customize OPie's appearance and behavior.", 75)
-	makeNav(5, L"Ring Bindings", L"Customize OPie ring and in-ring key bindings.")
-	makeNav(6, L"Custom Rings", L"Edit existing rings, or create your own custom OPie rings.")
-	local svWarning = CreateFrame("Button", nil, navView) do
+	local function makeNav(id, title, text)
+		local b = CreateFrame("Button", nil, navView, nil, id)
+		b:SetPoint("TOPLEFT", 16, oy)
+		b:SetPoint("TOPRIGHT", -16, oy)
+		b:SetHeight(52)
+		TS.Box(b, "BACKGROUND", nil, SKIN.header)
+		TS.Outline(b, "BORDER", nil, SKIN.line)
+		TS.Box(b, "HIGHLIGHT", nil, SKIN.hover)
+		local bar = TS.Fill(b, "ARTWORK", nil, SKIN.accent)
+		bar:SetWidth(3)
+		bar:SetPoint("TOPLEFT")
+		bar:SetPoint("BOTTOMLEFT")
+		local ct = b:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+		ct:SetPoint("TOPLEFT", 16, -9)
+		ct:SetText(title)
+		ct:SetJustifyH("LEFT")
+		local cd = b:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		cd:SetTextColor(0.66, 0.69, 0.74)
+		cd:SetPoint("TOPLEFT", ct, "BOTTOMLEFT", 0, -4)
+		cd:SetPoint("RIGHT", b, "RIGHT", -30, 0)
+		cd:SetText(text)
+		cd:SetJustifyH("LEFT")
+		local ar = b:CreateTexture(nil, "OVERLAY")
+		ar:SetTexture("Interface/Glues/Common/Glue-RightArrow-Button-Up")
+		ar:SetSize(22, 22)
+		ar:SetPoint("RIGHT", -10, 0)
+		ar:SetVertexColor(0.55, 0.58, 0.64)
+		b:SetScript("OnEnter", function()
+			ar:SetVertexColor(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3])
+		end)
+		b:SetScript("OnLeave", function()
+			ar:SetVertexColor(0.55, 0.58, 0.64)
+		end)
+		b:SetScript("OnClick", onNavClick)
 		oy = oy - 60
+	end
+
+	makeNav(1, L"Options", L"Customize OPie's appearance and behavior.")
+	makeNav(2, L"Ring Bindings", L"Customize OPie ring and in-ring key bindings.")
+	makeNav(3, L"Custom Rings", L"Edit existing rings, or create your own custom OPie rings.")
+
+	oy = oy - 6
+	local ch = navView:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	ch:SetPoint("TOPLEFT", 26, oy)
+	ch:SetText(L"Credits")
+	local chBar = TS.Fill(navView, "ARTWORK", nil, SKIN.accent)
+	chBar:SetSize(3, 14)
+	chBar:SetPoint("RIGHT", ch, "LEFT", -7, -1)
+	local chRule = TS.Fill(navView, "ARTWORK", nil, SKIN.line)
+	chRule:SetHeight(1)
+	chRule:SetPoint("TOPLEFT", ch, "TOPRIGHT", 10, -8)
+	chRule:SetPoint("TOPRIGHT", navView, "TOPRIGHT", -16, oy - 8)
+	oy = oy - 24
+
+	local credits = CreateFrame("Frame", nil, navView)
+	credits:SetPoint("TOPLEFT", 26, oy)
+	credits:SetPoint("TOPRIGHT", -16, oy)
+	credits:SetHeight(10)
+	local cy = 0
+	local function vh(text)
+		local t = credits:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		t:SetPoint("TOPLEFT", 0, cy)
+		t:SetText(text)
+		t:SetJustifyH("LEFT")
+		cy = cy - 18
+	end
+	local function li(text)
+		local b = credits:CreateTexture(nil, "OVERLAY")
+		b:SetSize(3, 3)
+		b:SetPoint("TOPLEFT", 10, cy - 7)
+		b:SetTexture(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3], 1)
+		local t = credits:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+		t:SetTextColor(0.72, 0.75, 0.80)
+		t:SetPoint("TOPLEFT", 20, cy)
+		t:SetPoint("TOPRIGHT", 0, cy)
+		t:SetJustifyH("LEFT")
+		t:SetText(text)
+		cy = cy - 17
+	end
+	securecall(T.CreditsData, vh, li)
+
+	local urlBox = CreateFrame("EditBox", nil, navView) do
+		urlBox:SetHeight(22)
+		urlBox:SetPoint("BOTTOMLEFT", 106, 14)
+		urlBox:SetPoint("BOTTOMRIGHT", -16, 14)
+		urlBox:SetFontObject(GameFontHighlightSmall)
+		urlBox:SetTextInsets(6, 6, 0, 0)
+		urlBox:SetAutoFocus(false)
+		TS.Box(urlBox, "BACKGROUND", nil, SKIN.btn)
+		TS.Outline(urlBox, "BORDER", nil, SKIN.edge)
+		urlBox:SetScript("OnTextChanged", function(self, userChanged)
+			if userChanged and self.url then
+				self:SetText(self.url)
+				self:HighlightText()
+			end
+			self:SetCursorPosition(0)
+		end)
+		urlBox:SetScript("OnMouseUp", function(self) self:HighlightText() end)
+		urlBox:SetScript("OnEscapePressed", urlBox.ClearFocus)
+		urlBox:SetScript("OnEnterPressed", urlBox.ClearFocus)
+	end
+
+	local linkPrev
+	local function makeLink(icon, url, title)
+		local b = CreateFrame("Button", nil, navView)
+		b:SetSize(32, 32)
+		if linkPrev then
+			b:SetPoint("LEFT", linkPrev, "RIGHT", 8, 0)
+		else
+			b:SetPoint("BOTTOMLEFT", 16, 9)
+		end
+		linkPrev = b
+		local bg = TS.Box(b, "BACKGROUND", nil, SKIN.btn)
+		local edge = TS.Outline(b, "BORDER", nil, SKIN.edge)
+		local tex = b:CreateTexture(nil, "ARTWORK")
+		tex:SetPoint("TOPLEFT", 3, -3)
+		tex:SetPoint("BOTTOMRIGHT", -3, 3)
+		tex:SetTexture(icon)
+		local function activate()
+			bg:SetTexture(SKIN.accentDim[1], SKIN.accentDim[2], SKIN.accentDim[3], SKIN.accentDim[4])
+			for i=1,#edge do
+				edge[i]:SetTexture(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3], 1)
+			end
+			urlBox.url = url
+			urlBox:SetText(url)
+			urlBox:SetCursorPosition(0)
+		end
+		b:SetScript("OnEnter", function(self)
+			activate()
+			GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+			GameTooltip:AddLine(title)
+			GameTooltip:AddLine(L"Copy the URL shown above and visit it using a web browser.", 1, 1, 1, true)
+			GameTooltip:Show()
+		end)
+		b:SetScript("OnLeave", function()
+			bg:SetTexture(SKIN.btn[1], SKIN.btn[2], SKIN.btn[3], SKIN.btn[4])
+			for i=1,#edge do
+				edge[i]:SetTexture(SKIN.edge[1], SKIN.edge[2], SKIN.edge[3], 1)
+			end
+			config.ui.HideTooltip(b)
+		end)
+		b:SetScript("OnClick", function()
+			activate()
+			urlBox:SetFocus()
+			urlBox:HighlightText()
+		end)
+		return b
+	end
+	makeLink(GFX .. "discord.tga", "https://discord.gg/wRPF8CCpNV", L"Report an Issue")
+	makeLink(GFX .. "boosty.tga", "https://boosty.to/accidev", L"Donate")
+	urlBox.url = "https://discord.gg/wRPF8CCpNV"
+	urlBox:SetText(urlBox.url)
+
+	local svWarning = CreateFrame("Button", nil, navView) do
 		svWarning:SetSize(300, 18)
-		svWarning:SetPoint("TOPLEFT", 18, oy)
+		svWarning:SetPoint("BOTTOMLEFT", 18, 50)
 		svWarning:SetNormalFontObject(GameFontRed)
 		svWarning:SetHighlightFontObject(GameFontHighlight)
 		svWarning:SetScript("OnClick", function() config.checkSVState(frame, true) end)
@@ -98,107 +204,11 @@ local navView = CreateFrame("Frame", nil, frame) do
 		svWarning:SetWidth(math.max(300, fs:GetStringWidth()))
 	end
 end
-local logView = CreateFrame("Frame", nil, frame) do
-	logView:SetHeight(100) -- going to overflow; it's fine
-	logView:SetPoint("TOPLEFT", 0, oy - 32)
-	logView:SetPoint("TOPRIGHT", 0, oy - 32)
-	logView:Hide()
 
-	local oy, t = 0, logView:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	t:SetPoint("TOPLEFT", 20, oy)
-	t:SetText(L"Credits")
-	t = CreateFrame("Button", nil, logView, "UIPanelCloseButtonNoScripts")
-	t:SetPoint("TOPRIGHT", -10, oy+6)
-	t:SetScript("OnClick", function() frame.refresh() end)
-
-	local MARK_TEXTURE = "Interface/AddOns/" .. ADDON .. "/gfx/mark.png"
-
-	local vGradient = {x=0, y=7}
-	local clipHost = CreateFrame("Frame", nil, logView)
-	if clipHost.SetClipsChildren then clipHost:SetClipsChildren(true) end
-	if clipHost.SetFlattensRenderLayers then clipHost:SetFlattensRenderLayers(true) end
-	if clipHost.SetAlphaGradient then
-		clipHost:SetAlphaGradient(0, vGradient)
-		clipHost:SetAlphaGradient(1, vGradient)
-	end
-	clipHost:SetPoint("TOPLEFT", logView, "TOPLEFT", 20, oy-37)
-	clipHost:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -30, 15)
-	if clipHost.SetHyperlinkPropagateToParent then clipHost:SetHyperlinkPropagateToParent(true) end
-	local clipAnchor = CreateFrame("Frame", nil, clipHost)
-	clipAnchor:SetHeight(0.125)
-	clipAnchor:SetPoint("TOPLEFT", 20, 0)
-	clipAnchor:SetPoint("TOPRIGHT", 0, 0)
-	local clipBar = XU:Create("ScrollBar", nil, logView)
-	clipBar:SetPoint("TOPLEFT", clipHost, "TOPRIGHT", 2, 20)
-	clipBar:SetPoint("BOTTOMLEFT", clipHost, "BOTTOMRIGHT", 2, -16)
-	clipBar:SetWheelScrollTarget(clipHost, -2, -5, -2, -1)
-	clipBar:SetCoverTarget(clipHost)
-	clipBar:SetScript("OnValueChanged", function(_, nv)
-		clipAnchor:SetPoint("TOPLEFT", 20, nv)
-		clipAnchor:SetPoint("TOPRIGHT", 0, nv)
-	end)
-	local anchorTo, anchorX, anchorY = clipAnchor, 0, -4
-	local function syncScrollRange()
-		local top, bottom = clipAnchor:GetTop(), anchorTo:GetBottom()
-		if not (top and bottom) then return end
-		local ch = top - bottom
-		local vh = math.max(1, clipHost:GetHeight() - 8)
-		clipBar:SetShown(ch > vh)
-		clipBar:SetMinMaxValues(0, math.max(0,ch-vh))
-		clipBar:SetWindowRange(vh)
-		clipBar:SetValueStep(30)
-		clipBar:SetStepsPerPage(math.max(1,vh/30/8), math.max(1,vh/30/4))
-	end
-	clipHost:SetScript("OnShow", syncScrollRange)
-	clipHost:SetScript("OnSizeChanged", syncScrollRange)
-	local function li(text)
-		local oy, b = anchorY, clipHost:CreateTexture(nil, "OVERLAY")
-		b:SetSize(14, 14)
-		b:SetPoint("TOPRIGHT", anchorTo, "BOTTOMLEFT", anchorX-4, oy+1)
-		b:SetTexture(MARK_TEXTURE)
-		b:SetTexCoord(0, 0.5, 0, 1)
-		local t = clipHost:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-		t:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", anchorX, oy)
-		t:SetPoint("TOPRIGHT", anchorTo, "BOTTOMRIGHT", 0, oy)
-		t:SetJustifyH("LEFT")
-		t:SetText(text)
-		anchorTo, anchorX, anchorY = t, 0, -8
-	end
-	local function vh(text)
-		local oy, t = anchorTo ~= clipAnchor and anchorY -12 or -2, clipHost:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		t:SetPoint("TOPLEFT", anchorTo, "BOTTOMLEFT", anchorX-20, oy)
-		t:SetPoint("TOPRIGHT", anchorTo, "BOTTOMRIGHT", 0, oy)
-		t:SetJustifyH("LEFT")
-		t:SetText(text)
-		anchorTo, anchorX, anchorY = t, 20, -4
-	end
-	securecall(T.CreditsData, vh, li)
-end
-
-local navDialogs = {"ShowCredits", "ShowReportIssuePrompt", "ShowDonatePrompt",
-                    "ShowOptionsPanel", "ShowBindingsPanel", "ShowCustomRingsPanel"}
+local navDialogs = {"ShowOptionsPanel", "ShowBindingsPanel", "ShowCustomRingsPanel"}
 
 function H.HandleNavClick(id)
 	return H[navDialogs[id]]()
-end
-function H.ShowCredits()
-	if not frame:IsVisible() then
-		frame:OpenPanel()
-	end
-	navView:Hide()
-	logView:Show()
-end
-function H.ShowReportIssuePrompt()
-	local text = L"If something in OPie does not behave correctly (or if you'd like it to behave differently), create an issue by visiting:"
-	local url = "https://discord.gg/wRPF8CCpNV"
-	local hint = L"Copy the URL shown above and visit it using a web browser."
-	TS:ShowCopyOverlay(frame, L"Report an Issue", text, url, hint, OKAY, 0.85)
-end
-function H.ShowDonatePrompt()
-	local text = L"You can support further development by visiting:"
-	local url = "https://boosty.to/accidev"
-	local hint = L"Copy the URL shown above and visit it using a web browser."
-	TS:ShowCopyOverlay(frame, L"Donate", text, url, hint, OKAY, 0.85)
 end
 function H.ShowOptionsPanel()
 	T.ShowOPieOptionsPanel()
@@ -209,10 +219,3 @@ end
 function H.ShowCustomRingsPanel()
 	T.ShowCustomRingsPanel()
 end
-
-function frame.refresh()
-	navView:Show()
-	logView:Hide()
-end
-
-T.AddSlashSuffix(H.ShowCredits, "credits", "thanks")

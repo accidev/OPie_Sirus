@@ -15,7 +15,34 @@ local TextAreaProps = {
 }
 AddObjectMethods({"TextArea", "EditBox"}, TextAreaProps)
 
-local tooltipBackdrop = {edgeFile="Interface/Tooltips/UI-Tooltip-Border", bgFile="Interface/DialogFrame/UI-DialogBox-Background-Dark", tile=true, edgeSize=16, tileSize=16, insets={left=4,right=4,bottom=4,top=4}, bgColor=0xb2000000, edgeColor=0xb2b2b2}
+local function buildFlatSkin(d)
+	if d.flatSkin then return d.flatSkin end
+	local f, s = d.self, {}
+	local bg = f:CreateTexture(nil, "BACKGROUND", nil, -7)
+	bg:SetTexture(0.055, 0.060, 0.070, 0.96)
+	bg:SetAllPoints()
+	s[1] = bg
+	for i=1,4 do
+		local t = f:CreateTexture(nil, "BORDER", nil, -6)
+		t:SetTexture(0.21, 0.23, 0.27, 1)
+		s[i+1] = t
+		if i < 3 then
+			local p = i == 1 and "TOP" or "BOTTOM"
+			t:SetHeight(1)
+			t:SetPoint("LEFT")
+			t:SetPoint("RIGHT")
+			t:SetPoint(p)
+		else
+			local p = i == 3 and "LEFT" or "RIGHT"
+			t:SetWidth(1)
+			t:SetPoint("TOP")
+			t:SetPoint("BOTTOM")
+			t:SetPoint(p)
+		end
+	end
+	d.flatSkin = s
+	return s
+end
 
 function TextArea:GetHighlightText()
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
@@ -56,13 +83,15 @@ function TextArea:SetStyle(style)
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
 	local px, py = 0, 0
 	if style == "tooltip" then
-		if not d.backdrop then
-			d.backdrop = XU:Create("Backdrop", d.self)
+		local s = buildFlatSkin(d)
+		for i=1,#s do
+			s[i]:Show()
 		end
-		d.backdrop:SetBackdrop(tooltipBackdrop)
 		px, py = 5, 5
-	elseif d.backdrop then
-		d.backdrop:SetBackdrop(nil)
+	elseif d.flatSkin then
+		for i=1,#d.flatSkin do
+			d.flatSkin[i]:Hide()
+		end
 	end
 	d.clipArea:SetPoint("TOPLEFT", px, -py)
 	d.scrollBar:SetPoint("TOPRIGHT", -px, -py)
@@ -136,11 +165,14 @@ function int:OnClick()
 end
 function int:OnScrollValueChanged(nv)
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
-	d.editBox:SetPoint("TOPLEFT", 0, nv)
-	d.editBox:SetPoint("TOPRIGHT", 0, nv)
+	d.clipArea:SetVerticalScroll(nv)
 end
 function int:OnSizeChanged()
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
+	local cw = d.clipArea:GetWidth()
+	if cw and cw > 0 and math.abs(d.editBox:GetWidth() - cw) > 0.5 then
+		d.editBox:SetWidth(cw)
+	end
 	if d.holdScroll then return end
 	local sb, ch, th = d.scrollBar, d.clipArea:GetHeight(), d.editBox:GetHeight() + (d.editBox:GetText():sub(-1) == "\n" and (d.cachedCursorH or 13) or 0)
 	sb:SetMinMaxValues(0, th > ch and th-ch or 0)
@@ -162,17 +194,15 @@ local function CreateTextArea(name, parent, outerTemplate, id)
 	sb:SetScript("OnValueChanged", int.OnScrollValueChanged)
 	sb:SetWheelScrollTarget(area)
 	sb:SetValueStep(12)
-	local ec = CreateFrame("Frame", nil, area)
+	local ec = CreateFrame("ScrollFrame", nil, area)
 	ec:SetPoint("TOPLEFT")
 	ec:SetPoint("BOTTOMRIGHT", sb, "BOTTOMLEFT")
-	if ec.SetClipsChildren then ec:SetClipsChildren(true) end
 	ec:SetScript("OnSizeChanged", int.OnSizeChanged)
 	ec:EnableMouse(1)
 	if ec.SetHyperlinkPropagateToParent then ec:SetHyperlinkPropagateToParent(true) end
 	ec:SetScript("OnMouseDown", int.OnClick)
 	local input = CreateFrame("EditBox", type(name) == "string" and name .. "EB" or nil, ec)
-	input:SetPoint("TOPLEFT")
-	input:SetPoint("TOPRIGHT")
+	input:SetSize(1, 1)
 	input:SetMultiLine(true)
 	input:SetAutoFocus(false)
 	input:SetFontObject(GameFontHighlight)
@@ -187,6 +217,7 @@ local function CreateTextArea(name, parent, outerTemplate, id)
 	setWidgetData(input, TextAreaData, d)
 	setWidgetData(sb, TextAreaData, d)
 	setWidgetData(ec, TextAreaData, d)
+	ec:SetScrollChild(input)
 	TextArea.SetSpacing(area, 2)
 	return area
 end

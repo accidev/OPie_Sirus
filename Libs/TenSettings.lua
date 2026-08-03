@@ -2,6 +2,122 @@
 local EV, XU, noop = T.Evie, T.exUI, function() end
 T.TenSettings = M
 
+local SKIN = {
+	bg        = {0.043, 0.047, 0.055, 0.96},
+	edge      = {0.21, 0.23, 0.27, 1},
+	header    = {0.075, 0.082, 0.096, 1},
+	rail      = {0.058, 0.063, 0.074, 1},
+	line      = {0.14, 0.15, 0.18, 1},
+	accent    = {0.16, 0.66, 1.00, 1},
+	accentDim = {0.16, 0.66, 1.00, 0.13},
+	hover     = {1, 1, 1, 0.06},
+	btn       = {0.115, 0.125, 0.145, 1},
+	card      = {0.062, 0.067, 0.078, 0.98},
+	danger    = {0.72, 0.16, 0.16, 0.55},
+}
+M.SKIN = SKIN
+local function fill(f, layer, sub, c)
+	local t = f:CreateTexture(nil, layer or "BACKGROUND", nil, sub)
+	t:SetTexture(c[1], c[2], c[3], c[4])
+	return t
+end
+local function box(f, layer, sub, c)
+	local t = fill(f, layer, sub, c)
+	t:SetAllPoints()
+	return t
+end
+local function outline(f, layer, sub, c, inset)
+	inset = inset or 0
+	local e = {}
+	for i=1,4 do
+		local t = fill(f, layer, sub, c)
+		e[i] = t
+		if i < 3 then
+			local p = i == 1 and "TOP" or "BOTTOM"
+			t:SetHeight(1)
+			t:SetPoint("LEFT", f, "LEFT", inset, 0)
+			t:SetPoint("RIGHT", f, "RIGHT", -inset, 0)
+			t:SetPoint(p, f, p, 0, i == 1 and -inset or inset)
+		else
+			local p = i == 3 and "LEFT" or "RIGHT"
+			t:SetWidth(1)
+			t:SetPoint("TOP", f, "TOP", 0, -inset)
+			t:SetPoint("BOTTOM", f, "BOTTOM", 0, inset)
+			t:SetPoint(p, f, p, i == 3 and inset or -inset, 0)
+		end
+	end
+	return e
+end
+local function hideTextureRegions(f)
+	for _, o in ipairs({f:GetRegions()}) do
+		if o.GetObjectType and o:GetObjectType() == "Texture" then
+			o:Hide()
+		end
+	end
+end
+M.Fill, M.Box, M.Outline = fill, box, outline
+
+local styled = setmetatable({}, {__mode="k"})
+function M:StyleButton(b, kind)
+	if not b or styled[b] then return b end
+	styled[b] = true
+	hideTextureRegions(b)
+	local primary = kind == "primary"
+	box(b, "BACKGROUND", nil, primary and SKIN.accentDim or SKIN.btn)
+	outline(b, "BORDER", nil, primary and SKIN.accent or SKIN.edge)
+	box(b, "HIGHLIGHT", nil, SKIN.hover)
+	b:SetNormalFontObject(GameFontNormalSmall)
+	b:SetHighlightFontObject(GameFontHighlightSmall)
+	b:SetDisabledFontObject(GameFontDisableSmall)
+	b:SetPushedTextOffset(0, -1)
+	return b
+end
+function M:StyleCloseButton(b)
+	if not b or styled[b] then return b end
+	styled[b] = true
+	hideTextureRegions(b)
+	b:SetSize(20, 20)
+	box(b, "HIGHLIGHT", nil, SKIN.danger)
+	local x = b:CreateTexture(nil, "ARTWORK")
+	x:SetTexture("Interface\\Buttons\\UI-StopButton")
+	x:SetSize(11, 11)
+	x:SetPoint("CENTER")
+	x:SetVertexColor(0.78, 0.79, 0.82)
+	b.Icon = x
+	return b
+end
+function M:StyleCheckButton(b)
+	if not b or styled[b] then return b end
+	styled[b] = true
+	for _, g in ipairs({"GetNormalTexture", "GetPushedTexture", "GetDisabledTexture"}) do
+		local t = b[g] and b[g](b)
+		if t then t:SetTexture(0, 0, 0, 0) end
+	end
+	local hl = b:GetHighlightTexture()
+	if hl then
+		hl:SetTexture(SKIN.hover[1], SKIN.hover[2], SKIN.hover[3], 0.13)
+		hl:SetBlendMode("BLEND")
+		hl:ClearAllPoints()
+		hl:SetPoint("TOPLEFT", 5, -5)
+		hl:SetPoint("BOTTOMRIGHT", -5, 5)
+	end
+	local bg = fill(b, "BACKGROUND", nil, SKIN.btn)
+	bg:SetPoint("TOPLEFT", 5, -5)
+	bg:SetPoint("BOTTOMRIGHT", -5, 5)
+	local e = CreateFrame("Frame", nil, b)
+	e:SetPoint("TOPLEFT", 5, -5)
+	e:SetPoint("BOTTOMRIGHT", -5, 5)
+	outline(e, "BORDER", nil, SKIN.edge)
+	local ct = b:GetCheckedTexture()
+	if ct then
+		ct:SetVertexColor(SKIN.accent[1], SKIN.accent[2], SKIN.accent[3])
+		ct:ClearAllPoints()
+		ct:SetPoint("TOPLEFT", 1, -1)
+		ct:SetPoint("BOTTOMRIGHT", -1, 1)
+	end
+	return b
+end
+
 do -- EscapeCallback
 	local catchers = {}
 	local function refresh()
@@ -48,29 +164,44 @@ do -- EscapeCallback
 	end
 end
 do -- TenSettingsFrame
-	local WINDOW_PADDING_H, WINDOW_PADDING_TOP, WINDOW_ACTIONS_HEIGHT, WINDOW_PADDING_BOTTOM = 10, 30, 30, 15
-	local IW_PADDING_TOP, IW_PADDING_RIGHT, IW_PADDING_BOTTOM, IW_PADDING_LEFT = 24, 4, 5, 8
-	local CONTAINER_TABS_YOFFSET, CONTAINER_CONTENT_TOP_YOFFSET, CONTAINER_TITLE_YOFFSET = 11, -26, -4
-	local CONTAINER_PADDING_H, CONTAINER_PADDING_V = 10, 6
+	local HEADER_HEIGHT, FOOTER_HEIGHT, RAIL_WIDTH, TAB_HEIGHT = 34, 46, 138, 30
+	local CONTAINER_CONTENT_TOP_YOFFSET, CONTAINER_TITLE_YOFFSET = -30, -7
+	local CONTAINER_PADDING_H, CONTAINER_PADDING_V = 10, 8
 	local PANEL_VIEW_MARGIN_TOP, PANEL_VIEW_MARGIN_TOP_TITLESHIFT = -14, -35
 	local PANEL_VIEW_MARGIN_LEFT, PANEL_VIEW_MARGIN_RIGHT = -15, -10
 	M.PANEL_VIEW_MARGIN_TOP_TITLESHIFT = PANEL_VIEW_MARGIN_TOP_TITLESHIFT
 
 	local PANEL_WIDTH, PANEL_HEIGHT = 585, 528
-	local CONTAINER_WIDTH = PANEL_WIDTH + CONTAINER_PADDING_H * 2
+	local CONTAINER_WIDTH = PANEL_WIDTH + CONTAINER_PADDING_H * 2 + RAIL_WIDTH
 	local CONTAINER_HEIGHT = PANEL_HEIGHT - CONTAINER_CONTENT_TOP_YOFFSET + CONTAINER_PADDING_V*2
-	local WINDOW_WIDTH = CONTAINER_WIDTH + WINDOW_PADDING_H * 2
-	local WINDOW_HEIGHT = CONTAINER_HEIGHT + WINDOW_PADDING_TOP + WINDOW_ACTIONS_HEIGHT + WINDOW_PADDING_BOTTOM
+	local WINDOW_WIDTH = CONTAINER_WIDTH + 2
+	local WINDOW_HEIGHT = CONTAINER_HEIGHT + HEADER_HEIGHT + FOOTER_HEIGHT
 
 	local TenSettingsFrame, notifyTenant = CreateFrame("Frame", "TenSettingsFrame", UIParent) do
-		TenSettingsFrame:SetBackdrop({bgFile="Interface\\Tooltips\\UI-Tooltip-Background", edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", edgeSize=16, insets={left=4,right=4,top=4,bottom=4}})
-		TenSettingsFrame:SetBackdropColor(0.05, 0.05, 0.05, 0.95)
-		TenSettingsFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 0.9)
-		local _tsTitle = TenSettingsFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-		_tsTitle:SetPoint("TOP", 0, -8)
+		box(TenSettingsFrame, "BACKGROUND", -8, SKIN.bg)
+		outline(TenSettingsFrame, "BACKGROUND", -7, SKIN.edge)
+		local header = CreateFrame("Frame", nil, TenSettingsFrame)
+		header:SetPoint("TOPLEFT", 1, -1)
+		header:SetPoint("TOPRIGHT", -1, -1)
+		header:SetHeight(HEADER_HEIGHT - 1)
+		box(header, "BACKGROUND", -6, SKIN.header)
+		local hl = fill(header, "BORDER", nil, SKIN.line)
+		hl:SetHeight(1)
+		hl:SetPoint("BOTTOMLEFT")
+		hl:SetPoint("BOTTOMRIGHT")
+		local ha = fill(header, "BORDER", nil, SKIN.accent)
+		ha:SetSize(3, 15)
+		ha:SetPoint("LEFT", 11, 0)
+		TenSettingsFrame.Header = header
+		local _tsTitle = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+		_tsTitle:SetPoint("LEFT", 21, 0)
 		TenSettingsFrame.NineSlice = {Text = _tsTitle}
-		local _tsClose = CreateFrame("Button", nil, TenSettingsFrame, "UIPanelCloseButton")
-		_tsClose:SetPoint("TOPRIGHT", -4, -4)
+		local _tsVersion = header:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+		_tsVersion:SetPoint("LEFT", _tsTitle, "RIGHT", 6, -1)
+		TenSettingsFrame.HeaderVersion = _tsVersion
+		local _tsClose = CreateFrame("Button", nil, header, "UIPanelCloseButton")
+		_tsClose:SetPoint("RIGHT", -7, 0)
+		M:StyleCloseButton(_tsClose)
 		TenSettingsFrame.ClosePanelButton = _tsClose
 		TenSettingsFrame:SetSize(WINDOW_WIDTH, WINDOW_HEIGHT)
 		TenSettingsFrame:SetPoint("CENTER", 0, 50)
@@ -83,36 +214,44 @@ do -- TenSettingsFrame
 		TenSettingsFrame:SetClampRectInsets(5,0,0,0)
 		TenSettingsFrame:SetResizable(true)
 		TenSettingsFrame:SetMinResize(WINDOW_WIDTH, WINDOW_HEIGHT)
-		TenSettingsFrame:SetMaxResize(900, 700)
+		TenSettingsFrame:SetMaxResize(1100, 860)
 		TenSettingsFrame:SetUserPlaced(true)
 		local f = CreateFrame("Frame", nil, TenSettingsFrame)
-		f:SetPoint("TOPLEFT", IW_PADDING_LEFT, -IW_PADDING_TOP)
-		f:SetPoint("BOTTOMRIGHT", -IW_PADDING_RIGHT, IW_PADDING_BOTTOM)
+		f:SetPoint("TOPLEFT", 1, -HEADER_HEIGHT)
+		f:SetPoint("BOTTOMRIGHT", -1, 1)
 		f.OverlayFaderMargin = 0
 		TenSettingsFrame.WindowArea = f
+		local fl = fill(f, "BORDER", nil, SKIN.line)
+		fl:SetHeight(1)
+		fl:SetPoint("BOTTOMLEFT", 0, FOOTER_HEIGHT)
+		fl:SetPoint("BOTTOMRIGHT", 0, FOOTER_HEIGHT)
 		f = CreateFrame("Frame", nil, f)
-		f:SetPoint("TOPLEFT", 0, IW_PADDING_TOP-WINDOW_PADDING_TOP)
-		f:SetPoint("BOTTOMRIGHT", 0, WINDOW_ACTIONS_HEIGHT+WINDOW_PADDING_BOTTOM-IW_PADDING_BOTTOM)
+		f:SetPoint("TOPLEFT")
+		f:SetPoint("BOTTOMRIGHT", 0, FOOTER_HEIGHT)
 		TenSettingsFrame.ContentArea = f
 		local cancel = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate")
-		cancel:SetSize(110, 24)
-		cancel:SetPoint("BOTTOMRIGHT", IW_PADDING_RIGHT-WINDOW_PADDING_H, WINDOW_PADDING_BOTTOM-IW_PADDING_BOTTOM)
+		cancel:SetSize(112, 26)
+		cancel:SetPoint("BOTTOMRIGHT", -12, 11)
 		cancel:SetText(CANCEL)
+		M:StyleButton(cancel)
 		TenSettingsFrame.Cancel = cancel
 		local save = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate")
-		save:SetSize(110, 24)
-		save:SetPoint("RIGHT", cancel, "LEFT", -4, 0)
+		save:SetSize(112, 26)
+		save:SetPoint("RIGHT", cancel, "LEFT", -8, 0)
 		save:SetText(OKAY)
+		M:StyleButton(save, "primary")
 		TenSettingsFrame.Save = save
 		local defaults = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate")
-		defaults:SetSize(110, 24)
-		defaults:SetPoint("BOTTOMLEFT", WINDOW_PADDING_H - IW_PADDING_LEFT, WINDOW_PADDING_BOTTOM-IW_PADDING_BOTTOM)
+		defaults:SetSize(112, 26)
+		defaults:SetPoint("BOTTOMLEFT", 12, 11)
 		defaults:SetText(DEFAULTS)
+		M:StyleButton(defaults)
 		TenSettingsFrame.Reset = defaults
 		local revert = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate") do
-			revert:SetSize(110, 24)
-			revert:SetPoint("LEFT", defaults, "RIGHT", 4, 0)
+			revert:SetSize(112, 26)
+			revert:SetPoint("LEFT", defaults, "RIGHT", 8, 0)
 			revert:SetText(REVERT)
+			M:StyleButton(revert)
 			local drop = CreateFrame("Frame", nil, revert, "UIDropDownMenuTemplate")
 			UIDropDownMenu_SetAnchor(drop, 0, 2, "BOTTOM", revert, "TOP")
 			UIDropDownMenu_SetDisplayMode(drop, "MENU")
@@ -156,8 +295,8 @@ do -- TenSettingsFrame
 		-- UISpecialFrames registration removed: causes taint in CloseAllWindows() secure path.
 		-- EscapeCallback above already handles Escape key for this frame.
 		local dragHandle = CreateFrame("Frame", nil, TenSettingsFrame) do
-			dragHandle:SetPoint("TOPLEFT", TenSettingsFrame, "TOPLEFT", 4, 0)
-			dragHandle:SetPoint("BOTTOMRIGHT", TenSettingsFrame, "TOPRIGHT", -28, -20)
+			dragHandle:SetPoint("TOPLEFT", TenSettingsFrame, "TOPLEFT", 1, -1)
+			dragHandle:SetPoint("BOTTOMRIGHT", TenSettingsFrame, "TOPRIGHT", -30, -HEADER_HEIGHT)
 			dragHandle:RegisterForDrag("LeftButton")
 			dragHandle:EnableMouse(true)
 			dragHandle:SetScript("OnDragStart", function()
@@ -175,6 +314,7 @@ do -- TenSettingsFrame
 			resizeGrip:SetNormalTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Up")
 			resizeGrip:SetHighlightTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Highlight")
 			resizeGrip:SetPushedTexture("Interface\\ChatFrame\\UI-ChatIM-SizeGrabber-Down")
+			resizeGrip:GetNormalTexture():SetVertexColor(0.45, 0.47, 0.52)
 			resizeGrip:SetScript("OnMouseDown", function(self, button)
 				if button == "LeftButton" then
 					TenSettingsFrame:StartSizing("BOTTOMRIGHT")
@@ -218,6 +358,9 @@ do -- TenSettingsFrame
 		t:SetText(CURRENT_SETTINGS)
 		t:SetScript("OnClick", onResetButtonClick)
 		d.OnlyThese = t
+		M:StyleButton(d.AllSet)
+		M:StyleButton(d.Cancel)
+		M:StyleButton(d.OnlyThese, "primary")
 		d:SetScript("OnHide", function(self)
 			self:Hide()
 			tenant = nil
@@ -233,26 +376,14 @@ do -- TenSettingsFrame
 	local minitabs = {}
 	local function minitab_deselect(self)
 		local r = minitabs[self]
-		r.Text:SetPoint("BOTTOM", 0, 6)
-		r.Text:SetFontObject("GameFontNormalSmall")
-		r.Left:SetTexture(0,0,0,0)
-		r.Middle:SetTexture(0,0,0,0)
-		r.Right:SetTexture(0,0,0,0)
-		r.NormalBG:SetPoint("TOPRIGHT", -2, -15)
-		r.HighlightBG:SetTexture(1,1,1,1)
-		r.SelectedBG:SetTexture(0,0,0,0)
-		self:SetNormalFontObject(GameFontNormalSmall)
+		r.SelectedBG:Hide()
+		r.Marker:Hide()
+		self:SetNormalFontObject(GameFontDisableSmall)
 	end
 	local function minitab_select(self)
 		local r = minitabs[self]
-		r.Text:SetPoint("BOTTOM", 0, 8)
-		r.Text:SetFontObject("GameFontHighlightSmall")
-		r.Left:SetTexture(0,0,0,0)
-		r.Middle:SetTexture(0,0,0,0)
-		r.Right:SetTexture(0,0,0,0)
-		r.NormalBG:SetPoint("TOPRIGHT", -2, -12)
-		r.HighlightBG:SetTexture(0,0,0,0)
-		r.SelectedBG:SetTexture(1,1,1,1)
+		r.SelectedBG:Show()
+		r.Marker:Show()
 		self:SetNormalFontObject(GameFontHighlightSmall)
 	end
 	local function minitab_new(parent, text)
@@ -261,40 +392,27 @@ do -- TenSettingsFrame
 		t = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 		b:SetFontString(t)
 		t:ClearAllPoints()
-		t:SetPoint("BOTTOM", 0, 6)
-		b:SetNormalFontObject(GameFontNormalSmall)
+		t:SetPoint("LEFT", 16, 0)
+		t:SetPoint("RIGHT", -8, 0)
+		t:SetJustifyH("LEFT")
 		b:SetDisabledFontObject(GameFontDisableSmall)
 		b:SetHighlightFontObject(GameFontHighlightSmall)
 		b:SetPushedTextOffset(0, 0)
 		t:SetText(text)
 		t:SetWordWrap(false)
-		t, r.Text = b:CreateTexture(nil, "BACKGROUND"), t
+		r.Text = t
+		r.SelectedBG = box(b, "BACKGROUND", -2, SKIN.accentDim)
+		box(b, "HIGHLIGHT", nil, SKIN.hover)
+		t = fill(b, "ARTWORK", nil, SKIN.accent)
+		t:SetWidth(3)
+		t:SetPoint("TOPLEFT")
 		t:SetPoint("BOTTOMLEFT")
-		t, r.Left = b:CreateTexture(nil, "BACKGROUND"), t
-		t:SetPoint("BOTTOMRIGHT")
-		t, r.Right = b:CreateTexture(nil, "BACKGROUND"), t
-		t:SetPoint("TOPLEFT", r.Left, "TOPRIGHT", 0, 0)
-		t:SetPoint("TOPRIGHT", r.Right, "TOPLEFT", 0, 0)
-		t, r.Middle = b:CreateTexture(nil, "BACKGROUND", nil, -2), t
-		t:SetPoint("BOTTOMLEFT", 2, 0)
-		t:SetPoint("TOPRIGHT", -2, -15)
-		t:SetTexture(1,1,1,1)
-		t:SetGradientAlpha("VERTICAL", 0.1,0.1,0.1,0.85, 0.15,0.15,0.15,0.85)
-		t, r.NormalBG = b:CreateTexture(nil, "HIGHLIGHT"), t
-		t:SetPoint("BOTTOMLEFT", 2, 0)
-		t:SetPoint("TOPRIGHT", b, "BOTTOMRIGHT", -2, 12)
-		t:SetTexture(1,1,1,1)
-		t:SetGradientAlpha("VERTICAL", 1,1,1,0.15, 0,0,0,0)
-		t, r.HighlightBG = b:CreateTexture(nil, "BACKGROUND", nil, -1), t
-		t:SetPoint("BOTTOMLEFT", 2, 0)
-		t:SetPoint("TOPRIGHT", b, "BOTTOMRIGHT", -2, 16)
-		t:SetGradientAlpha("VERTICAL", 1,1,1,0.15, 0,0,0,0)
-		r.SelectedBG = t
-		b:SetSize(math.min(r.Text:GetStringWidth()+40, 200), 37)
+		r.Marker = t
+		b:SetSize(RAIL_WIDTH, TAB_HEIGHT)
 		minitab_deselect(b)
 		return b
 	end
-	
+
 	local containers = {}
 	local container_notifications, container_notifications_internal = {}, {} do
 		local function container_notify_panels(self, notification, ...)
@@ -329,13 +447,15 @@ do -- TenSettingsFrame
 		if newPanel.TenSettings_TitleBlock then
 			newPanel.title:Hide()
 			newPanel.version:Hide()
-			ci.Version:SetText((ci.forceRootVersion and ci.root or newPanel).version:GetText() or "")
 			oy = -PANEL_VIEW_MARGIN_TOP_TITLESHIFT
 		end
 		local isRoot = newPanel == ci.root
 		local brandContainer = not (isRoot and ci.selfBrandedRoot)
-		ci.Version:SetShown(brandContainer)
+		ci.Title:SetText(newPanel.name or ci.name)
 		ci.Title:SetShown(brandContainer)
+		ci.TitleRule:SetShown(brandContainer)
+		TenSettingsFrame.NineSlice.Text:SetText(ci.name)
+		TenSettingsFrame.HeaderVersion:SetText((ci.forceRootVersion and ci.root or newPanel).version and (ci.forceRootVersion and ci.root or newPanel).version:GetText() or "")
 		newPanel:SetParent(ci.View)
 		newPanel:ClearAllPoints()
 		newPanel:SetPoint("TOPLEFT", CONTAINER_PADDING_H + PANEL_VIEW_MARGIN_LEFT, oy - CONTAINER_PADDING_V)
@@ -353,16 +473,17 @@ do -- TenSettingsFrame
 			PlaySound(SOUNDKIT.IG_CHARACTER_INFO_TAB)
 		end
 	end
-	local function container_addTab(tabs, parent, panel, text)
+	local function container_addTab(ci, panel, text)
+		local tabs = ci.tabs
 		local prev, idx = tabs[#tabs], #tabs+1
-		local tab = minitab_new(parent, text or panel.name)
+		local tab = minitab_new(ci.Rail, text or panel.name)
 		tabs[idx], tabs[panel], tabs[tab] = tab, tab, panel
-		tab:SetPoint("TOPRIGHT", -10, CONTAINER_TABS_YOFFSET)
 		tab:SetScript("OnClick", container_selectTab)
 		if prev == nil then
+			tab:SetPoint("TOPLEFT", ci.Rail, "TOPLEFT", 0, -10)
 			container_selectTab(tab, nil)
 		else
-			prev:SetPoint("TOPRIGHT", tab, "TOPLEFT", -4, 0)
+			tab:SetPoint("TOPLEFT", prev, "BOTTOMLEFT", 0, idx == 2 and -8 or 0)
 		end
 		return tab
 	end
@@ -386,16 +507,28 @@ do -- TenSettingsFrame
 			cf:SetSize(CONTAINER_WIDTH, CONTAINER_HEIGHT)
 		end
 		local ci = {f=cf, tabs={}, name=name, root=rootPanel}
-		-- Options_InnerFrame is a retail atlas — invisible in WotLK; skip to avoid white rectangles
-		local t = cf:CreateFontString(nil, "OVERLAY", "GameFontHighlightHuge")
-		t:SetPoint("TOPLEFT", 5, CONTAINER_TITLE_YOFFSET)
+		local rail = CreateFrame("Frame", nil, cf)
+		rail:SetPoint("TOPLEFT")
+		rail:SetPoint("BOTTOMLEFT")
+		rail:SetWidth(RAIL_WIDTH)
+		box(rail, "BACKGROUND", -5, SKIN.rail)
+		local rl = fill(rail, "BORDER", nil, SKIN.line)
+		rl:SetWidth(1)
+		rl:SetPoint("TOPRIGHT")
+		rl:SetPoint("BOTTOMRIGHT")
+		ci.Rail = rail
+		local t = cf:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+		t:SetPoint("TOPLEFT", RAIL_WIDTH + 16, CONTAINER_TITLE_YOFFSET)
 		t:SetText(name)
-		t, ci.Title = cf:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall"), t
-		t:SetPoint("TOPLEFT", ci.Title, "TOPRIGHT", 4, 2)
-		t, ci.Version = CreateFrame("Frame", nil, cf), t
-		t:SetPoint("TOPLEFT", 0, CONTAINER_CONTENT_TOP_YOFFSET)
+		ci.Title = t
+		t = fill(cf, "BORDER", nil, SKIN.line)
+		t:SetHeight(1)
+		t:SetPoint("TOPLEFT", RAIL_WIDTH + 16, CONTAINER_CONTENT_TOP_YOFFSET + 2)
+		t:SetPoint("TOPRIGHT", -14, CONTAINER_CONTENT_TOP_YOFFSET + 2)
+		ci.TitleRule = t
+		t = CreateFrame("Frame", nil, cf)
+		t:SetPoint("TOPLEFT", RAIL_WIDTH + 1, CONTAINER_CONTENT_TOP_YOFFSET)
 		t:SetPoint("BOTTOMRIGHT", 0, 0)
-		if t.SetClipsChildren then t:SetClipsChildren(true) end
 		t, ci.View = CreateFrame("Frame"), t
 		t:Hide()
 		t:SetScript("OnShow", container_onCanvasShow)
@@ -406,7 +539,7 @@ do -- TenSettingsFrame
 			ci.rootTabText = opts.tabText
 			ci.selfBrandedRoot = opts.selfBrandedRoot
 		end
-		containers[rootPanel], containers[name], containers[cf] = ci, ci, ci
+		containers[rootPanel], containers[name], containers[cf], containers[rail] = ci, ci, ci, ci
 		return ci
 	end
 	local function container_selectRootPanel(self)
@@ -549,9 +682,9 @@ do -- TenSettingsFrame
 			containers[panel] = ci
 			panel:SetParent(ci.f)
 			if #ci.tabs == 0 then
-				container_addTab(ci.tabs, ci.f, ci.root, ci.rootTabText or OPTIONS)
+				container_addTab(ci, ci.root, ci.rootTabText or OPTIONS)
 			end
-			container_addTab(ci.tabs, ci.f, panel)
+			container_addTab(ci, panel)
 		end
 		panel.OpenPanel = openSettingsPanel
 	end
@@ -560,7 +693,7 @@ do -- TenSettingsFrame
 		p2 = p2 and p2:GetParent()
 		local ci = containers[f]
 		if ci and ci.f == p2 then
-			return p2, f.OverlayFaderMargin or 3.5, 28
+			return p2, f.OverlayFaderMargin or 0, 0
 		end
 		return nil, f.OverlayFaderMargin
 	end
@@ -695,14 +828,17 @@ do -- M:ShowFrameOverlay(self, overlayFrame)
 		end)
 		container:SetScript("OnMouseWheel", function() end)
 		container.fader = container:CreateTexture(nil, "BACKGROUND", nil, -6)
-		container.fader:SetTexture(0,0,0,0.40)
-		local corner = container:CreateTexture(nil, "ARTWORK")
-		corner:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Corner")
-		corner:SetSize(30,30) corner:SetPoint("TOPRIGHT", -5, -6)
+		container.fader:SetTexture(0,0,0,0.55)
 		local close = CreateFrame("Button", nil, container, "UIPanelCloseButton")
-		close:SetPoint("TOPRIGHT", 0, 0)
+		close:SetPoint("TOPRIGHT", -5, -5)
 		close:SetScript("OnClick", function() container:Hide() end)
-		XU:Create("Backdrop", container, {edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", edgeSize=32, bgFile="Interface\\FrameGeneral\\UI-Background-Rock", tile=true, tileSize=256, insets={left=10,right=10,top=10,bottom=10}, bgColor=0x4c667f, subLevel=-5})
+		M:StyleCloseButton(close)
+		box(container, "BACKGROUND", -5, SKIN.card)
+		outline(container, "BORDER", -4, SKIN.edge)
+		local ca = fill(container, "BORDER", -3, SKIN.accent)
+		ca:SetHeight(2)
+		ca:SetPoint("TOPLEFT", 1, -1)
+		ca:SetPoint("TOPRIGHT", -1, -1)
 		watcher:SetScript("OnHide", function()
 			if occupant then
 				container:Hide()
@@ -750,8 +886,8 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 		promptInfo.editBox = XU:Create("LineInput", nil, promptFrame)
 		promptInfo.editBox:SetStyle("chat")
 		promptInfo.editBox:SetWidth(300)
-		promptInfo.accept = CreateFrame("Button", nil, promptFrame, "UIPanelButtonTemplate")
-		promptInfo.cancel = CreateFrame("Button", nil, promptFrame, "UIPanelButtonTemplate")
+		promptInfo.accept = M:StyleButton(CreateFrame("Button", nil, promptFrame, "UIPanelButtonTemplate"), "primary")
+		promptInfo.cancel = M:StyleButton(CreateFrame("Button", nil, promptFrame, "UIPanelButtonTemplate"))
 		promptInfo.detail = promptFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 		promptInfo.title:SetPoint("TOP", 0, -3)
 		promptInfo.prompt:SetPoint("TOP", promptInfo.title, "BOTTOM", 0, -8)
@@ -860,6 +996,7 @@ do -- M:CreateOptionsCheckButton(name, parent)
 	function M:CreateOptionsCheckButton(name, parent)
 		local b = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
 		b:SetSize(24, 24)
+		M:StyleCheckButton(b)
 		if not b.Text then
 			b.Text = (name and _G[name.."Text"])
 			if not b.Text then

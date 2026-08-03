@@ -279,7 +279,7 @@ do -- config.bind
 		end
 	end
 	function config.createBindingButton(parent, w)
-		local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+		local btn = TS:StyleButton(CreateFrame("Button", nil, parent, "UIPanelButtonTemplate"))
 		btn:SetSize(w or 120, 22)
 		btn:RegisterForClicks("AnyUp")
 		btn:SetScript("OnClick", OnClick)

@@ -1,14 +1,17 @@
 local MAJ, _, T = 1, ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 
-local EV, WR, AB, KR, RW = T.Evie, T.Ware, T.ActionBook:compatible(2,36), T.ActionBook:compatible("Kindred", 1,22), T.ActionBook:compatible("Rewire", 1, 31)
+local EV, WR, AB, KR, RW = T.Evie, T.Ware, T.ActionBook:compatible(2, 36), T.ActionBook:compatible("Kindred", 1, 22),
+	T.ActionBook:compatible("Rewire", 1, 31)
 assert(EV and WR and AB and KR and RW and 1, "Incompatible library bundle")
 
 local FM, core = {}, CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
 local cenvW, cenv = WR.GetRestrictedEnvironment(core)
-cenvW.KR, cenvW.flags, cenvW.cargcache, cenvW.crm = KR:seclib(), WR.newtable, WR.newtable, 2^24
-WR.newtable(cenvW, "crand", math.random(2^24)-1)
-cenvW.NO_FLAGS_MESSAGE = AB.L"No flags are active."
+cenvW.KR, cenvW.flags, cenvW.cargcache, cenvW.crm = KR:seclib(), WR.newtable, WR.newtable, 2 ^ 24
+WR.newtable(cenvW, "crand", math.random(2 ^ 24) - 1)
+cenvW.NO_FLAGS_MESSAGE = AB.L "No flags are active."
 core:SetAttribute("RunSlashCmd", [=[-- flag-RunSlashCmd
 	local slash, clause, target = ...
 	local flag, nv
@@ -85,7 +88,8 @@ core:SetAttribute("EvaluateMacroConditional", [=[-- flag-EvaluateMacroConditiona
 	return false
 ]=])
 
-local flagHint, flagCommandHint, dumpFlags do
+local flagHint, flagCommandHint, dumpFlags
+do
 	local currentFutureID
 	local function newSpeculativeProxy(base)
 		local ov, ot = {}, {}
@@ -100,14 +104,22 @@ local flagHint, flagCommandHint, dumpFlags do
 				ov[k], ot[k] = nv, currentFutureID
 			end
 		end
-		return setmetatable({}, {__index=getValue, __newindex=setValue})
+		return setmetatable({}, {
+			__index = getValue,
+			__newindex = setValue
+		})
 	end
 	local flagProxy, crandProxy = newSpeculativeProxy(cenv.flags), newSpeculativeProxy(cenv.crand)
-	local flagHintI = loadstring(("local cargcache, flags, newtable = ... return function(...) %s end"):format(core:GetAttribute("EvaluateMacroConditional")))({}, flagProxy, function() return {} end)
-	local runSlashI = loadstring(("local KR, self, flags, crand, crm = false, ... return function(...) %s end"):format(core:GetAttribute("RunSlashCmd")))(core, flagProxy, crandProxy, cenv.crm)
+	local flagHintI = loadstring(("local cargcache, flags, newtable = ... return function(...) %s end"):format(
+		core:GetAttribute("EvaluateMacroConditional")))({}, flagProxy, function()
+		return {}
+	end)
+	local runSlashI = loadstring(("local KR, self, flags, crand, crm = false, ... return function(...) %s end"):format(
+		core:GetAttribute("RunSlashCmd")))(core, flagProxy, crandProxy, cenv.crm)
 
 	function flagHint(...)
-		local _; _, _, _, _, currentFutureID = ...
+		local _;
+		_, _, _, _, currentFutureID = ...
 		return flagHintI(...)
 	end
 	function flagCommandHint(slash, _, args2, target, _, _, _, speculationID)
@@ -119,11 +131,13 @@ local flagHint, flagCommandHint, dumpFlags do
 	end
 end
 
-local ownDumpCommand, ownDumpKey do
-	local suf = 1 repeat
+local ownDumpCommand, ownDumpKey
+do
+	local suf = 1
+	repeat
 		ownDumpKey, suf = "ABFM_DUMP_FLAG_" .. suf .. "X", suf + 1
 	until SlashCmdList[ownDumpKey] == nil
-	ownDumpCommand = "/dumpflag" .. (suf-1)
+	ownDumpCommand = "/dumpflag" .. (suf - 1)
 	_G["SLASH_" .. ownDumpKey .. "1"], _G["SLASH_" .. ownDumpKey .. "2"] = "/dumpflag", ownDumpCommand
 	SlashCmdList[ownDumpKey] = function(msg)
 		local cv = KR:EvaluateCmdOptions(msg)
@@ -133,13 +147,14 @@ local ownDumpCommand, ownDumpKey do
 	end
 end
 
-local pendingRestoreState, DoRestoreState = nil do
+local pendingRestoreState, DoRestoreState = nil
+do
 	local function RestoreFlags(flags)
 		if type(flags) ~= "table" then
 			return
 		end
 		local r = cenvW.flags
-		for k,v in pairs(flags) do
+		for k, v in pairs(flags) do
 			if type(k) == 'string' and type(v) == 'string' then
 				r[k] = v
 			end
@@ -149,7 +164,7 @@ local pendingRestoreState, DoRestoreState = nil do
 		if type(revars) ~= "table" then
 			return
 		end
-		for k,v in pairs(revars) do
+		for k, v in pairs(revars) do
 			if type(k) == 'string' and type(v) == 'string' then
 				RW:SetMacroVarValue(k, v)
 			end
@@ -171,11 +186,15 @@ function FM:GetState()
 		rv[n] = v ~= "" and v or nil
 	end
 	rf, rv = next(rf) ~= nil and rf or nil, next(rv) ~= nil and rv or nil
-	return (rf or rv) and {flags=rf, revars=rv, at=GetServerTime()} or nil
+	return (rf or rv) and {
+		flags = rf,
+		revars = rv,
+		at = GetServerTime()
+	} or nil
 end
 function FM:RestoreState(state)
 	if type(state) == "table" and pendingRestoreState == nil and
-	  (type(state.flags) == "table" or type(state.revars) == "table") then
+		(type(state.flags) == "table" or type(state.revars) == "table") then
 		pendingRestoreState = state
 		if InCombatLockdown() then
 			EV.PLAYER_REGEN_ENABLED = function()

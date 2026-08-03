@@ -1,20 +1,21 @@
 ﻿local M, I, _, T = {}, {}, ...
-local EV, XU, noop = T.Evie, T.exUI, function() end
+local EV, XU, noop = T.Evie, T.exUI, function()
+end
 local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 T.TenSettings = M
 
 local SKIN = {
-	bg        = {0.043, 0.047, 0.055, 0.96},
-	edge      = {0.21, 0.23, 0.27, 1},
-	header    = {0.075, 0.082, 0.096, 1},
-	rail      = {0.058, 0.063, 0.074, 1},
-	line      = {0.14, 0.15, 0.18, 1},
-	accent    = {0.16, 0.66, 1.00, 1},
+	bg = {0.043, 0.047, 0.055, 0.96},
+	edge = {0.21, 0.23, 0.27, 1},
+	header = {0.075, 0.082, 0.096, 1},
+	rail = {0.058, 0.063, 0.074, 1},
+	line = {0.14, 0.15, 0.18, 1},
+	accent = {0.16, 0.66, 1.00, 1},
 	accentDim = {0.16, 0.66, 1.00, 0.13},
-	hover     = {1, 1, 1, 0.06},
-	btn       = {0.115, 0.125, 0.145, 1},
-	card      = {0.062, 0.067, 0.078, 0.98},
-	danger    = {0.72, 0.16, 0.16, 0.55},
+	hover = {1, 1, 1, 0.06},
+	btn = {0.115, 0.125, 0.145, 1},
+	card = {0.062, 0.067, 0.078, 0.98},
+	danger = {0.72, 0.16, 0.16, 0.55}
 }
 M.SKIN = SKIN
 local function fill(f, layer, sub, c)
@@ -30,7 +31,7 @@ end
 local function outline(f, layer, sub, c, inset)
 	inset = inset or 0
 	local e = {}
-	for i=1,4 do
+	for i = 1, 4 do
 		local t = fill(f, layer, sub, c)
 		e[i] = t
 		if i < 3 then
@@ -58,9 +59,13 @@ local function hideTextureRegions(f)
 end
 M.Fill, M.Box, M.Outline = fill, box, outline
 
-local styled = setmetatable({}, {__mode="k"})
+local styled = setmetatable({}, {
+	__mode = "k"
+})
 local function prepCheckMark(tex, r, g, b)
-	if not tex then return end
+	if not tex then
+		return
+	end
 	tex:SetVertexColor(r, g, b)
 	tex:SetBlendMode("BLEND")
 	tex:ClearAllPoints()
@@ -68,7 +73,9 @@ local function prepCheckMark(tex, r, g, b)
 	tex:SetPoint("BOTTOMRIGHT", -4, 4)
 end
 function M:StyleButton(b, kind)
-	if not b or styled[b] then return b end
+	if not b or styled[b] then
+		return b
+	end
 	styled[b] = true
 	hideTextureRegions(b)
 	local primary = kind == "primary"
@@ -82,7 +89,9 @@ function M:StyleButton(b, kind)
 	return b
 end
 function M:StyleCloseButton(b)
-	if not b or styled[b] then return b end
+	if not b or styled[b] then
+		return b
+	end
 	styled[b] = true
 	hideTextureRegions(b)
 	b:SetSize(20, 20)
@@ -96,11 +105,15 @@ function M:StyleCloseButton(b)
 	return b
 end
 function M:StyleCheckButton(b)
-	if not b or styled[b] then return b end
+	if not b or styled[b] then
+		return b
+	end
 	styled[b] = true
 	for _, g in ipairs({"GetNormalTexture", "GetPushedTexture", "GetDisabledTexture"}) do
 		local t = b[g] and b[g](b)
-		if t then t:SetTexture(0, 0, 0, 0) end
+		if t then
+			t:SetTexture(0, 0, 0, 0)
+		end
 	end
 	local hl = b:GetHighlightTexture()
 	if hl then
@@ -129,11 +142,13 @@ end
 do -- EscapeCallback
 	local catchers = {}
 	local function refresh()
-		if InCombatLockdown() then return end
-		for i=1,#catchers do
+		if InCombatLockdown() then
+			return
+		end
+		for i = 1, #catchers do
 			ClearOverrideBindings(catchers[i])
 		end
-		for i=1,#catchers do
+		for i = 1, #catchers do
 			local c = catchers[i]
 			if c.owner:IsVisible() then
 				SetOverrideBindingClick(c, true, c.key, c:GetName())
@@ -152,7 +167,9 @@ do -- EscapeCallback
 		end
 	end
 	local function ESC_OnClick(self)
-		if GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil then return end
+		if GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() ~= nil then
+			return
+		end
 		return self.callback(self.owner, self.key)
 	end
 	EV.PLAYER_REGEN_ENABLED = refresh
@@ -160,11 +177,11 @@ do -- EscapeCallback
 		if callback == nil then
 			callback, key2 = key2, nil
 		end
-		for i=1, key2 and 2 or 1 do
-			local c = CreateFrame("Button", "TenSettingsEscapeCatcher" .. (#catchers+1), parent)
+		for i = 1, key2 and 2 or 1 do
+			local c = CreateFrame("Button", "TenSettingsEscapeCatcher" .. (#catchers + 1), parent)
 			c.owner, c.callback, c.key = parent, callback, i == 2 and key2 or "ESCAPE"
 			c:SetScript("OnClick", ESC_OnClick)
-			catchers[#catchers+1] = c
+			catchers[#catchers + 1] = c
 		end
 		parent:HookScript("OnShow", refreshSoon)
 		parent:HookScript("OnHide", refreshSoon)
@@ -181,11 +198,12 @@ do -- TenSettingsFrame
 
 	local PANEL_WIDTH, PANEL_HEIGHT = 585, 528
 	local CONTAINER_WIDTH = PANEL_WIDTH + CONTAINER_PADDING_H * 2 + RAIL_WIDTH
-	local CONTAINER_HEIGHT = PANEL_HEIGHT - CONTAINER_CONTENT_TOP_YOFFSET + CONTAINER_PADDING_V*2
+	local CONTAINER_HEIGHT = PANEL_HEIGHT - CONTAINER_CONTENT_TOP_YOFFSET + CONTAINER_PADDING_V * 2
 	local WINDOW_WIDTH = CONTAINER_WIDTH + 2
 	local WINDOW_HEIGHT = CONTAINER_HEIGHT + HEADER_HEIGHT + FOOTER_HEIGHT
 
-	local TenSettingsFrame, notifyTenant = CreateFrame("Frame", "TenSettingsFrame", UIParent) do
+	local TenSettingsFrame, notifyTenant = CreateFrame("Frame", "TenSettingsFrame", UIParent)
+	do
 		box(TenSettingsFrame, "BACKGROUND", -8, SKIN.bg)
 		outline(TenSettingsFrame, "BACKGROUND", -7, SKIN.edge)
 		local header = CreateFrame("Frame", nil, TenSettingsFrame)
@@ -203,7 +221,9 @@ do -- TenSettingsFrame
 		TenSettingsFrame.Header = header
 		local _tsTitle = header:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 		_tsTitle:SetPoint("LEFT", 21, 0)
-		TenSettingsFrame.NineSlice = {Text = _tsTitle}
+		TenSettingsFrame.NineSlice = {
+			Text = _tsTitle
+		}
 		local _tsVersion = header:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 		_tsVersion:SetPoint("LEFT", _tsTitle, "RIGHT", 6, -1)
 		TenSettingsFrame.HeaderVersion = _tsVersion
@@ -219,7 +239,7 @@ do -- TenSettingsFrame
 		TenSettingsFrame:Hide()
 		TenSettingsFrame:EnableMouse(true)
 		TenSettingsFrame:SetClampedToScreen(true)
-		TenSettingsFrame:SetClampRectInsets(5,0,0,0)
+		TenSettingsFrame:SetClampRectInsets(5, 0, 0, 0)
 		TenSettingsFrame:SetResizable(true)
 		TenSettingsFrame:SetMinResize(WINDOW_WIDTH, WINDOW_HEIGHT)
 		TenSettingsFrame:SetMaxResize(1100, 860)
@@ -255,7 +275,8 @@ do -- TenSettingsFrame
 		defaults:SetText(DEFAULTS)
 		M:StyleButton(defaults)
 		TenSettingsFrame.Reset = defaults
-		local revert = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate") do
+		local revert = CreateFrame("Button", nil, TenSettingsFrame.WindowArea, "UIPanelButtonTemplate")
+		do
 			revert:SetSize(112, 26)
 			revert:SetPoint("LEFT", defaults, "RIGHT", 8, 0)
 			revert:SetText(REVERT)
@@ -280,18 +301,23 @@ do -- TenSettingsFrame
 			end
 			local function formatTime(td)
 				if GetCVarBool("timeMgrUseMilitaryTime") then
-					return date("%H:%M:%S", time()-td)
+					return date("%H:%M:%S", time() - td)
 				end
-				return (date("%I:%M:%S %p", time()-td):gsub("^0(%d)", "%1"))
+				return (date("%I:%M:%S %p", time() - td):gsub("^0(%d)", "%1"))
 			end
 			function drop:initialize()
-				local info, text = {func=performRevert, notCheckable=1, justifyH="CENTER"}, revert.optionText or "%2$s"
+				local info, text = {
+					func = performRevert,
+					notCheckable = 1,
+					justifyH = "CENTER"
+				}, revert.optionText or "%2$s"
 				local now, numEntries, numArchives, firstTime = GetServerTime(), I.undo:GetState()
-				for i=1, numArchives + (numEntries > 0 and 1 or 0) do
+				for i = 1, numArchives + (numEntries > 0 and 1 or 0) do
 					local isCancel = i > numArchives
 					local td = now - (isCancel and firstTime or I.undo:GetArchiveInfo(i))
 					local cc = isCancel and "|cffffb000" or ""
-					info.text, info.arg1 = cc .. text:format(math.floor(td/60+0.5), formatTime(td)), isCancel and -1 or i
+					info.text, info.arg1 = cc .. text:format(math.floor(td / 60 + 0.5), formatTime(td)),
+						isCancel and -1 or i
 					UIDropDownMenu_AddButton(info)
 				end
 			end
@@ -302,7 +328,8 @@ do -- TenSettingsFrame
 		end)
 		-- UISpecialFrames registration removed: causes taint in CloseAllWindows() secure path.
 		-- EscapeCallback above already handles Escape key for this frame.
-		local dragHandle = CreateFrame("Frame", nil, TenSettingsFrame) do
+		local dragHandle = CreateFrame("Frame", nil, TenSettingsFrame)
+		do
 			dragHandle:SetPoint("TOPLEFT", TenSettingsFrame, "TOPLEFT", 1, -1)
 			dragHandle:SetPoint("BOTTOMRIGHT", TenSettingsFrame, "TOPRIGHT", -30, -HEADER_HEIGHT)
 			dragHandle:RegisterForDrag("LeftButton")
@@ -333,7 +360,8 @@ do -- TenSettingsFrame
 			end)
 		end
 	end
-	local ConfusableResetDialog, crd_show, CRD_QUESTION_TEXT = CreateFrame("Frame", nil) do
+	local ConfusableResetDialog, crd_show, CRD_QUESTION_TEXT = CreateFrame("Frame", nil)
+	do
 		local d, t, tenant = ConfusableResetDialog
 		d:Hide()
 		d:SetSize(460, 105)
@@ -375,12 +403,13 @@ do -- TenSettingsFrame
 		end)
 		function crd_show(forTenant, thisName, rootName)
 			local qt, cc = CRD_QUESTION_TEXT or CONFIRM_RESET_INTERFACE_SETTINGS, NORMAL_FONT_COLOR_CODE
-			ConfusableResetDialog.Question:SetFormattedText(qt, cc .. tostring(rootName) .. "|r", cc .. tostring(thisName) .. "|r")
+			ConfusableResetDialog.Question:SetFormattedText(qt, cc .. tostring(rootName) .. "|r",
+				cc .. tostring(thisName) .. "|r")
 			tenant = forTenant
 			M:ShowFrameOverlay(TenSettingsFrame.WindowArea, ConfusableResetDialog)
 		end
 	end
-	
+
 	local minitabs = {}
 	local function minitab_deselect(self)
 		local r = minitabs[self]
@@ -422,12 +451,13 @@ do -- TenSettingsFrame
 	end
 
 	local containers = {}
-	local container_notifications, container_notifications_internal = {}, {} do
+	local container_notifications, container_notifications_internal = {}, {}
+	do
 		local function container_notify_panels(self, notification, ...)
 			local ci = containers[self]
 			local onlyNotifyCurrentPanel = (...) == "current-panel-only"
 			I.HandlePanelNotification(notification)
-			for i=1, math.max(#ci.tabs, 1) do
+			for i = 1, math.max(#ci.tabs, 1) do
 				local panel = ci.tabs[ci.tabs[i]] or ci.root
 				if panel[notification] and (ci.currentPanel == panel or not onlyNotifyCurrentPanel) then
 					securecall(panel[notification], panel)
@@ -444,7 +474,9 @@ do -- TenSettingsFrame
 		end
 	end
 	local function container_setTenant(ci, newPanel)
-		if ci.currentPanel == newPanel then return end
+		if ci.currentPanel == newPanel then
+			return
+		end
 		if ci.currentPanel then
 			ci.currentPanel:Hide()
 			minitab_deselect(ci.tabs[ci.currentPanel])
@@ -463,7 +495,8 @@ do -- TenSettingsFrame
 		ci.Title:SetShown(brandContainer)
 		ci.TitleRule:SetShown(brandContainer)
 		TenSettingsFrame.NineSlice.Text:SetText(ci.name)
-		TenSettingsFrame.HeaderVersion:SetText((ci.forceRootVersion and ci.root or newPanel).version and (ci.forceRootVersion and ci.root or newPanel).version:GetText() or "")
+		TenSettingsFrame.HeaderVersion:SetText((ci.forceRootVersion and ci.root or newPanel).version and
+												   (ci.forceRootVersion and ci.root or newPanel).version:GetText() or "")
 		newPanel:SetParent(ci.View)
 		newPanel:ClearAllPoints()
 		newPanel:SetPoint("TOPLEFT", CONTAINER_PADDING_H + PANEL_VIEW_MARGIN_LEFT, oy - CONTAINER_PADDING_V)
@@ -483,7 +516,7 @@ do -- TenSettingsFrame
 	end
 	local function container_addTab(ci, panel, text)
 		local tabs = ci.tabs
-		local prev, idx = tabs[#tabs], #tabs+1
+		local prev, idx = tabs[#tabs], #tabs + 1
 		local tab = minitab_new(ci.Rail, text or panel.name)
 		tabs[idx], tabs[panel], tabs[tab] = tab, tab, panel
 		tab:SetScript("OnClick", container_selectTab)
@@ -506,14 +539,20 @@ do -- TenSettingsFrame
 		end
 	end
 	local function container_new(name, rootPanel, opts)
-		local cf = CreateFrame("Frame") do
+		local cf = CreateFrame("Frame")
+		do
 			cf:Hide()
 			cf:SetScript("OnMouseWheel", noop)
 			local cn = container_notifications
 			cf.OnCommit, cf.OnDefault, cf.OnRefresh, cf.OnCancel = cn.okay, cn.default, cn.refresh, cn.cancel
 			cf:SetSize(CONTAINER_WIDTH, CONTAINER_HEIGHT)
 		end
-		local ci = {f=cf, tabs={}, name=name, root=rootPanel}
+		local ci = {
+			f = cf,
+			tabs = {},
+			name = name,
+			root = rootPanel
+		}
 		local rail = CreateFrame("Frame", nil, cf)
 		rail:SetPoint("TOPLEFT")
 		rail:SetPoint("BOTTOMLEFT")
@@ -559,7 +598,7 @@ do -- TenSettingsFrame
 		local ci = containers[f]
 		if ci and ci.f == f and ci.currentPanel.default then
 			local dc = 0
-			for i=1,#ci.tabs do
+			for i = 1, #ci.tabs do
 				if ci.tabs[ci.tabs[i]].default ~= nil then
 					dc = dc + 1
 					if dc == 2 then
@@ -573,7 +612,7 @@ do -- TenSettingsFrame
 	end
 	container_notifications_internal.okay = container_selectRootPanel
 	container_notifications_internal.cancel = container_selectRootPanel
-	
+
 	local currentSettingsTenant
 	function notifyTenant(notification, filter, ...)
 		local nf = currentSettingsTenant and currentSettingsTenant[notification]
@@ -623,7 +662,8 @@ do -- TenSettingsFrame
 	end
 
 	do -- Detect settings dismissal, archive undo stack
-		local cueWatcher do
+		local cueWatcher
+		do
 			local waitLeft, watcher = 0, CreateFrame("Frame")
 			watcher:Hide()
 			watcher:SetScript("OnUpdate", function(_, elapsed)
@@ -728,27 +768,33 @@ do -- M:CreateUndoHandle()
 	I.undo = undo
 	local function storeUndoEntry(idx, ns, key, func, ...)
 		local bot, now = undoStack.bottom, GetServerTime()
-		undoStack[idx] = {ns=ns, key=key, func=func, n=select("#", ...), ...}
+		undoStack[idx] = {
+			ns = ns,
+			key = key,
+			func = func,
+			n = select("#", ...),
+			...
+		}
 		undoStack.bottom = (bot == nil or bot > idx) and idx or bot
 		undoStack.firstTime, undoStack.lastTime = undoStack.firstTime or now, now
 	end
 	local function unwind(us, msg)
 		undoStack = us == undoStack and {} or undoStack
-		for i=#us, us.bottom or 1, -1 do
+		for i = #us, us.bottom or 1, -1 do
 			i = us[i]
 			securecall(i.func, msg, unpack(i, 1, i.n))
 		end
 	end
 	local function archive(data)
-		for i=1, #archives == MAX_ARCHIVES and MAX_ARCHIVES or 0 do
-			archives[i] = archives[i+1]
+		for i = 1, #archives == MAX_ARCHIVES and MAX_ARCHIVES or 0 do
+			archives[i] = archives[i + 1]
 		end
 		data.archiveTime = data.archiveTime or GetServerTime()
 		undoStack = undoStack == data and {} or undoStack
-		archives[#archives+1] = data
+		archives[#archives + 1] = data
 	end
 	local function rearchive(_msg, aa)
-		for i=#aa, 1, -1 do
+		for i = #aa, 1, -1 do
 			archive(aa[i])
 		end
 	end
@@ -765,18 +811,18 @@ do -- M:CreateUndoHandle()
 			unwind(undoStack, "unwind")
 		end
 		local uw, ai = {}
-		for i=#archives, idx, -1 do
-			ai, uw[#uw+1], archives[i] = archives[i], archives[i], nil
+		for i = #archives, idx, -1 do
+			ai, uw[#uw + 1], archives[i] = archives[i], archives[i], nil
 			unwind(ai, "archive-unwind")
 		end
 		if #uw > 0 and undoStack.bottom then
-			storeUndoEntry(#undoStack+1, nil, nil, rearchive, uw)
+			storeUndoEntry(#undoStack + 1, nil, nil, rearchive, uw)
 		end
 		undo:NotifyStateChanged()
 	end
 	function undo:GetState()
 		local bot = undoStack.bottom
-		return #undoStack + (bot and 1-bot or 0), #archives, undoStack.firstTime
+		return #undoStack + (bot and 1 - bot or 0), #archives, undoStack.firstTime
 	end
 	function undo:ArchiveStack()
 		if #undoStack > 0 or undoStack.bottom then
@@ -803,7 +849,7 @@ do -- M:CreateUndoHandle()
 		end
 	end
 	function uhandle:search(key)
-		for i=#undoStack, undoStack.bottom or 1,-1 do
+		for i = #undoStack, undoStack.bottom or 1, -1 do
 			local e = undoStack[i]
 			if e.ns == self and e.key == key then
 				return true
@@ -818,7 +864,10 @@ do -- M:CreateUndoHandle()
 		storeUndoEntry((undoStack.bottom or 2) - 1, self, ...)
 		undo:NotifyStateChanged()
 	end
-	local uhmeta = {__index=uhandle, __metatable=false}
+	local uhmeta = {
+		__index = uhandle,
+		__metatable = false
+	}
 	function M:CreateUndoHandle()
 		return setmetatable({}, uhmeta)
 	end
@@ -832,17 +881,22 @@ function I.HandlePanelNotification(notification)
 end
 
 do -- M:ShowFrameOverlay(self, overlayFrame)
-	local container, watcher, occupant = CreateFrame("Frame"), CreateFrame("Frame") do
-		container:EnableMouse(true) container:Hide()
+	local container, watcher, occupant = CreateFrame("Frame"), CreateFrame("Frame")
+	do
+		container:EnableMouse(true)
+		container:Hide()
 		M:EscapeCallback(container, function(self)
 			self:Hide()
 		end)
-		container:SetScript("OnMouseWheel", function() end)
+		container:SetScript("OnMouseWheel", function()
+		end)
 		container.fader = container:CreateTexture(nil, "BACKGROUND", nil, -6)
-		container.fader:SetTexture(0,0,0,0.55)
+		container.fader:SetTexture(0, 0, 0, 0.55)
 		local close = CreateFrame("Button", nil, container, "UIPanelCloseButton")
 		close:SetPoint("TOPRIGHT", -5, -5)
-		close:SetScript("OnClick", function() container:Hide() end)
+		close:SetScript("OnClick", function()
+			container:Hide()
+		end)
 		M:StyleCloseButton(close)
 		box(container, "BACKGROUND", -5, SKIN.card)
 		outline(container, "BORDER", -4, SKIN.edge)
@@ -855,17 +909,19 @@ do -- M:ShowFrameOverlay(self, overlayFrame)
 				container:Hide()
 				PlaySound(SOUNDKIT.IG_MAINMENU_CLOSE)
 				occupant:Hide()
-				occupant=nil
+				occupant = nil
 			end
 		end)
 	end
 	function M:ShowFrameOverlay(self, overlayFrame)
-		if occupant and occupant ~= overlayFrame then occupant:Hide() end
+		if occupant and occupant ~= overlayFrame then
+			occupant:Hide()
+		end
 		local cw, ch = overlayFrame:GetSize()
 		local w2, h2 = self:GetSize()
 		local w, h, isRefresh = cw + 24, ch + 24, occupant == overlayFrame
-		local frameLevel = (math.ceil(self:GetFrameLevel()/500)+1)*500
-		w2, h2, occupant = w2 > w and (w-w2)/2 or 0, h2 > h and (h-h2)/2 or 0
+		local frameLevel = (math.ceil(self:GetFrameLevel() / 500) + 1) * 500
+		w2, h2, occupant = w2 > w and (w - w2) / 2 or 0, h2 > h and (h - h2) / 2 or 0
 		container:SetSize(w, h)
 		container:SetHitRectInsets(w2, w2, h2, h2)
 		container:SetParent(self)
@@ -885,12 +941,15 @@ do -- M:ShowFrameOverlay(self, overlayFrame)
 		watcher:SetParent(overlayFrame)
 		watcher:Show()
 		CloseDropDownMenus()
-		if not isRefresh then PlaySound(SOUNDKIT.IG_MAINMENU_OPEN) end
+		if not isRefresh then
+			PlaySound(SOUNDKIT.IG_MAINMENU_OPEN)
+		end
 		occupant = overlayFrame
 	end
 end
 do -- M:Show{Prompt,Alert,Copy}Overlay(...)
-	local promptFrame, promptInfo, promptTextChanged = CreateFrame("Frame"), {} do
+	local promptFrame, promptInfo, promptTextChanged = CreateFrame("Frame"), {}
+	do
 		promptFrame:SetSize(400, 130)
 		promptInfo.title = promptFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 		promptInfo.prompt = promptFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -915,7 +974,8 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 		end)
 		promptTextChanged = function(self)
 			local cb = promptInfo.callback
-			promptInfo.accept:SetEnabled(type(cb) ~= "function" or cb(self, self:GetText() or "", false, promptInfo.owner))
+			promptInfo.accept:SetEnabled(type(cb) ~= "function" or
+											 cb(self, self:GetText() or "", false, promptInfo.owner))
 		end
 		promptInfo.editBox:SetScript("OnTextChanged", promptTextChanged)
 		promptInfo.accept:SetScript("OnClick", function()
@@ -924,10 +984,15 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 				promptFrame:Hide()
 			end
 		end)
-		promptInfo.editBox:SetScript("OnEnterPressed", function() promptInfo.accept:Click() end)
-		promptInfo.editBox:SetScript("OnEscapePressed", function() promptInfo.cancel:Click() end)
+		promptInfo.editBox:SetScript("OnEnterPressed", function()
+			promptInfo.accept:Click()
+		end)
+		promptInfo.editBox:SetScript("OnEscapePressed", function()
+			promptInfo.cancel:Click()
+		end)
 	end
-	function M:ShowPromptOverlay(frame, title, prompt, explainText, acceptText, callback, editBoxWidth, cancelText, editText)
+	function M:ShowPromptOverlay(frame, title, prompt, explainText, acceptText, callback, editBoxWidth, cancelText,
+		editText)
 		local showEditBox, editBox = editBoxWidth ~= false, promptInfo.editBox
 		editText = showEditBox and type(editText) == "string" and editText or ""
 		promptInfo.owner, promptInfo.callback, promptInfo.initEditText = frame, callback, nil
@@ -942,7 +1007,8 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 		promptTextChanged(editBox)
 		editBox:SetShown(editBoxWidth ~= false)
 		editBox:SetWidth(math.max(40, math.min(1, editBoxWidth or 0.50) * 380))
-		promptFrame:SetHeight(55 + math.max(20, promptInfo.prompt:GetStringHeight()) + (editBoxWidth ~= false and 30 or 0) + ((explainText or "") ~= "" and 20 or 0))
+		promptFrame:SetHeight(55 + math.max(20, promptInfo.prompt:GetStringHeight()) +
+								  (editBoxWidth ~= false and 30 or 0) + ((explainText or "") ~= "" and 20 or 0))
 		promptInfo.cancel:ClearAllPoints()
 		promptInfo.accept:ClearAllPoints()
 		if acceptText ~= false then
@@ -956,8 +1022,8 @@ do -- M:Show{Prompt,Alert,Copy}Overlay(...)
 			promptInfo.cancel:SetText(cancelText or OKAY)
 			promptInfo.cancel:SetPoint("BOTTOM", 5, 2)
 		end
-		promptInfo.cancel:SetWidth(math.max(125, 25+promptInfo.cancel:GetFontString():GetStringWidth()))
-		promptInfo.accept:SetWidth(math.max(125, 25+promptInfo.accept:GetFontString():GetStringWidth()))
+		promptInfo.cancel:SetWidth(math.max(125, 25 + promptInfo.cancel:GetFontString():GetStringWidth()))
+		promptInfo.accept:SetWidth(math.max(125, 25 + promptInfo.accept:GetFontString():GetStringWidth()))
 		M:ShowFrameOverlay(frame, promptFrame)
 		if showEditBox then
 			editBox:SetFocus()
@@ -1006,17 +1072,20 @@ end
 do -- M:CreateOptionsCheckButton(name, parent)
 	local function updateCheckButtonHitRect(self)
 		local b = self:GetParent()
-		b:SetHitRectInsets(0, -self:GetStringWidth()-5, 4, 4)
+		b:SetHitRectInsets(0, -self:GetStringWidth() - 5, 4, 4)
 	end
 	function M:CreateOptionsCheckButton(name, parent)
 		local b = CreateFrame("CheckButton", name, parent, "UICheckButtonTemplate")
 		b:SetSize(24, 24)
 		M:StyleCheckButton(b)
 		if not b.Text then
-			b.Text = (name and _G[name.."Text"])
+			b.Text = (name and _G[name .. "Text"])
 			if not b.Text then
 				for _, r in ipairs({b:GetRegions()}) do
-					if r.GetObjectType and r:GetObjectType() == "FontString" then b.Text = r; break end
+					if r.GetObjectType and r:GetObjectType() == "FontString" then
+						b.Text = r;
+						break
+					end
 				end
 			end
 		end

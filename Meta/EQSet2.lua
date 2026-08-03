@@ -6,27 +6,30 @@ local L, ABL = T.L, AB.L
 
 do -- action handler
 	local actions = {}
-	local syncSetSet do
+	local syncSetSet
+	do
 		local setNames, col, isCurrent, markCurrent
 		local function cmpSetName(a, b)
-			return strcmputf8i(a,b) < 0
+			return strcmputf8i(a, b) < 0
 		end
 		local function initEQS2()
 			local setNamesB, namesStale, colsStale = {}, true, false
 			local syncGen, actionGen, actionPattern = 200, {}, {}
-			setNames, col = {}, {__embed=true}
+			setNames, col = {}, {
+				__embed = true
+			}
 			local function bufferSetNames()
 				local ni, namesChanged = 1
-				for _,id in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+				for _, id in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
 					setNamesB[ni], ni = C_EquipmentSet.GetEquipmentSetInfo(id), ni + 1
 				end
-				for i=ni, #setNamesB do
+				for i = ni, #setNamesB do
 					setNamesB[i] = nil
 				end
 				table.sort(setNamesB, cmpSetName)
 				namesStale, setNames, setNamesB = false, setNamesB, setNames
 				namesChanged = #setNames ~= #setNamesB
-				for i=1, namesChanged and 0 or #setNames do
+				for i = 1, namesChanged and 0 or #setNames do
 					if setNames[i] ~= setNamesB[i] then
 						namesChanged = true
 						break
@@ -76,12 +79,12 @@ do -- action handler
 			if InCombatLockdown() or isCurrent(id) then
 				return id
 			end
-			for i=1, #col do
+			for i = 1, #col do
 				col[i], col[col[i] or 1] = nil
 			end
-			id = id or AB:CreateActionSlot(nil,nil, "collection",col)
+			id = id or AB:CreateActionSlot(nil, nil, "collection", col)
 			local ni, smatch = 1, string.match
-			for i=1, #setNames do
+			for i = 1, #setNames do
 				local name = setNames[i]
 				if smatch(name, fp) then
 					local said = AB:GetActionSlot("equipmentset", name)
@@ -97,11 +100,13 @@ do -- action handler
 		end
 	end
 	local function describeEquipSetSet(filter)
-		filter = (filter or "") ~= "" and filter or ("|cff0077cc" .. L"(All sets)" .. "|r")
-		return L"Equipment Sets", filter, "Interface/Icons/INV_Pants_01", nil, nil, nil, "collection"
+		filter = (filter or "") ~= "" and filter or ("|cff0077cc" .. L "(All sets)" .. "|r")
+		return L "Equipment Sets", filter, "Interface/Icons/INV_Pants_01", nil, nil, nil, "collection"
 	end
 	local function createEquipSetSet(filter)
-		if type(filter) ~= "string" then return end
+		if type(filter) ~= "string" then
+			return
+		end
 		local aid = actions[filter]
 		if aid == nil then
 			local fp = filter:gsub("[][%%()?.*+-]", "%%%0")
@@ -112,14 +117,14 @@ do -- action handler
 	end
 	AB:RegisterActionType("opie.eqset2", createEquipSetSet, describeEquipSetSet, 1)
 end
-AB:AddActionToCategory(ABL"Equipment sets", "opie.eqset2", "")
+AB:AddActionToCategory(ABL "Equipment sets", "opie.eqset2", "")
 
 local editor, edFrame, edFilter, edValue = {}
 local function initEditor()
 	edFrame = CreateFrame("Frame")
 	edFrame:Hide()
 	local s = edFrame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-	s:SetText(L"Set name filter:")
+	s:SetText(L "Set name filter:")
 	s:SetPoint("TOPLEFT", 0.5, -4)
 	edFilter = XU:Create("LineInput", nil, edFrame)
 	edFilter:SetScript("OnEnterPressed", edFilter.ClearFocus)
@@ -129,7 +134,9 @@ local function initEditor()
 	end)
 	edFilter:SetScript("OnEditFocusLost", function(self)
 		local text = self:GetText()
-		if text == edValue then return end
+		if text == edValue then
+			return
+		end
 		edValue = text
 		local p = edFrame and edFrame:GetParent()
 		if p and type(p.OnActionChanged) == "function" then

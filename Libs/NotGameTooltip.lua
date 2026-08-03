@@ -1,6 +1,7 @@
 local _, T = ...
 
-local suf, tn = 1 repeat
+local suf, tn = 1
+repeat
 	tn, suf = "NotGameTooltip" .. suf, suf + 1
 until _G[tn] == nil
 
@@ -36,7 +37,9 @@ do
 		if not t.SetSpellBookItem then
 			function t:SetSpellBookItem(slot, bookType)
 				local link = GetSpellLink(slot, bookType or "spell")
-				if link then return self:SetHyperlink(link) end
+				if link then
+					return self:SetHyperlink(link)
+				end
 			end
 		end
 	end
@@ -45,12 +48,16 @@ end
 
 do
 	local EV = T.Evie
-	local adopted, pending = setmetatable({}, {__mode="k"}), {}
+	local adopted, pending = setmetatable({}, {
+		__mode = "k"
+	}), {}
 	local function elvTooltipModule()
 		local E = _G.ElvUI and _G.ElvUI[1]
 		local p = E and E.initialized and E.private
 		local bs = p and p.skins and p.skins.blizzard
-		if not (p and p.tooltip and p.tooltip.enable and bs and bs.enable and bs.tooltip) then return end
+		if not (p and p.tooltip and p.tooltip.enable and bs and bs.enable and bs.tooltip) then
+			return
+		end
 		local TT = E.GetModule and E:GetModule("Tooltip", true)
 		if TT and TT.SetStyle and TT.SecureHookScript then
 			return TT
@@ -58,7 +65,9 @@ do
 	end
 	local function adopt(tt)
 		local TT = elvTooltipModule()
-		if not TT then return false end
+		if not TT then
+			return false
+		end
 		if not adopted[tt] then
 			adopted[tt] = true
 			TT:SecureHookScript(tt, "OnShow", "SetStyle")
@@ -69,7 +78,7 @@ do
 		return true
 	end
 	local function flush()
-		for i=#pending,1,-1 do
+		for i = #pending, 1, -1 do
 			if adopt(pending[i]) then
 				table.remove(pending, i)
 			end
@@ -78,14 +87,16 @@ do
 	end
 	function T.UseSharedTooltipSkin(tt)
 		if tt and not adopted[tt] then
-			pending[#pending+1] = tt
+			pending[#pending + 1] = tt
 			flush()
 		end
 	end
 	local retriesLeft = 10
 	local function retry()
 		retriesLeft = retriesLeft - 1
-		if flush() or retriesLeft <= 0 then return end
+		if flush() or retriesLeft <= 0 then
+			return
+		end
 		EV.After(1, retry)
 	end
 	function EV.PLAYER_LOGIN()

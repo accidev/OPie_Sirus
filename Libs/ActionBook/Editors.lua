@@ -1,11 +1,14 @@
 local _, T = ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 
 local AB = T.ActionBook:compatible(2, 36)
 assert(AB and 1, "Incompatible library bundle")
 local L = T.ActionBook.L
 
-local RegisterSimpleOptionsPanel do
+local RegisterSimpleOptionsPanel
+do
 	local optionsForHandle, curHandle, curHandleID = {}
 	local f, fButtons = CreateFrame("Frame"), {}
 	f:Hide()
@@ -17,21 +20,23 @@ local RegisterSimpleOptionsPanel do
 	end
 	local function updateCheckButtonHitRect(self)
 		local b = self:GetParent()
-		b:SetHitRectInsets(0, -self:GetStringWidth()-5, 4, 4)
+		b:SetHitRectInsets(0, -self:GetStringWidth() - 5, 4, 4)
 	end
-	for i=1,3 do
+	for i = 1, 3 do
 		local e = CreateFrame("CheckButton", nil, f, "InterfaceOptionsCheckButtonTemplate")
 		e:SetSize(24, 24)
 		e.Text:SetPoint("LEFT", e, "RIGHT", 2, 1)
 		e.Text:SetFontObject(GameFontHighlightLeft)
 		hooksecurefunc(e.Text, "SetText", updateCheckButtonHitRect)
-		if e.SetMotionScriptsWhileDisabled then e:SetMotionScriptsWhileDisabled(1) end
+		if e.SetMotionScriptsWhileDisabled then
+			e:SetMotionScriptsWhileDisabled(1)
+		end
 		e:SetScript("OnClick", callSave)
 		fButtons[i] = e
 	end
 	T.Evie.After(0, function()
 		local TS = T.TenSettings
-		for i=1, TS and #fButtons or 0 do
+		for i = 1, TS and #fButtons or 0 do
 			TS:StyleCheckButton(fButtons[i])
 		end
 	end)
@@ -62,10 +67,10 @@ local RegisterSimpleOptionsPanel do
 		ofsX = type(ofsX) == "number" and ofsX or 2
 		local getState, fvm = opts.getOptionState, opts.flagValues
 		local f3 = type(actionTable[3]) == "number" and actionTable[3] or 0
-		for i=1,#opts do
+		for i = 1, #opts do
 			local w, oi, isChecked = fButtons[i], opts[i], false
 			w.Text:SetText(opts[oi])
-			w:SetPoint("TOPLEFT", ofsX, 23-21*i)
+			w:SetPoint("TOPLEFT", ofsX, 23 - 21 * i)
 			local flagMask = fvm and fvm[opts[i]]
 			if getState then
 				isChecked = getState(actionTable, oi)
@@ -77,7 +82,7 @@ local RegisterSimpleOptionsPanel do
 			w:SetChecked(isChecked)
 			w:Show()
 		end
-		for i=#opts+1,#fButtons do
+		for i = #opts + 1, #fButtons do
 			fButtons[i]:Hide()
 		end
 		f:Show()
@@ -87,12 +92,12 @@ local RegisterSimpleOptionsPanel do
 		into[1], into[2] = opts[0], curHandleID
 		if opts.flagValues then
 			local v, fv = 0, opts.flagValues
-			for i=1, #opts do
+			for i = 1, #opts do
 				v = v + (fButtons[i]:GetChecked() and fv[opts[i]] or 0)
 			end
 			into[3] = v > 0 and v or nil
 		else
-			for i=1,#opts do
+			for i = 1, #opts do
 				into[opts[i]] = fButtons[i]:GetChecked() or nil
 			end
 		end
@@ -101,31 +106,47 @@ local RegisterSimpleOptionsPanel do
 		end
 	end
 	function RegisterSimpleOptionsPanel(atype, opts)
-		local r = {IsOwned=IsOwned, Release=Release, SetAction=SetAction, GetAction=GetAction}
+		local r = {
+			IsOwned = IsOwned,
+			Release = Release,
+			SetAction = SetAction,
+			GetAction = GetAction
+		}
 		optionsForHandle[r], opts[0] = opts, atype
 		AB:RegisterEditorPanel(atype, r)
 	end
 end
 
-local forceShowFlag = {forceShow=1}
-RegisterSimpleOptionsPanel("item", {"byName", "forceShow", "onlyEquipped",
-	byName=L"Also use items with the same name",
-	forceShow=L"Show a placeholder when unavailable",
-	onlyEquipped=L"Only show when equipped",
-	flagValues={byName=2, forceShow=1, onlyEquipped=4},
+local forceShowFlag = {
+	forceShow = 1
+}
+RegisterSimpleOptionsPanel("item", {
+	"byName",
+	"forceShow",
+	"onlyEquipped",
+	byName = L "Also use items with the same name",
+	forceShow = L "Show a placeholder when unavailable",
+	onlyEquipped = L "Only show when equipped",
+	flagValues = {
+		byName = 2,
+		forceShow = 1,
+		onlyEquipped = 4
+	}
 })
-RegisterSimpleOptionsPanel("macro", {"forceShow",
-	forceShow=L"Show a placeholder when unavailable",
-	flagValues=forceShowFlag,
+RegisterSimpleOptionsPanel("macro", {
+	"forceShow",
+	forceShow = L "Show a placeholder when unavailable",
+	flagValues = forceShowFlag
 })
-RegisterSimpleOptionsPanel("spell", {"upRank",
-	upRank=L"Use the highest known rank",
-	getOptionState=function(actionTable, _optKey)
+RegisterSimpleOptionsPanel("spell", {
+	"upRank",
+	upRank = L "Use the highest known rank",
+	getOptionState = function(actionTable, _optKey)
 		return actionTable[3] ~= 16
 	end,
-	saveState=function(intoTable)
+	saveState = function(intoTable)
 		intoTable[3], intoTable.upRank = not intoTable.upRank and 16 or nil
-	end,
+	end
 })
 
 AB.HUM.CreateSimpleEditorPanel = RegisterSimpleOptionsPanel

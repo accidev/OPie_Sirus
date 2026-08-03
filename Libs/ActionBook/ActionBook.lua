@@ -1,25 +1,34 @@
 local MAJ, REV, _, T = 2, 52, ...
-if T.SkipLocalActionBook or T.ActionBook then return end
+if T.SkipLocalActionBook or T.ActionBook then
+	return
+end
 local EV, WR = T.Evie, T.Ware
 assert(EV and WR and 1, 'Incompatible library bundle')
 
-local apiV, AB, ext, RWsec = {}, {}, {Kindred=T.Kindred}, nil
+local apiV, AB, ext, RWsec = {}, {}, {
+	Kindred = T.Kindred
+}, nil
 apiV[MAJ], T.Kindred = AB
 
 local function assert(condition, err, ...)
 	return condition or error(tostring(err):format(...), 3)((0)[0])
 end
-local istore do
+local istore
+do
 	local function write(t, n, i, a, b, ...) -- overwrites by up to 1 element
 		if n > 0 then
-			t[i], t[i+1] = a, b
-			return write(t, n-2, i+2, ...)
+			t[i], t[i + 1] = a, b
+			return write(t, n - 2, i + 2, ...)
 		end
-		return i+n-1
+		return i + n - 1
 	end
-	local base, api, inner = newproxy(true), {}, setmetatable({}, {__mode="k"}), {}
+	local base, api, inner = newproxy(true), {}, setmetatable({}, {
+		__mode = "k"
+	}), {}
 	function istore()
-		local r, d = newproxy(base), {[0]=0}
+		local r, d = newproxy(base), {
+			[0] = 0
+		}
 		inner[r] = d
 		return r
 	end
@@ -31,17 +40,17 @@ local istore do
 		local h, n = inner[self], select("#", ...)
 		if n > 0 then
 			local c = h[0]
-			h[0], h[-c-1] = c+1, write(h, n, h[-c]+1, ...)
+			h[0], h[-c - 1] = c + 1, write(h, n, h[-c] + 1, ...)
 		end
 	end
 	function api:filter(func, farg)
 		local h, c, ni, first = inner[self], 0, 0, 0
-		for i=1, h[0] do
+		for i = 1, h[0] do
 			local last = h[-i]
-			if securecall(func, farg, unpack(h, first+1, last)) then
-				c, h[-c-1] = c + 1, ni + last-first
-				for j=1,last == h[-c] and 0 or (last-first) do
-					h[ni+j] = h[first+j]
+			if securecall(func, farg, unpack(h, first + 1, last)) then
+				c, h[-c - 1] = c + 1, ni + last - first
+				for j = 1, last == h[-c] and 0 or (last - first) do
+					h[ni + j] = h[first + j]
 				end
 				ni = h[-c]
 			end
@@ -55,29 +64,35 @@ local istore do
 	function api:get(i)
 		local h = inner[self]
 		if i > 0 and h[-i] then
-			return unpack(h, (i == 1 and 0 or h[-i+1]) + 1, h[-i])
+			return unpack(h, (i == 1 and 0 or h[-i + 1]) + 1, h[-i])
 		end
 	end
 	local meta = getmetatable(base)
 	meta.__index, meta.__len, meta.__call = api, api.size, api.get
 end
 
-local L do
+local L
+do
 	local LT, LR = {}, newproxy(true)
 	local function lookup(_, k, t)
 		return LT[k] or t or k
 	end
 	local LM = getmetatable(LR)
 	LM.__index, LM.__call, LM.__metatable = lookup, lookup, false
-	T.ActionBook = {L=LR, LW=LT}
+	T.ActionBook = {
+		L = LR,
+		LW = LT
+	}
 	L = T.ActionBook.L
 end
 
 local actionCallbacks, core = {}, CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
-local sabtHost = CreateFrame("Frame", nil, nil, "SecureFrameTemplate") do
+local sabtHost = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
+do
 	sabtHost:SetAttribute("pressAndHoldAction", 1)
 end
-local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
+local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core)
+do
 	local re, newtable = coreEnvW, WR.newtable
 	re._NIL, re.busy, re.idle = newtable, newtable, newtable
 	re.collections, re.tokens, re.metadata = newtable, newtable, newtable
@@ -85,14 +100,16 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 	re.actInfo, re.sidCastID = newtable, 30 + math.random(9)
 	re.actInfo[re.sidCastID] = "psabt"
 	sabtHost:SetAttribute("type-" .. re.sidCastID, "spell")
-	re.colStack, re.idxStack, re.ecStack, re.etStack, re.onStack, re.outCount = newtable, newtable, newtable, newtable, newtable, newtable
+	re.colStack, re.idxStack, re.ecStack, re.etStack, re.onStack, re.outCount = newtable, newtable, newtable, newtable,
+		newtable, newtable
 	re.paNextID, re.paSlot, re.paLock, re.paCount = 36000, newtable, newtable, 0
 	re.cndLockNext, re.cndLockMap, re.cndLockRes, re.cndLockCount = 36000, newtable, newtable, 0
 	re.pendingNotify, re.nextNotifyId = newtable, 45000
-	re.SH, re.KR, re.sabtHost = sabtHost, ext.Kindred:compatible(1,0):seclib(), sabtHost
+	re.SH, re.KR, re.sabtHost = sabtHost, ext.Kindred:compatible(1, 0):seclib(), sabtHost
 	core:SetAttribute("execID", 1e3)
 	local function uniqueName(s)
-		local bni, bn = 1 repeat
+		local bni, bn = 1
+		repeat
 			bn, bni = "AB!" .. bni .. s, bni + 1
 		until GetClickFrame(bn) == nil
 		return bn
@@ -269,12 +286,13 @@ function core:icall(id)
 	local t = actionCallbacks[id]
 	local ttype = type(t)
 	if ttype == "table" then
-		t[1](unpack(t,3,t[2]))
+		t[1](unpack(t, 3, t[2]))
 	elseif ttype == "function" then
 		t()
 	end
 end
-local UnlockedCall do
+local UnlockedCall
+do
 	local q, qn = {}, 1
 	local function packcall(pack)
 		return pack[1](unpack(pack, 3, pack[2])) and false
@@ -282,18 +300,19 @@ local UnlockedCall do
 	function EV:PLAYER_REGEN_ENABLED()
 		local i = 1
 		while i < qn do
-			i, q[i] = i+1, securecall(packcall, q[i]) or nil
+			i, q[i] = i + 1, securecall(packcall, q[i]) or nil
 		end
 		qn = 1
 	end
 	local function pack(f, ...)
-		qn, q[qn] = qn + 1, {f, 2+select("#", ...), ...}
+		qn, q[qn] = qn + 1, {f, 2 + select("#", ...), ...}
 	end
 	function UnlockedCall(f, ...)
 		return ((InCombatLockdown() or qn > 1) and pack or securecall)(f, ...)
 	end
 end
-local checkEntryToken, reserveEntryToken do
+local checkEntryToken, reserveEntryToken
+do
 	local etCollection, etIndex = {}, {}
 	local rtKey, rtNS = {}, {}
 	function checkEntryToken(tok, colId, newIdx)
@@ -324,7 +343,7 @@ local nextActionId, allocatedActions, allocatedActionType, allocatedActionArg = 
 local createHandlers, updateHandlers = {}, {}
 local function re_set_actInfo_attribute(id, count, ...)
 	coreEnvW.actInfo[id] = "psabt"
-	for i=1,count,2 do
+	for i = 1, count, 2 do
 		local an, av = select(i, ...)
 		sabtHost:SetAttribute("*" .. an .. "-" .. id, av)
 	end
@@ -341,7 +360,7 @@ function createHandlers.func(id, cnt, func, ...)
 		return false, "Callback expected, got %s", type(func)
 	end
 	UnlockedCall(re_set_actInfo_icall, id)
-	actionCallbacks[id] = cnt > 1 and {func, cnt+1, ...} or func
+	actionCallbacks[id] = cnt > 1 and {func, cnt + 1, ...} or func
 	return true
 end
 function createHandlers.recall(id, _count, handle, attr, ...)
@@ -372,7 +391,8 @@ function createHandlers.reslash(id, _cnt, slash, varg, target)
 	elseif not RWsec then
 		return false, "reslash: Rewire not available"
 	end
-	return createHandlers.recall(id, target and 5 or 4, RWsec, "RunSlashCmd", slash, varg or "", select(target and 1 or 2, target))
+	return createHandlers.recall(id, target and 5 or 4, RWsec, "RunSlashCmd", slash, varg or "",
+		select(target and 1 or 2, target))
 end
 function createHandlers.retext(id, _cnt, retext)
 	if type(retext) ~= "string" then
@@ -386,7 +406,7 @@ local function re_set_collection(id, pack)
 	local nc, nt = WR.newtable(coreEnvW.collections, id), WR.newtable(coreEnvW.tokens, id)
 	local m, v = coreEnvW.metadata, coreEnvW.tokConditionals
 	local openToken = pack.__openToken
-	for i=1, #pack do
+	for i = 1, #pack do
 		local tok = pack[i]
 		local vkey, ekey, pkey = '__visibility-' .. tok, '__embed-' .. tok, '__pmode-' .. tok
 		nt[i], nc[i], v[tok] = tok, pack[tok], pack[vkey]
@@ -405,7 +425,7 @@ function updateHandlers.collection(id, _count, idList)
 		return false, "Collection __openAction key does not specify a valid action"
 	end
 	local pack = {}
-	for i=1,#idList do
+	for i = 1, #idList do
 		local tok = idList[i]
 		if type(tok) ~= "string" then
 			return false, "Collection entry #%d: unsupported entry token type (%s)", i, type(tok)
@@ -463,12 +483,15 @@ function createHandlers.clone(id, _count, id2)
 	UnlockedCall(re_set_actInfo_clone, id, id2)
 	return true
 end
-local function nullInfoFunc() return false end
+local function nullInfoFunc()
+	return false
+end
 local function re_set_actConditional(id, cnd)
 	coreEnvW.actConditionals[id] = cnd
 end
 
-local getActionIdent, getActionArgs do
+local getActionIdent, getActionArgs
+do
 	function getActionIdent(identTable)
 		local itt = type(identTable)
 		if itt == "string" then
@@ -479,19 +502,19 @@ local getActionIdent, getActionArgs do
 	end
 	local function private_unpack(t, a, b)
 		if a <= b then
-			return t[a], private_unpack(t, a+1, b)
+			return t[a], private_unpack(t, a + 1, b)
 		end
 	end
 	function getActionArgs(it, ...)
 		if it then
-			return private_unpack(it, 2, 1+(actionNumArgs[it[1]] or 1))
+			return private_unpack(it, 2, 1 + (actionNumArgs[it[1]] or 1))
 		end
 		return ...
 	end
 end
 local categoryAliases = {}
 local function getCategoryName(id)
-	local LM = id == (#categories+1) and L"Miscellaneous"
+	local LM = id == (#categories + 1) and L "Miscellaneous"
 	return categories[id] or (LM and categories[LM] and LM) or nil
 end
 local function getCategoryTable(name)
@@ -500,7 +523,7 @@ local function getCategoryTable(name)
 	if not r then
 		r = {}
 		categories[name] = r
-		if name ~= L"Miscellaneous" then
+		if name ~= L "Miscellaneous" then
 			categories[#categories + 1] = name
 		end
 	end
@@ -516,13 +539,15 @@ local function getActionDescription(q, ident, at, ...)
 	end
 end
 
-local editorPanels, createEditorHost = {} do
-	local copyActionKeys, clearActionKeys do
+local editorPanels, createEditorHost = {}
+do
+	local copyActionKeys, clearActionKeys
+	do
 		local function copy(t, copies)
 			local into = {}
 			copies = copies or {}
 			copies[t] = into
-			for k,v in pairs(t) do
+			for k, v in pairs(t) do
 				k = type(k) == "table" and (copies[k] or copy(k, copies)) or k
 				v = type(v) == "table" and (copies[v] or copy(v, copies)) or v
 				into[k] = v
@@ -530,7 +555,9 @@ local editorPanels, createEditorHost = {} do
 			return into, copies
 		end
 		local function copyKeys(src, dst, lib, n, k, ...)
-			if n == 0 then return dst end
+			if n == 0 then
+				return dst
+			end
 			local v = src and src[k]
 			if lib and lib[v] ~= nil then
 				v = lib[v]
@@ -538,7 +565,7 @@ local editorPanels, createEditorHost = {} do
 				v, lib = copy(v, lib)
 			end
 			dst[k] = v
-			return copyKeys(src, dst, lib, n-1, ...)
+			return copyKeys(src, dst, lib, n - 1, ...)
 		end
 		local function prefixCount(...)
 			return select("#", ...), ...
@@ -559,7 +586,8 @@ local editorPanels, createEditorHost = {} do
 			copyKeys(nil, dst, nil, prefixCount(allActionKeys(dst)))
 		end
 	end
-	local hdata, hhproto = {}, newproxy(true) do
+	local hdata, hhproto = {}, newproxy(true)
+	do
 		local hhapi, m = {}, getmetatable(hhproto)
 		m.__index, m.__metatable = hhapi, false
 		local function pmcall(s, m, ...)
@@ -568,7 +596,9 @@ local editorPanels, createEditorHost = {} do
 		function hhapi:SetAction(actionTable)
 			assert(type(actionTable) == "table", 'Syntax: ok = hh:SetAction(actionTable)')
 			local d, ed = hdata[self], editorPanels[actionTable[1]]
-			if not ed then return end
+			if not ed then
+				return
+			end
 			local oed, oaction = d.editor, d.action
 			d.editor, d.action = nil
 			d.rq:Hide()
@@ -576,12 +606,12 @@ local editorPanels, createEditorHost = {} do
 				securecall(oed.Release, oed, d.host)
 			end
 			--[[ There's a fair bit of copying involved here to avoid sharing table
-			     references between the host and the editor panel. This serves to
-			     protect both parties from each other. The host's copy cannot be
-			     modified by the editor except when the host explicitly requests that
-			     via :GetAction (limited to the action's option keys!). The copy the
-			     editor panel receives is in principle solely its own, although other
-			     code could call SetAction directly (with arbitrary arguments). ]]
+				 references between the host and the editor panel. This serves to
+				 protect both parties from each other. The host's copy cannot be
+				 modified by the editor except when the host explicitly requests that
+				 via :GetAction (limited to the action's option keys!). The copy the
+				 editor panel receives is in principle solely its own, although other
+				 code could call SetAction directly (with arbitrary arguments). ]]
 			local edCopy = copyActionKeys(actionTable, {})
 			if not securecall(pmcall, ed, "SetAction", d.host, edCopy) then
 				securecall(ed.Release, ed, d.host)
@@ -589,9 +619,9 @@ local editorPanels, createEditorHost = {} do
 			end
 			d.editor = ed
 			--[[ Keep a separate copy in case the editor is stolen from the host without
-			     a :OnEditorRelease notification. When reacquiring the editor panel, it
-			     is safe to keep the copy we're restoring from -- barring shenanigans,
-			     it is immutable. ]]
+				 a :OnEditorRelease notification. When reacquiring the editor panel, it
+				 is safe to keep the copy we're restoring from -- barring shenanigans,
+				 it is immutable. ]]
 			d.action = oaction == actionTable and oaction or copyActionKeys(actionTable, {})
 			return true
 		end
@@ -627,7 +657,8 @@ local editorPanels, createEditorHost = {} do
 		function hhapi:GetTabFocusWidget(which)
 			local d = hdata[self]
 			local ed = d.editor
-			return ed and type(ed.GetTabFocusWidget) == "function" and ed:IsOwned(d.host) and ed:GetTabFocusWidget(which) or nil
+			return ed and type(ed.GetTabFocusWidget) == "function" and ed:IsOwned(d.host) and
+					   ed:GetTabFocusWidget(which) or nil
 		end
 	end
 	local function hf_OnEditorRelease(hf, ed)
@@ -652,10 +683,12 @@ local editorPanels, createEditorHost = {} do
 		end
 	end
 	function createEditorHost(parent)
-		local hf = CreateFrame("Frame", nil, parent) do
+		local hf = CreateFrame("Frame", nil, parent)
+		do
 			hf.OnEditorRelease = hf_OnEditorRelease
 		end
-		local rq = CreateFrame("Button", nil, hf, "UIPanelButtonTemplate") do
+		local rq = CreateFrame("Button", nil, hf, "UIPanelButtonTemplate")
+		do
 			rq:Hide()
 			rq:SetSize(30, 26)
 			rq:SetPoint("CENTER")
@@ -669,34 +702,42 @@ local editorPanels, createEditorHost = {} do
 			ico:SetVertexColor(0.78, 0.80, 0.84)
 			rq:SetScript("OnClick", hf_OnReaquireClick)
 		end
-		local hd, hh = {host=hf, hh=0, rq=rq}, newproxy(hhproto)
+		local hd, hh = {
+			host = hf,
+			hh = 0,
+			rq = rq
+		}, newproxy(hhproto)
 		hd.hh = hh
 		hdata[hh], hdata[hf] = hd, hd
 		return hf, hh
 	end
 end
-local getPartialHint, registerPartialHints, hintAspects do
+local getPartialHint, registerPartialHints, hintAspects
+do
 	local BASE_SUFFIX = math.random(16777216)
 	hintAspects = {"cooldownInfo", "cooldownDuration", "chargeInfo", "chargeDuration", "count"}
-	local allocSuffix do
+	local allocSuffix
+	do
 		local SHUFFLE_SIZE = 8
 		local ofs, count, remain, pool = -1, 1, SHUFFLE_SIZE, {}
-		for i=1, SHUFFLE_SIZE do pool[i] = i end
+		for i = 1, SHUFFLE_SIZE do
+			pool[i] = i
+		end
 		local function peek(n, c)
 			while n >= c do
 				n, c = n - c, c + c
 			end
-			return (1+n+n)/(c+c), n, c
+			return (1 + n + n) / (c + c), n, c
 		end
 		function allocSuffix()
 			if remain == 0 then
-				remain, ofs, count = peek(SHUFFLE_SIZE+ofs, count)
+				remain, ofs, count = peek(SHUFFLE_SIZE + ofs, count)
 				remain = SHUFFLE_SIZE
 			end
 			local r = math.random(remain)
 			local v = pool[r]
 			pool[r], pool[remain], remain = pool[remain], v, remain - 1
-			return (peek(ofs+v, count))
+			return (peek(ofs + v, count))
 		end
 	end
 	local sufHintFuncs = {}
@@ -721,20 +762,21 @@ do -- AB:CreateToken()
 		local ret, d = ""
 		repeat
 			d = n % dictLength
-			ret, n = dict:sub(d+1, d+1) .. ret, (n - d) / dictLength
+			ret, n = dict:sub(d + 1, d + 1) .. ret, (n - d) / dictLength
 		until n == 0
 		return ret
 	end
 	function AB:CreateToken()
 		if seq > 262142 then
-			prefix, seq = "ABu" .. encode(time()*100+(math.floor(GetTime()*100)%100)), 0
+			prefix, seq = "ABu" .. encode(time() * 100 + (math.floor(GetTime() * 100) % 100)), 0
 		end
 		seq = seq + 1
 		return prefix .. encode(seq)
 	end
 end
 function AB:ReserveToken(token, ns, key, collectionID)
-	assert(key ~= nil and (collectionID == nil or type(collectionID) == "number"), 'Syntax: ok = ActionBook:ReserveToken("token", ns, key, collectionID or nil)')
+	assert(key ~= nil and (collectionID == nil or type(collectionID) == "number"),
+		'Syntax: ok = ActionBook:ReserveToken("token", ns, key, collectionID or nil)')
 	if type(token) ~= "string" or not token:match("^[A-Za-z][A-Za-z0-9_=/]*$") then
 		return false, 'unacceptable-token'
 	end
@@ -751,26 +793,31 @@ function AB:GetActionSlot(actionType, ...)
 end
 function AB:GetActionDescription(actionType, ...)
 	local ident, at = getActionIdent(actionType)
-	assert(ident, 'Syntax: typeName, actionName, icon, ext, tipFunc, tipArg, actionType, actionFlags = ActionBook:GetActionDescription(actionTable or "actionType", ...)')
+	assert(ident,
+		'Syntax: typeName, actionName, icon, ext, tipFunc, tipArg, actionType, actionFlags = ActionBook:GetActionDescription(actionTable or "actionType", ...)')
 	return getActionDescription(nil, ident, at, ...)
 end
 function AB:GetActionNumArgs(actionType)
-	local ident = getActionIdent(actionType) or error('Syntax: numArgs? = ActionBook:GetActionNumArgs(actionTable or "actionType")', 2)
+	local ident = getActionIdent(actionType) or
+					  error('Syntax: numArgs? = ActionBook:GetActionNumArgs(actionTable or "actionType")', 2)
 	return actionNumArgs[ident]
 end
 function AB:GetActionListDescription(actionType, ...)
 	local ident, at = getActionIdent(actionType)
-	assert(ident, 'Syntax: typeName, actionName, icon, ext, tipFunc, tipArg, actionType = ActionBook:GetActionListDescription(actionTable or "actionType", ...)')
+	assert(ident,
+		'Syntax: typeName, actionName, icon, ext, tipFunc, tipArg, actionType = ActionBook:GetActionListDescription(actionTable or "actionType", ...)')
 	return getActionDescription("list-query", ident, at, ...)
 end
 function AB:GetSlotInfo(id, cndLock)
-	assert(type(id) == "number" and (cndLock == nil or type(cndLock) == "string"), 'Syntax: usable, state, icon, caption, count, cdLeft, cdLength, tipFunc, tipArg, ext = ActionBook:GetSlotInfo(slot, "cndLockState"?)')
+	assert(type(id) == "number" and (cndLock == nil or type(cndLock) == "string"),
+		'Syntax: usable, state, icon, caption, count, cdLeft, cdLength, tipFunc, tipArg, ext = ActionBook:GetSlotInfo(slot, "cndLockState"?)')
 	if allocatedActions[id] then
 		return allocatedActions[id](allocatedActionArg[id], cndLock)
 	end
 end
 function AB:GetSlotImplementation(id)
-	assert(type(id) == "number", "Syntax: actionType, colEntryCount, colEmbedDefault = ActionBook:GetSlotImplementation(slot)")
+	assert(type(id) == "number",
+		"Syntax: actionType, colEntryCount, colEmbedDefault = ActionBook:GetSlotImplementation(slot)")
 	local aType = allocatedActions[id] and allocatedActionType[id]
 	local colData = coreEnv.collections[id]
 	return aType, colData and #colData or nil, colData and coreEnv.metadata['embed-' .. id]
@@ -783,7 +830,7 @@ end
 function AB:ReservePartialHintSuffix(partialFuncs)
 	assert(type(partialFuncs) == "table", "Syntax: suffix = ActionBook:ReservePartialHintSuffix(partialFuncs)")
 	local t = {}
-	for i=1, #hintAspects do
+	for i = 1, #hintAspects do
 		local k = hintAspects[i]
 		local v = partialFuncs[k]
 		if type(v) == "function" then
@@ -794,22 +841,26 @@ function AB:ReservePartialHintSuffix(partialFuncs)
 end
 
 function AB:RegisterActionType(actionType, create, describe, numArgs, useListDescribe)
-	assert(type(actionType) == "string" and type(create) == "function" and type(describe) == "function" and type(numArgs) == "number"
-	       and (numArgs >= 0 and numArgs % 1 == 0)
-	       and (useListDescribe == nil or type(useListDescribe) == "boolean")
-	      , 'Syntax: ActionBook:RegisterActionType("actionType", createFunc, describeFunc, numArgs, useListDescribe?)')
+	assert(type(actionType) == "string" and type(create) == "function" and type(describe) == "function" and
+			   type(numArgs) == "number" and (numArgs >= 0 and numArgs % 1 == 0) and
+			   (useListDescribe == nil or type(useListDescribe) == "boolean"),
+		'Syntax: ActionBook:RegisterActionType("actionType", createFunc, describeFunc, numArgs, useListDescribe?)')
 	assert(not actionCreators[actionType], "Identifier %q is already registered", actionType)
-	actionCreators[actionType], actionDescribers[actionType], actionFlags[actionType] = create, describe, useListDescribe and 1 or nil
+	actionCreators[actionType], actionDescribers[actionType], actionFlags[actionType] = create, describe,
+		useListDescribe and 1 or nil
 	actionNumArgs[actionType] = numArgs
 end
 function AB:CreateActionSlot(infoFunc, infoArg, implType, ...)
 	local as, an = 1, select("#", ...)
-	local cnd if implType == "conditional" then
+	local cnd
+	if implType == "conditional" then
 		as, an, cnd, implType = as + 2, an - 2, select(as, ...)
 		assert(type(cnd) == "string", "Conditional options expected, got %s", type(cnd))
 	end
-	assert(type(implType) == "string" and (infoFunc == nil or type(infoFunc) == "function"), 'Syntax: slot = ActionBook:CreateAction(infoFunc, infoArg, "implType", ...)')
-	local cf, id = assert(createHandlers[implType] or updateHandlers[implType], "Implementation type %q is not creatable", implType), nextActionId
+	assert(type(implType) == "string" and (infoFunc == nil or type(infoFunc) == "function"),
+		'Syntax: slot = ActionBook:CreateAction(infoFunc, infoArg, "implType", ...)')
+	local cf, id = assert(createHandlers[implType] or updateHandlers[implType],
+		"Implementation type %q is not creatable", implType), nextActionId
 	nextActionId, allocatedActionType[id], allocatedActionArg[id] = id + 1, implType, infoArg
 	assert(cf(id, an, select(as, ...)))
 	allocatedActions[id] = infoFunc or nullInfoFunc
@@ -826,22 +877,25 @@ function AB:UpdateActionSlot(id, ...)
 end
 
 function AB:AddCategoryAlias(name, aliasOf)
-	assert(type(name) == "string" and type(aliasOf) == "string", 'Syntax: ActionBook:AddCategoryAlias("name", "aliasOf")')
+	assert(type(name) == "string" and type(aliasOf) == "string",
+		'Syntax: ActionBook:AddCategoryAlias("name", "aliasOf")')
 	assert(name == aliasOf or categories[name] == nil, "Category %q already exists.", name)
 	categoryAliases[name] = categoryAliases[name] or aliasOf
 end
 function AB:AugmentCategory(name, augFunc)
-	assert(type(name) == "string" and type(augFunc) == "function" and name ~= "*", 'Syntax: ActionBook:AugmentCategory("name", augFunc)')
+	assert(type(name) == "string" and type(augFunc) == "function" and name ~= "*",
+		'Syntax: ActionBook:AugmentCategory("name", augFunc)')
 	table.insert(getCategoryTable(name), augFunc)
 end
 function AB:AddActionToCategory(name, actionType, ...)
-	assert(type(name) == "string" and type(actionType) == "string" and name ~= "*", 'Syntax: ActionBook:AddActionToCategory("name", "actionType"[, ...])')
+	assert(type(name) == "string" and type(actionType) == "string" and name ~= "*",
+		'Syntax: ActionBook:AddActionToCategory("name", "actionType"[, ...])')
 	local ct = getCategoryTable(name)
 	ct.extra = ct.extra or istore()
 	ct.extra:insert(actionType, ...)
 end
 function AB:GetNumCategories()
-	return #categories + (categories[L"Miscellaneous"] and 1 or 0)
+	return #categories + (categories[L "Miscellaneous"] and 1 or 0)
 end
 function AB:GetCategoryInfo(id)
 	assert(type(id) == "number", 'Syntax: name = ActionBook:GetCategoryInfo(index)')
@@ -851,31 +905,39 @@ function AB:GetCategoryContents(id, into)
 	assert(type(id) == "number", 'Syntax: contents = ActionBook:GetCategoryContents(index[, into])')
 	local cname, ret = assert(getCategoryName(id), 'Invalid category index'), into or istore()
 	local co = categories[cname]
-	local ex, addToRet = co.extra, #co > 0 and function(...) return ret:insert(...) end
-	for i=1,#co do
+	local ex, addToRet = co.extra, #co > 0 and function(...)
+		return ret:insert(...)
+	end
+	for i = 1, #co do
 		securecall(co[i], cname, addToRet)
 	end
-	for i=1,ex and #ex or 0 do
+	for i = 1, ex and #ex or 0 do
 		ret:insert(ex(i))
 	end
 	return ret
 end
 
-local notifyCount, observers = 1, {["*"]={}, ["internal.collection.preopen"] = {}}
+local notifyCount, observers = 1, {
+	["*"] = {},
+	["internal.collection.preopen"] = {}
+}
 function AB:NotifyObservers(ident, data)
 	assert(type(ident) == "string", 'Syntax: ActionBook:NotifyObservers("identifier"[, data])')
 	assert(actionCreators[ident] or observers[ident] ~= nil, "Identifier %q is not registered", ident)
 	notifyCount = (notifyCount + 1) % 4503599627370495
-	for i=(ident == "*" or not observers[ident]) and 1 or 2, 1, -1 do
-		for k,v in pairs(observers[i == 1 and "*" or ident]) do
+	for i = (ident == "*" or not observers[ident]) and 1 or 2, 1, -1 do
+		for k, v in pairs(observers[i == 1 and "*" or ident]) do
 			securecall(k, v, ident, data)
 		end
 	end
 end
 function AB:AddObserver(ident, callback, selfarg)
-	assert(type(ident) == "string" and type(callback) == "function", 'Syntax: ActionBook:AddObserver("identifier", callbackFunc, callbackSelfArg)')
+	assert(type(ident) == "string" and type(callback) == "function",
+		'Syntax: ActionBook:AddObserver("identifier", callbackFunc, callbackSelfArg)')
 	assert(ident == "*" or actionCreators[ident] or observers[ident], "Identifier %q is not registered", ident)
-	if observers[ident] == nil then observers[ident] = {} end
+	if observers[ident] == nil then
+		observers[ident] = {}
+	end
 	observers[ident][callback] = selfarg == nil and true or selfarg
 end
 function AB:GetLastObserverUpdateToken(ident)
@@ -885,15 +947,13 @@ function AB:GetLastObserverUpdateToken(ident)
 end
 
 function AB:RegisterEditorPanel(actionType, editorPanel)
-	assert(type(actionType) == "string" and type(editorPanel) == "table", 'Syntax: ActionBook:RegisterEditorPanel("actionType", editorPanel)')
+	assert(type(actionType) == "string" and type(editorPanel) == "table",
+		'Syntax: ActionBook:RegisterEditorPanel("actionType", editorPanel)')
 	assert(actionCreators[actionType] ~= nil, "actionType %q is not registered", actionType)
 	assert(editorPanels[actionType] == nil, "An editor for %q is already registered", actionType)
-	assert(
-		type(editorPanel.SetAction) == "function" and
-		type(editorPanel.GetAction) == "function" and
-		type(editorPanel.IsOwned) == "function" and
-		type(editorPanel.Release) == "function",
-	"Required editor panel API methods not implemented")
+	assert(type(editorPanel.SetAction) == "function" and type(editorPanel.GetAction) == "function" and
+			   type(editorPanel.IsOwned) == "function" and type(editorPanel.Release) == "function",
+		"Required editor panel API methods not implemented")
 	editorPanels[actionType] = editorPanel
 end
 
@@ -910,15 +970,20 @@ function AB:compatible(module, maj, rev, ...)
 end
 
 -- HIDDEN, UNSUPPORTED METHODS: May vanish at any time.
-local hum = {L=L}
-setmetatable(AB, {__index=hum})
+local hum = {
+	L = L
+}
+setmetatable(AB, {
+	__index = hum
+})
 hum.HUM = hum
 function hum:CreateEditorHost(parent)
 	assert(type(parent) == "table" and parent[0], 'Syntax: hostWidget = ActionBook:CreateEditorHost(parent)')
 	return createEditorHost(parent)
 end
 function hum:RegisterModule(key, api)
-	assert(type(key) == "string" and type(api) == "table" and type(api.compatible) == "function", 'Syntax: ActionBook:RegisterModule("key", apiTable)')
+	assert(type(key) == "string" and type(api) == "table" and type(api.compatible) == "function",
+		'Syntax: ActionBook:RegisterModule("key", apiTable)')
 	assert(ext[key] == nil, 'Duplicate module registration')
 	ext[key] = api
 	if key == "Rewire" then

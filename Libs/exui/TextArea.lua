@@ -9,7 +9,9 @@ local assert, getWidgetData, newWidgetData, setWidgetData, AddObjectMethods, Cal
 local TextArea, TextAreaData, int = {}, {}, {}
 local function syncExtent(d)
 	local cw, ch = d.clipArea:GetWidth(), d.clipArea:GetHeight()
-	if not (cw and cw > 0 and ch and ch > 0) then return end
+	if not (cw and cw > 0 and ch and ch > 0) then
+		return
+	end
 	if math.abs(d.editBox:GetWidth() - cw) > 0.5 then
 		d.editBox:SetWidth(cw)
 	end
@@ -23,24 +25,26 @@ local function syncExtent(d)
 	end
 end
 local TextAreaProps = {
-	api=TextArea,
-	spacingTarget=0,
-	scripts={"OnCursorChanged"},
-	self2scripts={"OnKeyDown", "OnKeyUp", "OnChar"},
+	api = TextArea,
+	spacingTarget = 0,
+	scripts = {"OnCursorChanged"},
+	self2scripts = {"OnKeyDown", "OnKeyUp", "OnChar"}
 }
 AddObjectMethods({"TextArea", "EditBox"}, TextAreaProps)
 
 local function buildFlatSkin(d)
-	if d.flatSkin then return d.flatSkin end
+	if d.flatSkin then
+		return d.flatSkin
+	end
 	local f, s = d.self, {}
 	local bg = f:CreateTexture(nil, "BACKGROUND", nil, -7)
 	bg:SetTexture(0.055, 0.060, 0.070, 0.96)
 	bg:SetAllPoints()
 	s[1] = bg
-	for i=1,4 do
+	for i = 1, 4 do
 		local t = f:CreateTexture(nil, "BORDER", nil, -6)
 		t:SetTexture(0.21, 0.23, 0.27, 1)
-		s[i+1] = t
+		s[i + 1] = t
 		if i < 3 then
 			local p = i == 1 and "TOP" or "BOTTOM"
 			t:SetHeight(1)
@@ -71,7 +75,7 @@ function TextArea:GetHighlightText()
 		editBox:SetCursorPosition(curPos)
 		editBox:HighlightText(selStart, selEnd)
 	end
-	return text:sub(selStart+1, selEnd), selStart
+	return text:sub(selStart + 1, selEnd), selStart
 end
 function TextArea:SetHighlightText(newText, preserveCaret)
 	assert(type(newText) == 'string', 'Syntax: TextArea:SetHighlightText("text"[, preserveCaret])')
@@ -86,10 +90,11 @@ function TextArea:SetHighlightText(newText, preserveCaret)
 	if op == op2 then
 		editBox:SetCursorPosition(op2)
 	end
-	editBox:HighlightText(op2, op2+#newText)
+	editBox:HighlightText(op2, op2 + #newText)
 end
 function TextArea:SetStickyFocus(sticky)
-	assert(sticky == nil or type(sticky) == "function" or type(sticky) == "boolean", 'Syntax: TextArea:SetStickyFocus(sticky)')
+	assert(sticky == nil or type(sticky) == "function" or type(sticky) == "boolean",
+		'Syntax: TextArea:SetStickyFocus(sticky)')
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
 	d.editBox.HasStickyFocus = sticky == true and int.alwaysHasStickyFocus or sticky or nil
 end
@@ -99,12 +104,12 @@ function TextArea:SetStyle(style)
 	local px, py = 0, 0
 	if style == "tooltip" then
 		local s = buildFlatSkin(d)
-		for i=1,#s do
+		for i = 1, #s do
 			s[i]:Show()
 		end
 		px, py = 5, 5
 	elseif d.flatSkin then
-		for i=1,#d.flatSkin do
+		for i = 1, #d.flatSkin do
 			d.flatSkin[i]:Hide()
 		end
 	end
@@ -130,35 +135,38 @@ function int.alwaysHasStickyFocus()
 end
 function int.adjustSpacing(d, force)
 	local fs, ct, _, screenHeight = d.editFS, d.cursorTex, GetPhysicalScreenSize()
-	local spacing, fsLineHeight, screenLocalHeight = d.spacingTarget, fs:GetLineHeight(), fs:GetEffectiveScale() * screenHeight
-	if force or d.cachedLineHeight ~= fsLineHeight or d.cachedScreenHeight ~= screenLocalHeight  then
-		local pixel, mceil = 768/screenLocalHeight, math.ceil
-		local pixSpacedLineHeight = mceil((spacing + fsLineHeight)/pixel) * pixel
-		local correctedSpacing = pixSpacedLineHeight - fsLineHeight - 2^-18
+	local spacing, fsLineHeight, screenLocalHeight = d.spacingTarget, fs:GetLineHeight(),
+		fs:GetEffectiveScale() * screenHeight
+	if force or d.cachedLineHeight ~= fsLineHeight or d.cachedScreenHeight ~= screenLocalHeight then
+		local pixel, mceil = 768 / screenLocalHeight, math.ceil
+		local pixSpacedLineHeight = mceil((spacing + fsLineHeight) / pixel) * pixel
+		local correctedSpacing = pixSpacedLineHeight - fsLineHeight - 2 ^ -18
 		d.proto.super2.SetSpacing(d.editBox, correctedSpacing > 0 and correctedSpacing or 0)
 		d.cachedLineHeight, d.cachedScreenHeight = fsLineHeight, screenLocalHeight
-		d.cachedCursorH, d.cachedCursorW = pixSpacedLineHeight, mceil(2/pixel)*pixel
+		d.cachedCursorH, d.cachedCursorW = pixSpacedLineHeight, mceil(2 / pixel) * pixel
 	end
 	ct:SetSize(d.cachedCursorW, d.cachedCursorH)
 end
 function int:OnCursorChanged(...)
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
-	if d.holdScroll then return end
+	if d.holdScroll then
+		return
+	end
 	int.adjustSpacing(d)
 	repeat -- runs once; just need a break
 		local _x, y, _w, h = ...
 		local sb, insT, insB = d.scrollBar, 2, 2
 		local occH, occP, y = d.clipArea:GetHeight(), sb:GetValue(), -y
 		if not self:HasFocus() then -- only move if focused
-		elseif occP > y-insT then
-			occP = y > insT and y-insT or 0 -- too far
-		elseif occP < y+h-occH+insB+insT then
-			occP = y+h-occH+insB+insT -- not far enough
+		elseif occP > y - insT then
+			occP = y > insT and y - insT or 0 -- too far
+		elseif occP < y + h - occH + insB + insT then
+			occP = y + h - occH + insB + insT -- not far enough
 		else
 			break
 		end
 		local _, mx = sb:GetMinMaxValues()
-		occP = (mx-occP)^2 < 1 and mx or math.floor(occP)
+		occP = (mx - occP) ^ 2 < 1 and mx or math.floor(occP)
 		sb:SetMinMaxValues(0, occP < mx and mx or occP)
 		sb:SetWindowRange(occH)
 		sb:SetValue(occP)
@@ -168,7 +176,11 @@ end
 function int:OnClick()
 	local eb = assert(getWidgetData(self, TextAreaData), 'invalid object type').editBox
 	eb:SetCursorPosition(#eb:GetText())
-	if eb.ClearHighlightText then eb:ClearHighlightText() else eb:HighlightText(0, 0) end
+	if eb.ClearHighlightText then
+		eb:ClearHighlightText()
+	else
+		eb:HighlightText(0, 0)
+	end
 	eb:SetFocus()
 end
 function int:OnScrollValueChanged(nv)
@@ -178,12 +190,14 @@ end
 function int:OnSizeChanged()
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
 	syncExtent(d)
-	if d.holdScroll then return end
+	if d.holdScroll then
+		return
+	end
 	local sb, ch = d.scrollBar, d.clipArea:GetHeight()
 	local th = d.editBox:GetHeight() + (d.editBox:GetText():sub(-1) == "\n" and (d.cachedCursorH or 13) or 0)
-	sb:SetMinMaxValues(0, th > ch and th-ch or 0)
+	sb:SetMinMaxValues(0, th > ch and th - ch or 0)
 	sb:SetWindowRange(ch)
-	sb:SetStepsPerPage(math.min(5,math.ceil(ch/18)))
+	sb:SetStepsPerPage(math.min(5, math.ceil(ch / 18)))
 end
 function int:OnShow()
 	local d = assert(getWidgetData(self, TextAreaData), 'invalid object type')
@@ -211,7 +225,7 @@ local function CreateTextArea(name, parent, outerTemplate, id)
 	input:SetAutoFocus(false)
 	input:SetFontObject(GameFontHighlight)
 	input:SetHyperlinkPropagateToParent(true)
-	input:SetTextInsets(1,1,1,1)
+	input:SetTextInsets(1, 1, 1, 1)
 	input:SetHitRectInsets(-1, -1, -1, 0)
 	input:SetScript("OnCursorChanged", int.OnCursorChanged)
 	input:SetScript("OnSizeChanged", int.OnSizeChanged)

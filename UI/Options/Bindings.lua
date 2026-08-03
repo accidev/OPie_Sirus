@@ -1,15 +1,18 @@
 local _, T = ...
-local L, EV, PC, TS, XU, config, KR = T.L, T.Evie, T.OPieCore, T.TenSettings, T.exUI, T.config, T.ActionBook:compatible("Kindred", 1, 0)
-local frame = TS:CreateOptionsPanel(L"Ring Bindings", "OPie")
-	frame.desc:SetText(L"Customize OPie key bindings below. Hover over a binding button for additional information and options.")
+local L, EV, PC, TS, XU, config, KR = T.L, T.Evie, T.OPieCore, T.TenSettings, T.exUI, T.config,
+	T.ActionBook:compatible("Kindred", 1, 0)
+local frame = TS:CreateOptionsPanel(L "Ring Bindings", "OPie")
+frame.desc:SetText(
+	L "Customize OPie key bindings below. Hover over a binding button for additional information and options.")
 local OBC_Profile = XU:Create("DropDown", nil, frame)
-	OBC_Profile:SetPoint("TOPLEFT", 0, -80)
-	OBC_Profile:SetWidth(250)
-	OBC_Profile.initialize, OBC_Profile.text = T.OPC_Profile.initialize, T.OPC_Profile.text
+OBC_Profile:SetPoint("TOPLEFT", 0, -80)
+OBC_Profile:SetWidth(250)
+OBC_Profile.initialize, OBC_Profile.text = T.OPC_Profile.initialize, T.OPC_Profile.text
 local bindSet = XU:Create("DropDown", nil, frame)
-	bindSet:SetPoint("LEFT", OBC_Profile, "RIGHT", 44, 0)
-	bindSet:SetWidth(300)
-local bindLines, bindLines2, bindClip, bindZone, bindZoneOrigin = {}, {}, CreateFrame("ScrollFrame", nil, frame) do
+bindSet:SetPoint("LEFT", OBC_Profile, "RIGHT", 44, 0)
+bindSet:SetWidth(300)
+local bindLines, bindLines2, bindClip, bindZone, bindZoneOrigin = {}, {}, CreateFrame("ScrollFrame", nil, frame)
+do
 	bindClip:SetHitRectInsets(0, -22, 0, 0)
 	bindZone = CreateFrame("Frame", nil, bindClip)
 	bindClip:SetScrollChild(bindZone)
@@ -19,9 +22,9 @@ local bindLines, bindLines2, bindClip, bindZone, bindZoneOrigin = {}, {}, Create
 	bindZoneOrigin:SetPoint("TOPRIGHT")
 	bindZoneOrigin:Hide()
 	bindZone.clipContainer, bindZone.bindingContainerFrame = bindClip, frame
-	for i=1,19 do
+	for i = 1, 19 do
 		local bind = config.createBindingButton(bindZone, 170)
-		bind:SetPoint("TOPLEFT", bindZoneOrigin, "TOPLEFT", 220, 22-24*i)
+		bind:SetPoint("TOPLEFT", bindZoneOrigin, "TOPLEFT", 220, 22 - 24 * i)
 		local bind2 = config.createBindingButton(bindZone, 170)
 		bind2:SetPoint("LEFT", bind, "RIGHT", 4, 0)
 		local label = bind:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -38,27 +41,30 @@ local bindLines, bindLines2, bindClip, bindZone, bindZoneOrigin = {}, {}, Create
 	bindClip:SetPoint("TOP", OBC_Profile, "BOTTOM", 0, -4)
 	bindClip:SetPoint("LEFT", 15, 0)
 	bindClip:SetPoint("RIGHT", -30, 0)
-	bindClip:SetHeight((#bindLines-1)*24+3)
-	bindZone:SetSize(1, #bindLines*24+3)
+	bindClip:SetHeight((#bindLines - 1) * 24 + 3)
+	bindZone:SetSize(1, #bindLines * 24 + 3)
 	bindClip:SetScript("OnSizeChanged", function(self)
 		bindZone:SetWidth(self:GetWidth() or 1)
 	end)
 end
 local bindZoneBar = XU:Create("ScrollBar", nil, frame)
-	bindZoneBar:SetPoint("TOPLEFT", bindClip, "TOPRIGHT", 1, 14)
-	bindZoneBar:SetPoint("BOTTOMLEFT", bindClip, "BOTTOMRIGHT", 1, -10)
-	bindZoneBar:SetWindowRange(#bindLines-1)
-	bindZoneBar:SetStepsPerPage(#bindLines-5, 6)
-	bindZoneBar:SetCoverTarget(bindClip)
-	bindZoneBar:SetWheelScrollTarget(bindClip)
+bindZoneBar:SetPoint("TOPLEFT", bindClip, "TOPRIGHT", 1, 14)
+bindZoneBar:SetPoint("BOTTOMLEFT", bindClip, "BOTTOMRIGHT", 1, -10)
+bindZoneBar:SetWindowRange(#bindLines - 1)
+bindZoneBar:SetStepsPerPage(#bindLines - 5, 6)
+bindZoneBar:SetCoverTarget(bindClip)
+bindZoneBar:SetWheelScrollTarget(bindClip)
 
-local ringBindings = {map={}, name=L"Ring Bindings"}
+local ringBindings = {
+	map = {},
+	name = L "Ring Bindings"
+}
 function ringBindings:refresh()
 	local pos, map = 1, self.map
 	for key in PC:IterateRings(IsAltKeyDown()) do
 		map[pos], pos = key, pos + 1
 	end
-	for i=#map,pos,-1 do
+	for i = #map, pos, -1 do
 		map[i] = nil
 	end
 	self.count = #map
@@ -70,25 +76,28 @@ local function ringBindings_getInner(key, bidx)
 	local BC_HEADER_PREFIX = "|TInterface/EncounterJournal/UI-EJ-WarningTextIcon:0:0:0:2|t "
 	if not isOverride and not PC:GetOption("UseDefaultBindings", key) then
 		if bind then
-			showWarning, prefix, tipTitle = true, "|cffa0a0a0", BC_HEADER_PREFIX .. L"Default binding disabled"
-			tipText = (L"Choose a binding for this ring, or enable the %s option in OPie options."):format(HIGHLIGHT_FONT_COLOR_CODE .. L"Use default ring bindings" .. "|r")
+			showWarning, prefix, tipTitle = true, "|cffa0a0a0", BC_HEADER_PREFIX .. L "Default binding disabled"
+			tipText = (L "Choose a binding for this ring, or enable the %s option in OPie options."):format(
+				HIGHLIGHT_FONT_COLOR_CODE .. L "Use default ring bindings" .. "|r")
 		end
 	elseif cBind and isActiveExt ~= true then
-		showWarning, tipTitle = true, BC_HEADER_PREFIX .. L"Binding conflict"
+		showWarning, tipTitle = true, BC_HEADER_PREFIX .. L "Binding conflict"
 		if isActiveInt == false then
 			prefix = isOverride and "|cfffa2800" or "|cffa0a0a0"
-			tipText = L"This binding is not currently active because it conflicts with another."
+			tipText = L "This binding is not currently active because it conflicts with another."
 		else
-			prefix, tipText = "|cfffa2800", L"This binding is currently used by another addon."
+			prefix, tipText = "|cfffa2800", L "This binding is currently used by another addon."
 		end
 		if isActiveExt then
 			local lab = _G["BINDING_NAME_" .. isActiveExt]
-			if not (lab and type(lab) == "string" and lab:match("%S")) then lab = tostring(isActiveExt) end
-			tipText = tipText .. "\n\n" .. (L"Conflicts with: %s"):format("|cffe0e0e0" .. lab .. "|r")
+			if not (lab and type(lab) == "string" and lab:match("%S")) then
+				lab = tostring(isActiveExt)
+			end
+			tipText = tipText .. "\n\n" .. (L "Conflicts with: %s"):format("|cffe0e0e0" .. lab .. "|r")
 		end
 	elseif cBind == nil and cebind and not isActiveInt then
-		showWarning, tipTitle = true, BC_HEADER_PREFIX .. L"Binding conflict"
-		prefix, tipText = "|cffa0a0a0", L"This binding is not currently active because it conflicts with another."
+		showWarning, tipTitle = true, BC_HEADER_PREFIX .. L "Binding conflict"
+		prefix, tipText = "|cffa0a0a0", L "This binding is not currently active because it conflicts with another."
 	elseif isOverride and bind ~= nil then
 		prefix = "|cffffffff"
 	end
@@ -116,13 +125,18 @@ function ringBindings:altClick() -- self is the binding button
 end
 function ringBindings:shiftClick()
 	local name, key, macro = PC:GetRingInfo(ringBindings.map[math.abs(self:GetID())])
-	TS:ShowPromptOverlay(frame, name or key, (L"The following macro command opens this ring:"):format("|cffFFD029" .. (name or key) .. "|r"), false, false, nil, 0.90, nil, macro)
+	TS:ShowPromptOverlay(frame, name or key, (L "The following macro command opens this ring:"):format(
+		"|cffFFD029" .. (name or key) .. "|r"), false, false, nil, 0.90, nil, macro)
 end
 
-local subBindings = { name=L"In-Ring Bindings",
-	options={"ScrollNestedRingUpButton", "ScrollNestedRingDownButton", "OpenNestedRingButton", "SelectedSliceBind", "SelectedCloseBind", "CloseRingBind"},
-	optionNames={L"Scroll nested ring (up)", L"Scroll nested ring (down)", L"Open nested ring", L"Selected slice (keep ring open)", L"Selected slice (close ring)", L"Close ring"},
-	count=0, t={}
+local subBindings = {
+	name = L "In-Ring Bindings",
+	options = {"ScrollNestedRingUpButton", "ScrollNestedRingDownButton", "OpenNestedRingButton", "SelectedSliceBind",
+			   "SelectedCloseBind", "CloseRingBind"},
+	optionNames = {L "Scroll nested ring (up)", L "Scroll nested ring (down)", L "Open nested ring",
+				   L "Selected slice (keep ring open)", L "Selected slice (close ring)", L "Close ring"},
+	count = 0,
+	t = {}
 }
 local function adjustBindingID(scope, id)
 	local prefixLength = scope and 3 or 6
@@ -137,24 +151,26 @@ end
 function subBindings:refresh(scope)
 	local ringName = scope and PC:GetRingInfo(scope)
 	scope = ringName and scope or nil
-	self.scope, self.nameSuffix = scope, scope and (" (|cffacd7e6" ..  ringName .. "|r)") or (" (" .. L"Defaults" .. ")")
+	self.scope, self.nameSuffix = scope,
+		scope and (" (|cffacd7e6" .. ringName .. "|r)") or (" (" .. L "Defaults" .. ")")
 	local t, ni = {}, 1
 	for s, s2 in PC:GetOption("SliceBindingString", scope):gmatch("([^%s\31]+)\31?(%S*)") do
-		t[ni], t[ni+0.5], ni = s, s2, ni + 1
+		t[ni], t[ni + 0.5], ni = s, s2, ni + 1
 	end
 	local _, _, prefixLength = adjustBindingID(scope, 1)
-	subBindings.t, subBindings.count = t, ni+prefixLength
+	subBindings.t, subBindings.count = t, ni + prefixLength
 end
 function subBindings:get(id)
 	local inPrefix, id = adjustBindingID(self.scope, id)
 	if inPrefix then
 		local value, setting = PC:GetOption(self.options[id], self.scope)
 		local value2, setting2 = PC:GetOption(self.options[id] .. "2", self.scope)
-		return value, self.optionNames[id], setting and "|cffffffff" or nil, nil, nil, nil, nil, value2, setting2 and "|cffffffff" or nil
+		return value, self.optionNames[id], setting and "|cffffffff" or nil, nil, nil, nil, nil, value2,
+			setting2 and "|cffffffff" or nil
 	end
-	local b, b2 = self.t[id], self.t[id+0.5]
+	local b, b2 = self.t[id], self.t[id + 0.5]
 	b, b2 = b ~= "false" and b or "", b2 ~= "false" and b2 or ""
-	return b, (L"Slice #%d"):format(id), nil, nil, nil, nil, nil, b2
+	return b, (L "Slice #%d"):format(id), nil, nil, nil, nil, nil, b2
 end
 function subBindings:set(id, bind, bidx)
 	local inPrefix, id, prefixLength = adjustBindingID(self.scope, id)
@@ -174,8 +190,8 @@ end
 function subBindings:clearBinding(bind, exceptOpt)
 	local scope, opts = self.scope, subBindings.options
 	local _, startID, prefixLength = adjustBindingID(scope, 1)
-	for i=startID, startID+prefixLength-1 do
-		for j=1, 2 do
+	for i = startID, startID + prefixLength - 1 do
+		for j = 1, 2 do
 			local opt = j == 2 and opts[i] .. "2" or opts[i]
 			if opt ~= exceptOpt and bind == PC:GetOption(opt, scope) then
 				PC:SetOption(opt, nil, scope)
@@ -202,23 +218,23 @@ function subBindings:setSliceBinding(sliceIdx, bind, bidx, prefixLength)
 	local t, setIdx, setIdx2 = self.t, sliceIdx + (bidx == 2 and 0.5 or 0)
 	t[setIdx], setIdx2 = bind or "false", setIdx - 0.5
 	local o, nt, finalIndex = {}, {}
-	for j=math.max(sliceIdx, #t), 1, -1 do
-		local b1, b2 = t[j], t[j+0.5]
-		local h1, h2 = b1 and b1 ~= "false" and b1 ~= "" and (b1 ~= bind or j == setIdx), b2 and b2 ~= "false" and b2 ~= "" and (b2 ~= bind or j == setIdx2)
+	for j = math.max(sliceIdx, #t), 1, -1 do
+		local b1, b2 = t[j], t[j + 0.5]
+		local h1, h2 = b1 and b1 ~= "false" and b1 ~= "" and (b1 ~= bind or j == setIdx),
+			b2 and b2 ~= "false" and b2 ~= "" and (b2 ~= bind or j == setIdx2)
 		if (h1 and h2) then
 			o[j], finalIndex = b1 .. "\31" .. b2, finalIndex or j
-			nt[j], nt[j+0.5] = b1, b2
+			nt[j], nt[j + 0.5] = b1, b2
 		elseif h1 or h2 or finalIndex then
 			o[j], finalIndex = (h1 and b1 or h2 and b2 or "false"), finalIndex or j
-			nt[j], nt[j+0.5] = o[j], ""
+			nt[j], nt[j + 0.5] = o[j], ""
 		end
 	end
-	
+
 	self.t, self.count = nt, (finalIndex or 0) + prefixLength + 1
 	local _, _, _, global, default = PC:GetOption("SliceBindingString", self.scope)
 	local v = table.concat(o, " ")
-	if self.scope == nil and v == default or
-	   self.scope ~= nil and v == (global or default) then
+	if self.scope == nil and v == default or self.scope ~= nil and v == (global or default) then
 		v = nil
 	end
 	config.undo:saveActiveProfile()
@@ -237,16 +253,16 @@ end
 function subBindings:scopes(level, checked)
 	local list = subBindings_List
 	wipe(list) -- Reusing the table to maintain the scroll position key
-	list[0], list[1], list[false] = checked, false, L"Defaults for all rings"
+	list[0], list[1], list[false] = checked, false, L "Defaults for all rings"
 	local ct = T.OPC_RingScopePrefixes
 	for key, name, scope in PC:IterateRings(true) do
 		local color = ct and ct[scope] or "|cffacd7e6"
-		list[#list+1], list[key] = key, (L"Ring: %s"):format(color .. (name or key) .. "|r")
+		list[#list + 1], list[key] = key, (L "Ring: %s"):format(color .. (name or key) .. "|r")
 	end
 	XU:Create("ScrollableDropDownList", level, list, subBindings_ScopeFormat, subBindings_ScopeClick)
 end
 function subBindings:default()
-	for i=0,#self.options do
+	for i = 0, #self.options do
 		local on = i == 0 and "SliceBindingString" or self.options[i]
 		PC:SetOption(on, nil)
 		if self.scope then
@@ -263,22 +279,27 @@ local function updatePanelContent()
 	local csv = bindZoneBar:GetValue()
 	local csPartial = csv % 1
 	local csBase = csv - csPartial
-	bindClip:SetVerticalScroll(csPartial*24)
-	for i=1,#bindLines do
-		local j, e, e2 = csBase+i, bindLines[i], bindLines2[i]
+	bindClip:SetVerticalScroll(csPartial * 24)
+	for i = 1, #bindLines do
+		local j, e, e2 = csBase + i, bindLines[i], bindLines2[i]
 		if j > m then
 			e:Hide()
 			e2:Hide()
 		else
-			local binding, text, prefix, _, title, tip, showWarningIcon, binding2, prefix2, title2, tip2, warning2 = currentOwner:get(j)
+			local binding, text, prefix, _, title, tip, showWarningIcon, binding2, prefix2, title2, tip2, warning2 =
+				currentOwner:get(j)
 			e.bindingName, e.tooltipTitle, e.tooltipText = text, title, tip
 			e.label:SetText(text)
 			e.warn:SetShown(showWarningIcon or warning2)
 			e:SetBindingText(binding, prefix)
-			e:SetID(j) e:Hide() e:Show()
+			e:SetID(j)
+			e:Hide()
+			e:Show()
 			e2.bindingName, e2.tooltipTitle, e2.tooltipText = text, title2, tip2
 			e2:SetBindingText(binding2, prefix2)
-			e2:SetID(-j) e2:Hide() e2:Show()
+			e2:SetID(-j)
+			e2:Hide()
+			e2:Show()
 		end
 	end
 	bindZone.OnBindingAltClick = currentOwner.altClick
@@ -298,8 +319,11 @@ bindZoneBar:SetScript("OnValueChanged", function(_, _, userEvent)
 end)
 
 function bindSet:initialize(level)
-	local info = {func=bindSet.set, minWidth=bindSet:GetWidth()-40}
-	for i=1,#bindingTypes do
+	local info = {
+		func = bindSet.set,
+		minWidth = bindSet:GetWidth() - 40
+	}
+	for i = 1, #bindingTypes do
 		local v = bindingTypes[i]
 		if v.scopes then
 			UIDropDownMenu_AddSeparator(level)
@@ -316,7 +340,9 @@ end
 function bindSet:set(owner, scope)
 	currentOwner, bindZone.AllowWheelBinding = owner, owner and owner.allowWheel
 	bindZoneBar:SetValue(0)
-	if owner.refresh then owner:refresh(scope) end
+	if owner.refresh then
+		owner:refresh(scope)
+	end
 	updatePanelContent()
 	CloseDropDownMenus()
 	frame.resetOnHide = nil
@@ -324,7 +350,9 @@ end
 
 function frame.refresh()
 	for _, v in pairs(bindingTypes) do
-		if v.refresh then v:refresh(v.scope) end
+		if v.refresh then
+			v:refresh(v.scope)
+		end
 	end
 	OBC_Profile:text()
 	updatePanelContent()
@@ -333,7 +361,9 @@ end
 function frame.default()
 	config.undo:saveActiveProfile()
 	for _, v in pairs(bindingTypes) do
-		if v.default then v:default() end
+		if v.default then
+			v:default()
+		end
 	end
 	frame.refresh()
 end
@@ -364,7 +394,9 @@ function T.ShowSliceBindingPanel(ringKey)
 end
 
 T.AddSlashSuffix(T.ShowRingBindingPanel, "b", "bind", "binding", "bindings")
-T.AddSlashSuffix(function() T.ShowSliceBindingPanel(nil) end, "irbind")
+T.AddSlashSuffix(function()
+	T.ShowSliceBindingPanel(nil)
+end, "irbind")
 
 function EV:OPIE_PROFILE_SWITCHED()
 	if frame:IsVisible() then

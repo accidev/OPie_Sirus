@@ -35,16 +35,16 @@ do -- /opie
 	OPie_OpenSettings = showConfigHome
 end
 
-local KR = T.ActionBook:compatible("Kindred",1,0)
+local KR = T.ActionBook:compatible("Kindred", 1, 0)
 
 if TS and TS.Localize then
 	TS:Localize({
-		REVERT=L"Revert...",
-		REVERT_OPTION_LABEL=L"%d |4minute:minutes; ago (%s)",
-		RESET_QUESTION=L"Do you want to reset all %s settings to their defaults, or only the settings in the %s category?",
-		REVERT_CANCEL_HINT=L"You can cancel or revert to previous settings later.",
-		DEFAULTS_ALL=L("All Settings", ALL_SETTINGS),
-		DEFAULTS_VISIBLE=L("These Settings", CURRENT_SETTINGS),
+		REVERT = L "Revert...",
+		REVERT_OPTION_LABEL = L "%d |4minute:minutes; ago (%s)",
+		RESET_QUESTION = L "Do you want to reset all %s settings to their defaults, or only the settings in the %s category?",
+		REVERT_CANCEL_HINT = L "You can cancel or revert to previous settings later.",
+		DEFAULTS_ALL = L("All Settings", ALL_SETTINGS),
+		DEFAULTS_VISIBLE = L("These Settings", CURRENT_SETTINGS)
 	})
 end
 
@@ -65,7 +65,9 @@ do -- config.ui
 			end
 		end
 		thumb:SetScript("OnMouseDown", function(self, btn)
-			if btn ~= "LeftButton" then return end
+			if btn ~= "LeftButton" then
+				return
+			end
 			dragY0 = select(2, GetCursorPosition()) / self:GetEffectiveScale()
 			dragS0 = getValue()
 			self:SetScript("OnUpdate", onUpdate)
@@ -76,7 +78,9 @@ do -- config.ui
 	end
 	function config.ui.ShowControlTooltip(self)
 		local title, text = self.tooltipTitle, self.tooltipText
-		if not (title or text) then return end
+		if not (title or text) then
+			return
+		end
 		GameTooltip:SetOwner(self, self.tooltipOwnerPoint or "ANCHOR_BOTTOMRIGHT")
 		GameTooltip:AddLine(title or "", nil, nil, nil)
 		GameTooltip:AddLine(text or "", nil, nil, nil, true)
@@ -85,7 +89,8 @@ do -- config.ui
 end
 do -- config.bind
 	local activeCaptureButton
-	local alternateFrame = CreateFrame("Frame", nil, UIParent) do
+	local alternateFrame = CreateFrame("Frame", nil, UIParent)
+	do
 		alternateFrame:Hide()
 		TS.Box(alternateFrame, "BACKGROUND", -7, TS.SKIN.bg)
 		TS.Outline(alternateFrame, "BACKGROUND", -6, TS.SKIN.edge)
@@ -93,22 +98,34 @@ do -- config.bind
 		alternateFrame:EnableMouse(1)
 		alternateFrame:SetScript("OnHide", alternateFrame.Hide)
 		local extReminder = CreateFrame("Button", nil, alternateFrame)
-		extReminder:SetHeight(16) extReminder:SetPoint("TOPLEFT", 12, -10) extReminder:SetPoint("TOPRIGHT", -12, -10)
+		extReminder:SetHeight(16)
+		extReminder:SetPoint("TOPLEFT", 12, -10)
+		extReminder:SetPoint("TOPRIGHT", -12, -10)
 		extReminder:SetNormalTexture("Interface/Buttons/UI-OptionsButton")
-		extReminder:SetPushedTextOffset(0,0)
-		extReminder:SetText(" ") extReminder:SetNormalFontObject(GameFontHighlightSmall) do
+		extReminder:SetPushedTextOffset(0, 0)
+		extReminder:SetText(" ")
+		extReminder:SetNormalFontObject(GameFontHighlightSmall)
+		do
 			local fs, tex = extReminder:GetFontString(), extReminder:GetNormalTexture()
-			fs:ClearAllPoints() tex:ClearAllPoints()
-			fs:SetPoint("LEFT", 18, -1) tex:SetSize(14,14) tex:SetPoint("LEFT")
+			fs:ClearAllPoints()
+			tex:ClearAllPoints()
+			fs:SetPoint("LEFT", 18, -1)
+			tex:SetSize(14, 14)
+			tex:SetPoint("LEFT")
 		end
 		alternateFrame.caption = extReminder
 		extReminder:SetScript("OnEnter", function(self)
 			GameTooltip:SetOwner(self, "ANCHOR_NONE")
 			GameTooltip:SetPoint("TOP", self, "BOTTOM")
-			GameTooltip:AddLine(L"Conditional Bindings", NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-			GameTooltip:AddLine(L"The binding will update to reflect the value of this macro options expression.", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
-			GameTooltip:AddLine("Готовые условия с описанием — в настройках фрагмента, под списком параметров.", HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
-			GameTooltip:AddLine((L"Example: %s."):format(GREEN_FONT_COLOR_CODE .. "[combat] ALT-C; [nomounted] CTRL-F|r"), NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+			GameTooltip:AddLine(L "Conditional Bindings", NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+			GameTooltip:AddLine(L "The binding will update to reflect the value of this macro options expression.",
+				HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
+			GameTooltip:AddLine(
+				"Готовые условия с описанием — в настройках фрагмента, под списком параметров.",
+				HIGHLIGHT_FONT_COLOR.r, HIGHLIGHT_FONT_COLOR.g, HIGHLIGHT_FONT_COLOR.b, 1)
+			GameTooltip:AddLine((L "Example: %s."):format(GREEN_FONT_COLOR_CODE ..
+															  "[combat] ALT-C; [nomounted] CTRL-F|r"),
+				NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
 			GameTooltip:Show()
 		end)
 		extReminder:SetScript("OnLeave", config.ui.HideTooltip)
@@ -119,7 +136,9 @@ do -- config.bind
 		textarea:SetPoint("BOTTOMRIGHT", -10, 10)
 		alternateFrame.input = textarea
 		textarea:SetMaxBytes(1023)
-		textarea:SetScript("OnEscapePressed", function() alternateFrame:Hide() end)
+		textarea:SetScript("OnEscapePressed", function()
+			alternateFrame:Hide()
+		end)
 		textarea:SetScript("OnChar", function(self, c)
 			if c == "\n" then
 				local bind = strtrim((self:GetText():gsub("[\r\n]", "")))
@@ -130,7 +149,8 @@ do -- config.bind
 			end
 		end)
 	end
-	local captureFrame = CreateFrame("Button") do
+	local captureFrame = CreateFrame("Button")
+	do
 		captureFrame:Hide()
 		captureFrame:RegisterForClicks("AnyUp")
 		captureFrame:SetScript("OnClick", function(_, ...)
@@ -157,26 +177,43 @@ do -- config.bind
 		return self
 	end
 	local unbindableKeys = {
-		UNKNOWN=1, ESCAPE=1, ALT=1, SHIFT=1, META=1,
-		LALT=1, LCTRL=1, LSHIFT=1, LMETA=1,
-		RALT=1, RCTRL=1, RSHIFT=1, RMETA=1,
-		PADRSTICKUP=1, PADRSTICKDOWN=1, PADRSTICKLEFT=1, PADRSTICKRIGHT=1,
-		PADLSTICKUP=1, PADLSTICKDOWN=1, PADLSTICKLEFT=1, PADLSTICKRIGHT=1,
+		UNKNOWN = 1,
+		ESCAPE = 1,
+		ALT = 1,
+		SHIFT = 1,
+		META = 1,
+		LALT = 1,
+		LCTRL = 1,
+		LSHIFT = 1,
+		LMETA = 1,
+		RALT = 1,
+		RCTRL = 1,
+		RSHIFT = 1,
+		RMETA = 1,
+		PADRSTICKUP = 1,
+		PADRSTICKDOWN = 1,
+		PADRSTICKLEFT = 1,
+		PADRSTICKRIGHT = 1,
+		PADLSTICKUP = 1,
+		PADLSTICKDOWN = 1,
+		PADLSTICKLEFT = 1,
+		PADLSTICKRIGHT = 1
 	}
 	local function SetBind(self, bind)
 		if bind == "ESCAPE" then
 			return Deactivate(self)
 		elseif unbindableKeys[bind] then
 			return
-		elseif bind and bind:match("PAD") and (
-		         bind == GetCVar("GamePadEmulateAlt") or
-		         bind == GetCVar("GamePadEmulateCtrl") or
-		         bind == GetCVar("GamePadEmulateShift")
-		       ) then
+		elseif bind and bind:match("PAD") and
+			(bind == GetCVar("GamePadEmulateAlt") or bind == GetCVar("GamePadEmulateCtrl") or bind ==
+				GetCVar("GamePadEmulateShift")) then
 			return
 		end
 		Deactivate(self)
-		local bind, p = bind and ((IsAltKeyDown() and "ALT-" or "") ..  (IsControlKeyDown() and "CTRL-" or "") .. (IsShiftKeyDown() and "SHIFT-" or "") .. (IsMetaKeyDown() and "META-" or "") .. bind), self:GetParent()
+		local bind, p = bind and
+							((IsAltKeyDown() and "ALT-" or "") .. (IsControlKeyDown() and "CTRL-" or "") ..
+								(IsShiftKeyDown() and "SHIFT-" or "") .. (IsMetaKeyDown() and "META-" or "") .. bind),
+			self:GetParent()
 		if p and type(p.SetBinding) == "function" then
 			p.SetBinding(self, bind)
 		end
@@ -189,7 +226,9 @@ do -- config.bind
 			if deactivated == self and (mappedButton or button == "RightButton") then
 				SetBind(self, mappedButton)
 			end
-			if deactivated == self then return end
+			if deactivated == self then
+				return
+			end
 		elseif parent and parent.OnBindingAltClick and IsAltKeyDown() then
 			config.ui.HideTooltip(self)
 			return parent.OnBindingAltClick(self, button)
@@ -214,7 +253,7 @@ do -- config.bind
 			captureFrame:SetParent(parent.bindingContainerFrame or parent)
 			captureFrame:SetAllPoints()
 			captureFrame:Show()
-			captureFrame:SetFrameLevel(self:GetFrameLevel()-1)
+			captureFrame:SetFrameLevel(self:GetFrameLevel() - 1)
 		end
 	end
 	local function OnWheel(self, delta)
@@ -234,15 +273,15 @@ do -- config.bind
 		local parent = self:GetParent()
 		GameTooltip:SetOwner(self, self.tooltipOwnerPoint or "ANCHOR_BOTTOMRIGHT")
 		GameTooltip:AddLine(header, nil, nil, nil, 1)
-		GameTooltip:AddLine(L"Left click to assign binding", hc.r, hc.g, hc.b)
+		GameTooltip:AddLine(L "Left click to assign binding", hc.r, hc.g, hc.b)
 		if parent.OnBindingAltClick then
-			GameTooltip:AddLine(L"Alt click to set conditional binding", hc.r, hc.g, hc.b)
+			GameTooltip:AddLine(L "Alt click to set conditional binding", hc.r, hc.g, hc.b)
 		end
 		if parent.OnBindingShiftClick then
-			GameTooltip:AddLine(L"Shift click to view ring macro command", hc.r, hc.g, hc.b)
+			GameTooltip:AddLine(L "Shift click to view ring macro command", hc.r, hc.g, hc.b)
 		end
 		if self.hasSetBinding then
-			GameTooltip:AddLine(L"Right click to unbind", hc.r, hc.g, hc.b)
+			GameTooltip:AddLine(L "Right click to unbind", hc.r, hc.g, hc.b)
 		end
 		local title, text = self.tooltipTitle, self.tooltipText
 		if title and text then
@@ -252,7 +291,11 @@ do -- config.bind
 		end
 		GameTooltip:Show()
 	end
-	local specialSymbolMap = {OPEN="[", CLOSE="]", SEMICOLON=";"}
+	local specialSymbolMap = {
+		OPEN = "[",
+		CLOSE = "]",
+		SEMICOLON = ";"
+	}
 	local function SetBindingText(self, bind, pre, post, hasBinding)
 		local pre2, pre3
 		if type(bind) == "string" and bind:match("%[.*%]") then
@@ -262,17 +305,18 @@ do -- config.bind
 		bind = bind and KR:UnescapeCmdOptionsValue(bind):gsub("[^%-]+$", specialSymbolMap)
 		local bindText = bind and bind ~= "" and GetBindingText(bind, "KEY_")
 		self.hasSetBinding = not not (hasBinding or bindText)
-		return self:SetText((pre or "") .. (pre2 or "") .. (pre3 or "") .. (bindText or L"Not bound") .. (post or ""))
+		return self:SetText((pre or "") .. (pre2 or "") .. (pre3 or "") .. (bindText or L "Not bound") .. (post or ""))
 	end
 	local function ToggleAlternateEditor(self, bind)
 		if alternateFrame:IsShown() and alternateFrame.owner == self then
 			alternateFrame:Hide()
 		else
 			alternateFrame.apiFrame, alternateFrame.owner = self:GetParent(), self
-			alternateFrame.caption:SetFormattedText(L"Press %s to save.", NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER", "KEY_") .. "|r")
+			alternateFrame.caption:SetFormattedText(L "Press %s to save.",
+				NORMAL_FONT_COLOR_CODE .. GetBindingText("ENTER", "KEY_") .. "|r")
 			alternateFrame.input:SetText(bind or "")
 			alternateFrame:SetParent(self)
-			alternateFrame:SetFrameLevel(self:GetFrameLevel()+10)
+			alternateFrame:SetFrameLevel(self:GetFrameLevel() + 10)
 			alternateFrame:ClearAllPoints()
 			local yOfs, clipParent = 4, self:GetParent()
 			clipParent = clipParent.clipContainer or clipParent.bindingContainerFrame or clipParent
@@ -317,12 +361,13 @@ do -- config.bind
 		fs:SetPoint("LEFT", 6, -0.5)
 		fs:SetPoint("RIGHT", 6, -0.5)
 		fs:SetJustifyH("CENTER")
-		btn.IsCapturingBinding, btn.SetBindingText, btn.ToggleAlternateEditor =
-			IsCapturingBinding, SetBindingText, ToggleAlternateEditor
+		btn.IsCapturingBinding, btn.SetBindingText, btn.ToggleAlternateEditor = IsCapturingBinding, SetBindingText,
+			ToggleAlternateEditor
 		return btn
 	end
 end
-config.undo = TS:CreateUndoHandle() do
+config.undo = TS:CreateUndoHandle()
+do
 	local function CallSwitchProfile(msg, ...)
 		if msg == "archive-unwind" then
 			config.undo:saveActiveProfile()
@@ -360,11 +405,13 @@ function config.checkSVState(frame, forceAlert)
 	end
 	local msg
 	if not state then
-		msg = L"World of Warcraft could not load OPie's saved variables due to a lack of memory. Try disabling other addons."
+		msg =
+			L "World of Warcraft could not load OPie's saved variables due to a lack of memory. Try disabling other addons."
 	else
-		msg = L"An error occurred while loading OPie." .. " (Code " .. tostring(state) .. ")"
+		msg = L "An error occurred while loading OPie." .. " (Code " .. tostring(state) .. ")"
 	end
-	TS:ShowAlertOverlay(frame, L"Changes will not be saved", msg .. "\n\n" .. L"Any changes you make now will not be saved.", L"Understood; edit anyway", ackSVWarning)
+	TS:ShowAlertOverlay(frame, L "Changes will not be saved",
+		msg .. "\n\n" .. L "Any changes you make now will not be saved.", L "Understood; edit anyway", ackSVWarning)
 end
 
 do -- minimap button
@@ -388,8 +435,7 @@ do -- minimap button
 	border:SetSize(53, 53)
 	border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
 	border:SetPoint("TOPLEFT")
-	btn:SetPoint("CENTER", Minimap, "CENTER",
-		79 * math.cos(math.rad(220)), 79 * math.sin(math.rad(220)))
+	btn:SetPoint("CENTER", Minimap, "CENTER", 79 * math.cos(math.rad(220)), 79 * math.sin(math.rad(220)))
 	local dragging = false
 	btn:RegisterForDrag("LeftButton")
 	btn:RegisterForClicks("LeftButtonUp", "RightButtonUp")
@@ -409,8 +455,7 @@ do -- minimap button
 			local s = Minimap:GetEffectiveScale()
 			local a = math.deg(math.atan2(cy / s - my, cx / s - mx))
 			self:ClearAllPoints()
-			self:SetPoint("CENTER", Minimap, "CENTER",
-				79 * math.cos(math.rad(a)), 79 * math.sin(math.rad(a)))
+			self:SetPoint("CENTER", Minimap, "CENTER", 79 * math.cos(math.rad(a)), 79 * math.sin(math.rad(a)))
 		end)
 	end)
 	btn:SetScript("OnDragStop", function(self)
@@ -427,7 +472,7 @@ do -- minimap button
 	btn:SetScript("OnEnter", function(self)
 		GT:SetOwner(self, "ANCHOR_LEFT")
 		GT:AddLine("OPie")
-		GT:AddLine(L"Left click: Open settings", 1, 1, 1)
+		GT:AddLine(L "Left click: Open settings", 1, 1, 1)
 		GT:Show()
 	end)
 	btn:SetScript("OnLeave", function()

@@ -1,8 +1,10 @@
 local MAJ, REV, _, T = 1, 16, ...
-if T.SkipLocalActionBook then return end
+if T.SkipLocalActionBook then
+	return
+end
 local _GG = _G
 
-local EV, AB, RW = T.Evie, T.ActionBook:compatible(2,34), T.ActionBook:compatible("Rewire", 1,27)
+local EV, AB, RW = T.Evie, T.ActionBook:compatible(2, 34), T.ActionBook:compatible("Rewire", 1, 27)
 assert(EV and AB and RW and 1, "Incompatible library bundle")
 local IM, L, XU = {}, T.ActionBook.L, T.exUI
 
@@ -10,32 +12,48 @@ local function assert(condition, text, level, ...)
 	return condition or error(tostring(text):format(...), 1 + (level or 1))((0)[0])
 end
 
-local commandType, addCommandType = {["#show"]=0, ["#showtooltip"]=0, ["#imp"]=-1} do
+local commandType, addCommandType = {
+	["#show"] = 0,
+	["#showtooltip"] = 0,
+	["#imp"] = -1
+}
+do
 	function addCommandType(slashToken, ct)
 		local idx, s = 1
 		while 1 do
 			s = _G["SLASH_" .. slashToken .. idx]
-			if not s then break end
+			if not s then
+				break
+			end
 			commandType[s], idx = commandType[s] or ct, idx + 1
 		end
 	end
 	for n, ct in ("CAST:1 USE:1 CASTSEQUENCE:2 CASTRANDOM:3 USERANDOM:3"):gmatch("(%a+):(%d+)") do
-		addCommandType(n, ct+0)
+		addCommandType(n, ct + 0)
 	end
 end
 
 local extTokenText, extAbilityToken = {}, {}
 
-local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference do
-	local COMMA_LIST_COMMAND_TYPES, CAST_ESCAPE_COMMAND_TYPES = {[2]=1, [3]=1}, {[0]=1, [1]=1, [3]=1}
+local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference
+do
+	local COMMA_LIST_COMMAND_TYPES, CAST_ESCAPE_COMMAND_TYPES = {
+		[2] = 1,
+		[3] = 1
+	}, {
+		[0] = 1,
+		[1] = 1,
+		[3] = 1
+	}
 	local function parseListEntryPrefix(s, p)
 		local sp, spc = p, p
 		while spc do
 			sp, spc = spc, s:match("^%s*<[^<]->()", sp)
 		end
-		return sp > p and s:sub(p, sp-1), sp
+		return sp > p and s:sub(p, sp - 1), sp
 	end
-	local genParser do
+	local genParser
+	do
 		local doRewrite, replaceFunc, critFail, critLine
 		local function replaceAlternatives(ctype, args)
 			local sp, ret, alt, alt2, altPrefix, rfCtx = 1
@@ -69,14 +87,16 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			return ""
 		end
 		local function procLine(commandPrefix, nlc, command, args)
-			if critFail or (nlc ~= "" and nlc ~= "\n") then return end
+			if critFail or (nlc ~= "" and nlc ~= "\n") then
+				return
+			end
 			local ctype = commandType[command:lower()] or command:match("^/!%S") and commandType["/cast"]
 			if ctype == -1 then
 				return procImpOptions(args)
 			elseif not ctype then
 				return
 			end
-			local isCritical, pos, len1, ret = critLine and ctype > 0, 1, #args+1
+			local isCritical, pos, len1, ret = critLine and ctype > 0, 1, #args + 1
 			critLine = critLine and not isCritical
 			repeat
 				local cstart, cend, vend = pos
@@ -86,10 +106,12 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 						pos = args:match("%]()", ce)
 					else
 						ce = ce or len1
-						cend, vend, pos = pos, ce-1, ce + 1
+						cend, vend, pos = pos, ce - 1, ce + 1
 					end
 				until cend or not pos
-				if not pos then return end
+				if not pos then
+					return
+				end
 				local cval = args:sub(cend, vend)
 				if ctype < 2 then
 					cval = replaceFunc(ctype, args:sub(cend, vend))
@@ -103,7 +125,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 					cval = val and ((reset or "") .. val) or nil
 				end
 				if cval or ctype == 0 then
-					local cond = cstart < cend and args:sub(cstart, cend-1)
+					local cond = cstart < cend and args:sub(cstart, cend - 1)
 					if doRewrite then
 						cond = cond and cond:match("^%s*(.-)%s*$")
 						cval = cval and cval:match("^%s*(.-)%s*$")
@@ -137,7 +159,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 				varPrefixEnd = ep
 			end
 		until ep > #value
-		return varPrefixEnd == 1 and "" or value:sub(1, varPrefixEnd-1)
+		return varPrefixEnd == 1 and "" or value:sub(1, varPrefixEnd - 1)
 	end
 	local function restoreVarPrefix(varPrefix, emitText)
 		if varPrefix == "" then
@@ -168,12 +190,29 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			end
 		end
 	end
-	local replaceMountTag do -- +setMountPreference
-		local skip, gmSid, gmPref, fmSid, fmPref, drSid, drPref = {[44153]=1, [44151]=1, [61451]=1, [75596]=1, [61309]=1, [169952]=1, [171844]=1, [213339]=1,}
+	local replaceMountTag
+	do -- +setMountPreference
+		local skip, gmSid, gmPref, fmSid, fmPref, drSid, drPref = {
+			[44153] = 1,
+			[44151] = 1,
+			[61451] = 1,
+			[75596] = 1,
+			[61309] = 1,
+			[169952] = 1,
+			[171844] = 1,
+			[213339] = 1
+		}
 		local avoid = {
-			[446052]=1, [446133]=1, [1224048]=1,
-			[448689]=1, [327407]=1, [448680]=1, [448685]=1, [359401]=1,
-			[1217235]=1, [1221694]=1,
+			[446052] = 1,
+			[446133] = 1,
+			[1224048] = 1,
+			[448689] = 1,
+			[327407] = 1,
+			[448680] = 1,
+			[448685] = 1,
+			[359401] = 1,
+			[1217235] = 1,
+			[1221694] = 1
 		}
 		local function IsKnownSpell(sid)
 			local sn, sr = GetSpellInfo(sid or 0), select(2, GetSpellInfo(sid or 0))
@@ -187,20 +226,19 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			local idm, myFactionId = C_MountJournal.GetMountIDs(), UnitFactionGroup("player") == "Horde" and 0 or 1
 			local csAvoid, nc, cs = 1, 0
 			local gmi, gmiex = C_MountJournal.GetMountInfoByID, C_MountJournal.GetMountInfoExtraByID
-			for i=1, #idm do
+			for i = 1, #idm do
 				i = idm[i]
-				local _1, sid, _3, active, _5, _6, _7, factionLocked, factionId, hide, have, _12, _isSteadyFlight = gmi(i)
-				if have and not hide
-				   and (not factionLocked or factionId == myFactionId)
-				   and RW:IsSpellCastable(sid, escapeContext)
-				   then
+				local _1, sid, _3, active, _5, _6, _7, factionLocked, factionId, hide, have, _12, _isSteadyFlight = gmi(
+					i)
+				if have and not hide and (not factionLocked or factionId == myFactionId) and
+					RW:IsSpellCastable(sid, escapeContext) then
 					local _, _, _, _, t = gmiex(i)
 					local isTypeMatch = t == mtype or (wantDragonriding and t == 424)
 					if sid == prefSID or (active and isTypeMatch and prefSID == nil) then
 						return sid
 					elseif isTypeMatch and not skip[sid] and (csAvoid or not avoid[sid]) then
 						nc = nc + 1
-						if math.random(1,nc) == 1 then
+						if math.random(1, nc) == 1 then
 							cs, csAvoid = sid, avoid[sid]
 						end
 					end
@@ -236,7 +274,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 	-- PING_TYPE_* отсутствуют в WotLK (DF+), таблицы остаются пустыми
 	toMacroText = genParser(function(ctype, value)
 		local varPrefix = parseVarPrefix(value, ctype)
-		local prefix, tw, tkey, tval = value:match("^%s*(!?){{((%a+):([%a%d/]+))}}%s*$", #varPrefix+1)
+		local prefix, tw, tkey, tval = value:match("^%s*(!?){{((%a+):([%a%d/]+))}}%s*$", #varPrefix + 1)
 		if tkey == "spell" or tkey == "spellr" then
 			return restoreVarPrefix(varPrefix, replaceSpellID(ctype, tval, prefix, tkey))
 		elseif tkey == "mount" then
@@ -250,25 +288,29 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		end
 		return value
 	end)
-	local toImpText, prepareQuantizer do
+	local toImpText, prepareQuantizer
+	do
 		local spells, specialTokens, OTHER_SPELL_IDS = {}, {}, {150544, 243819, 460013}
-		local abMountTokens = {["Ground Mount"]="{{mount:ground}}", ["Flying Mount"]="{{mount:air}}"}
+		local abMountTokens = {
+			["Ground Mount"] = "{{mount:ground}}",
+			["Flying Mount"] = "{{mount:air}}"
+		}
 		toImpText = genParser(function(ctype, value, skipCount, args, cpos)
 			if type(skipCount) == "number" and skipCount > 0 then
 				-- This replaceAlternatives interaction would get bamboozled by
 				-- a castable token matching ",%s*<[^<]-,[^<]*>".
-				return nil, skipCount-1
+				return nil, skipCount - 1
 			end
 			local commaList, noEscapes = COMMA_LIST_COMMAND_TYPES[ctype], not CAST_ESCAPE_COMMAND_TYPES[ctype]
 			local varPrefix = parseVarPrefix(value, ctype)
-			local cc, pre, name, tws = 0, value:match("^(%s*!?)(.-)(%s*)$", #varPrefix+1)
+			local cc, pre, name, tws = 0, value:match("^(%s*!?)(.-)(%s*)$", #varPrefix + 1)
 			repeat
 				local lowname = name:lower()
 				local sid, stok, peek, cnpos = spells[lowname], specialTokens[lowname] or extAbilityToken[lowname]
 				if ctype == 4 then
 					name = pingTextMap[lowname]
 					if name then
-						return restoreVarPrefix(varPrefix, pre .. "{{ping:" .. name.. "}}" .. tws)
+						return restoreVarPrefix(varPrefix, pre .. "{{ping:" .. name .. "}}" .. tws)
 					end
 				elseif sid and noEscapes and RW:IsCastEscape(lowname, true) then
 					-- Don't tokenize escapes in contexts they wont't work in
@@ -295,7 +337,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		end)
 		local function addMountSpells()
 			local gmi, idm = C_MountJournal.GetMountInfoByID, C_MountJournal.GetMountIDs()
-			for i=1, #idm do
+			for i = 1, #idm do
 				local _, sid = gmi(idm[i])
 				local sname = GetSpellInfo(sid)
 				if sname then
@@ -310,12 +352,14 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			local nl, sr, k = n:lower(), select(2, GetSpellInfo(id))
 			spells[nl] = allowGenericOverwrite and id or spells[nl] or id
 			if sr and sr ~= "" then
-				k = nl .. "(" .. sr:lower() .. ")"; spells[k] = spells[k] or id
-				k = nl .. " (" .. sr:lower() .. ")"; spells[k] = spells[k] or id
+				k = nl .. "(" .. sr:lower() .. ")";
+				spells[k] = spells[k] or id
+				k = nl .. " (" .. sr:lower() .. ")";
+				spells[k] = spells[k] or id
 			end
 		end
 		local function addSpellBookTab(ofs, c, allowGenericOverwrite)
-			for j=ofs+1,ofs+c do
+			for j = ofs + 1, ofs + c do
 				local n = GetSpellBookItemName(j, "spell")
 				local st, id = GetSpellBookItemInfo(j, "spell")
 				if type(n) ~= "string" or not id or id == 0 then
@@ -327,7 +371,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 					end
 					addSpell(n, id, ao)
 				elseif st == "FLYOUT" then
-					for j=1,select(3,GetFlyoutInfo(id)) do
+					for j = 1, select(3, GetFlyoutInfo(id)) do
 						local sid, _, isKnown, sname = GetFlyoutSlotInfo(id, j)
 						if sid and type(sname) == "string" then
 							addSpell(sname, sid, isKnown)
@@ -337,24 +381,26 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 			end
 		end
 		function prepareQuantizer(skipCacheRefresh)
-			if skipCacheRefresh and next(spells) then return end
+			if skipCacheRefresh and next(spells) then
+				return
+			end
 			wipe(spells)
 			wipe(specialTokens)
-			for i=1,#OTHER_SPELL_IDS do
+			for i = 1, #OTHER_SPELL_IDS do
 				local sn = GetSpellInfo(OTHER_SPELL_IDS[i])
 				if sn then
 					spells[sn:lower()] = OTHER_SPELL_IDS[i]
 				end
 			end
 			addMountSpells()
-			for i=1,GetNumCompanions("CRITTER") do
+			for i = 1, GetNumCompanions("CRITTER") do
 				local _, _, sid = GetCompanionInfo("CRITTER", i)
 				local sn = GetSpellInfo(sid)
 				if sn then
 					addSpell(sn, sid)
 				end
 			end
-			for i=GetNumSpellTabs(),1,-1 do
+			for i = GetNumSpellTabs(), 1, -1 do
 				local _, _, ofs, c = GetSpellTabInfo(i)
 				if c and c > 0 then
 					addSpellBookTab(ofs, c, true)
@@ -371,18 +417,19 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		return toImpText(false, macro)
 	end
 	do -- formatMacro/formatToken
-		local formatTokenInner do
+		local formatTokenInner
+		do
 			local names, tag, mountTokens = {}, 0, {
-				ground="|cff71d5ff|Hiltmount:ground|h" .. L"Ground Mount" .. "|h|r",
-				air   ="|cff71d5ff|Hiltmount:air|h" .. L"Flying Mount" .. "|h|r",
-				dragon="|cff71d5ff|Hiltmount:dragon|h" .. L"Dragonriding Mount" .. "|h|r",
+				ground = "|cff71d5ff|Hiltmount:ground|h" .. L "Ground Mount" .. "|h|r",
+				air = "|cff71d5ff|Hiltmount:air|h" .. L "Flying Mount" .. "|h|r",
+				dragon = "|cff71d5ff|Hiltmount:dragon|h" .. L "Dragonriding Mount" .. "|h|r"
 			}
 			function formatTokenInner(token, targ, tw)
 				if token == "spell" or token == "spellr" then
 					local forceRank, tname = token == "spellr"
 					tag = tag + 1
 					for id in targ:gmatch("%d+") do
-						id = id+0
+						id = id + 0
 						local name, sr = GetSpellInfo(id), select(2, GetSpellInfo(id))
 						if sr and sr ~= "" and forceRank then
 							name = name .. "(" .. sr .. ")"
@@ -409,7 +456,7 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		end
 		local toUIText = genParser(function(ctype, value)
 			local varPrefix = parseVarPrefix(value, ctype)
-			local prefix, tw, token, targ, suf = value:match("^(%s*!?){{((%a+):([%a%d/]+))}}(%s*)$", #varPrefix+1)
+			local prefix, tw, token, targ, suf = value:match("^(%s*!?){{((%a+):([%a%d/]+))}}(%s*)$", #varPrefix + 1)
 			local v = token and formatTokenInner(token, targ, tw)
 			return v and restoreVarPrefix(varPrefix, prefix .. v .. suf) or value
 		end)
@@ -432,9 +479,13 @@ local toMacroText, quantizeMacro, formatMacro, formatToken, setMountPreference d
 		end
 	end
 end
-local encodeMacro, decodeMacro do
+local encodeMacro, decodeMacro
+do
 	local skipCacheRefresh
-	local phash_ChatTypeInfoList, importLooseSlashCommands = setmetatable({}, {__index=hash_ChatTypeInfoList}) do
+	local phash_ChatTypeInfoList, importLooseSlashCommands = setmetatable({}, {
+		__index = hash_ChatTypeInfoList
+	})
+	do
 		local imported = {}
 		-- Bootleg ChatFrame_ImportListToHash(SlashCmdList, hash_SlashCmdList); calling the FrameXML version directly
 		-- would defeat its iterator isolation, and SlashCmdList has late-added secure entries which would notice.
@@ -489,7 +540,7 @@ local encodeMacro, decodeMacro do
 			local i, v = 2, EMOTE1_TOKEN
 			while v do
 				if v == key then
-					return nl .. _G["EMOTE" .. (i-1) .. "_CMD1"]
+					return nl .. _G["EMOTE" .. (i - 1) .. "_CMD1"]
 				end
 				i, v = i + 1, _G["EMOTE" .. i .. "_TOKEN"]
 			end
@@ -508,10 +559,10 @@ end
 
 do -- AB imptext action type
 	local function findAnySpellTokenIcon(imptext)
-		local argMod = 2^31
+		local argMod = 2 ^ 31
 		for sl in imptext:gmatch("{{spell:([%d/]+)}}") do
 			for sid in sl:gmatch("%d+") do
-				local _,_, sico = GetSpellInfo(sid % argMod)
+				local _, _, sico = GetSpellInfo(sid % argMod)
 				if sico then
 					return sico
 				end
@@ -519,19 +570,25 @@ do -- AB imptext action type
 		end
 	end
 	local function createImpMacro(macrotext)
-		if type(macrotext) ~= "string" then return end
+		if type(macrotext) ~= "string" then
+			return
+		end
 		local dt = toMacroText(true, macrotext)
 		return dt and dt:match("%S") and AB:GetActionSlot("macrotext", dt) or nil
 	end
 	local function describeImpMacro(imptext)
-		if type(imptext) ~= "string" then return end
-		if imptext == "" then return L"Custom Macro", L"New Macro", "Interface/Icons/INV_Misc_Note_03" end
+		if type(imptext) ~= "string" then
+			return
+		end
+		if imptext == "" then
+			return L "Custom Macro", L "New Macro", "Interface/Icons/INV_Misc_Note_03"
+		end
 		local _, _, ico = RW:GetMacroAction(toMacroText(true, imptext))
 		local lp = ico and type(ico) == "string" and ico:gsub("\\", "/"):lower()
 		if ico == nil or lp == "interface/icons/temp" or lp == "interface/icons/inv_misc_questionmark" then
 			ico = findAnySpellTokenIcon(imptext)
 		end
-		return L"Custom Macro", "", ico or "interface/icons/inv_misc_questionmark"
+		return L "Custom Macro", "", ico or "interface/icons/inv_misc_questionmark"
 	end
 	AB:RegisterActionType("imptext", createImpMacro, describeImpMacro, 1)
 end
@@ -539,7 +596,8 @@ do -- Editor UI
 	local function removeEditorLinks(text)
 		return (text:gsub("|c%x+|Hilt%d+:([%a:%d/]+)|h.-|h|r", "{{%1}}"))
 	end
-	local setImpText, getImpText, newImpToken do
+	local setImpText, getImpText, newImpToken
+	do
 		local nextLinkID
 		function setImpText(box, imptext)
 			local uitext
@@ -568,9 +626,11 @@ do -- Editor UI
 		end
 	end)
 	eb:SetStickyFocus(true)
-	if eb.SetHyperlinksEnabled then eb:SetHyperlinksEnabled(true) end
+	if eb.SetHyperlinksEnabled then
+		eb:SetHyperlinksEnabled(true)
+	end
 	pcall(eb.SetScript, eb, "OnHyperlinkClick", function(self, link, text, button)
-		local pos = string.find(self:GetText(), text, 1, 1)-1
+		local pos = string.find(self:GetText(), text, 1, 1) - 1
 		self:HighlightText(pos, pos + #text)
 		if button == "RightButton" and link:match("^ilt%d+:") then
 			local replace = IsAltKeyDown() and text:match("|h(.-)|h") or removeEditorLinks(text)
@@ -610,41 +670,48 @@ do -- Editor UI
 		return (#preseq % 2) == 0 and preseq or nil
 	end
 	local function stripUIEscapes(link)
-		return (link:gsub("(|*)|H.-|h", stripUIEscapeCheck):gsub("(|*)|[hr]", stripUIEscapeCheck):gsub("(|*)|c%x%x%x%x%x%x%x%x", stripUIEscapeCheck))
+		return (link:gsub("(|*)|H.-|h", stripUIEscapeCheck):gsub("(|*)|[hr]", stripUIEscapeCheck):gsub(
+			"(|*)|c%x%x%x%x%x%x%x%x", stripUIEscapeCheck))
 	end
 	local function insertLinkHook(link)
-		if not eb:HasFocus() then return end
+		if not eb:HasFocus() then
+			return
+		end
 		local isItemLink = link:match("%f[|]|Hitem:")
 		local sid = not isItemLink and link:match("%f[|]|Hspell:(%d+)") or link:match("%f[|]|Htrade:[^:]+:(%d+)")
-		local isCastableLink = sid and not IsPassiveSpell(sid+0)
+		local isCastableLink = sid and not IsPassiveSpell(sid + 0)
 		local prefix, atext, skipPrefixSpace
 		if isItemLink or isCastableLink then
 			eb:Insert("") -- Inserting the link will clobber selection; do it now to i.a. converge cursor position
 			local cursor, text = eb:GetCursorPosition(), eb:GetText()
-			local isOnEmptyLineStart, lineCommand, lineStart do
+			local isOnEmptyLineStart, lineCommand, lineStart
+			do
 				local lep, sp, wep, ap = 0
 				while 1 do
-					sp, wep, ap, lep = text:match("()%S*()[^\n%S]*()[^\n]*()", lep+1)
+					sp, wep, ap, lep = text:match("()%S*()[^\n%S]*()[^\n]*()", lep + 1)
 					if lep > cursor then
 						isOnEmptyLineStart = cursor < sp and ap == lep
-						lineCommand = cursor >= wep-1 and text:sub(sp, wep-1):lower()
+						lineCommand = cursor >= wep - 1 and text:sub(sp, wep - 1):lower()
 						lineStart = sp
 						break
 					end
 				end
 			end
-			local canTokenize, tokPrefix, tokSuffix, tokNoPreSpace do
+			local canTokenize, tokPrefix, tokSuffix, tokNoPreSpace
+			do
 				if not isCastableLink then
 				elseif isOnEmptyLineStart then
 					canTokenize = true
 				elseif commandType[lineCommand] then
 					canTokenize = isImpTokenParsed(removeEditorLinks(text:sub(1, cursor)) .. ' ;')
 					if canTokenize then
-						local ct, nc = commandType[lineCommand], text:match('^[^%S\n]*(.?)', cursor+1)
-						tokSuffix = nc ~= '' and nc ~= '\n' and nc ~= ';' and (ct < 2 or nc ~= ',') and ((ct < 2 or nc == '[') and ';' or ',')
+						local ct, nc = commandType[lineCommand], text:match('^[^%S\n]*(.?)', cursor + 1)
+						tokSuffix = nc ~= '' and nc ~= '\n' and nc ~= ';' and (ct < 2 or nc ~= ',') and
+										((ct < 2 or nc == '[') and ';' or ',')
 						local excPrefix = text:sub(cursor, cursor) == '!'
 						local baseLineText = removeEditorLinks(text:sub(lineStart, cursor)) .. (excPrefix and '' or ' ')
-						tokPrefix = not isImpTokenParsed(baseLineText) and (ct >= 2 and isImpTokenParsed(baseLineText .. ',') and ',' or ';')
+						tokPrefix = not isImpTokenParsed(baseLineText) and
+										(ct >= 2 and isImpTokenParsed(baseLineText .. ',') and ',' or ';')
 						tokNoPreSpace = excPrefix and not tokPrefix
 					end
 				end
@@ -701,18 +768,18 @@ end
 
 function IM:EncodeCommands(macrotext, skipCacheRefresh)
 	assert(type(macrotext) == "string" and (skipCacheRefresh == nil or type(skipCacheRefresh) == "boolean"),
-	       'Syntax: enctext = IM:EncodeCommands("macrotext"[, skipCacheRefresh])', 2)
+		'Syntax: enctext = IM:EncodeCommands("macrotext"[, skipCacheRefresh])', 2)
 	return encodeMacro(macrotext, skipCacheRefresh)
 end
 function IM:DecodeCommands(enctext, skipCacheRefresh)
 	assert(type(enctext) == "string" and (skipCacheRefresh == nil or type(skipCacheRefresh) == "boolean"),
-	       'Syntax: macrotext = IM:DecodeCommands("enctext"[, skipCacheRefresh])', 2)
+		'Syntax: macrotext = IM:DecodeCommands("enctext"[, skipCacheRefresh])', 2)
 	return decodeMacro(enctext, skipCacheRefresh)
 end
 
 function IM:EncodeTokens(imptext, skipCacheRefresh)
 	assert(type(imptext) == "string" and (skipCacheRefresh == nil or type(skipCacheRefresh) == "boolean"),
-	       'Syntax: imptext = IM:EncodeTokens("macrotext"[, skipCacheRefresh])', 2)
+		'Syntax: imptext = IM:EncodeTokens("macrotext"[, skipCacheRefresh])', 2)
 	return quantizeMacro(imptext, skipCacheRefresh)
 end
 function IM:DecodeTokens(imptext)
@@ -725,7 +792,7 @@ function IM:FormatTokens(imptext)
 end
 function IM:AddTokenizableCommand(slashKey, behavesLikeCommand)
 	assert(type(slashKey) == 'string' and type(behavesLikeCommand) == 'string',
-	       'Syntax: IM:AddTokenizableCommand("slashKey"[, "behavesLikeCommand"])', 2)
+		'Syntax: IM:AddTokenizableCommand("slashKey"[, "behavesLikeCommand"])', 2)
 	assert(type(_G['SLASH_' .. slashKey .. '1']) == 'string', 'Invalid slash command key %q', 2, slashKey)
 	assert((commandType[behavesLikeCommand] or -1) >= 0, 'Unrecognized behaves-like command %q', 2, behavesLikeCommand)
 	addCommandType(slashKey, commandType[behavesLikeCommand])
@@ -733,30 +800,33 @@ function IM:AddTokenizableCommand(slashKey, behavesLikeCommand)
 end
 function IM:AddTokenizableAbility(abilityText, token)
 	assert(type(abilityText) == "string" and type(token) == "string",
-	       'Syntax: IM:AddTokenizableAbility("abilityText", "token")')
+		'Syntax: IM:AddTokenizableAbility("abilityText", "token")')
 	extAbilityToken[abilityText:lower()] = '{{' .. token .. '}}'
 end
 function IM:SetTokenReplacement(token, castText)
 	assert(type(token) == "string" and (type(castText) == "string" or castText == false),
-	       'Syntax: IM:SetTokenReplacement("token", "castText" or false)')
+		'Syntax: IM:SetTokenReplacement("token", "castText" or false)')
 	extTokenText[token] = castText
 end
 
 function IM:SetMountPreference(groundSpellID, flyingSpellID, dragonSpellID)
 	assert((type(groundSpellID) == "number" or not groundSpellID) and
-	       (type(flyingSpellID) == "number" or not flyingSpellID) and
-	       (type(dragonSpellID) == "number" or not dragonSpellID),
-	       'Syntax: groundSpellID, flyingSpellID, dragonSpellID = IM:SetMountPreference(groundSpellID|false|nil, flyingSpellID|false|nil, dragonSpellID|false|nil)', 2)
+			   (type(flyingSpellID) == "number" or not flyingSpellID) and
+			   (type(dragonSpellID) == "number" or not dragonSpellID),
+		'Syntax: groundSpellID, flyingSpellID, dragonSpellID = IM:SetMountPreference(groundSpellID|false|nil, flyingSpellID|false|nil, dragonSpellID|false|nil)',
+		2)
 	return setMountPreference(groundSpellID, flyingSpellID, dragonSpellID)
 end
 
 -- HIDDEN, UNSUPPORTED METHODS: May vanish at any time.
 local hum = {}
-setmetatable(IM, {__index=hum})
+setmetatable(IM, {
+	__index = hum
+})
 hum.HUM = hum
 
 AB:RegisterModule("Imp", {
-	compatible=function(_, maj, rev)
+	compatible = function(_, maj, rev)
 		if maj == MAJ and (rev == nil or rev <= REV) then
 			return IM
 		end

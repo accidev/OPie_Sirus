@@ -9,7 +9,9 @@ local function checkLDB()
 	LDB = LDB and LDB.DataObjectIterator and LDB or nil
 end
 local function registerSelf()
-	if not LDB.NewDataObject or LDB:GetDataObjectByName("OPie") then return end
+	if not LDB.NewDataObject or LDB:GetDataObjectByName("OPie") then
+		return
+	end
 	LDB:NewDataObject("OPie", {
 		type = "launcher",
 		label = "OPie",
@@ -21,8 +23,8 @@ local function registerSelf()
 		end,
 		OnTooltipShow = function(tip)
 			tip:AddLine("OPie")
-			tip:AddLine(L"Left click: Open settings", 1, 1, 1)
-		end,
+			tip:AddLine(L "Left click: Open settings", 1, 1, 1)
+		end
 	})
 end
 
@@ -36,17 +38,24 @@ do -- action handler
 		return "Launcher", obj and obj.label or name, obj and obj.icon or "Interface/Icons/INV_Misc_QuestionMark", obj
 	end
 	local function brokerHint(obj)
-		if not obj then return end
-		return true, 0, obj.icon, obj.label or obj.text, 0,0,0, obj.OnTooltipShow, nil, obj
+		if not obj then
+			return
+		end
+		return true, 0, obj.icon, obj.label or obj.text, 0, 0, 0, obj.OnTooltipShow, nil, obj
 	end
 	local function createBroker(name, flags)
 		local rightClick = flags == 8
-		if type(name) ~= "string" or not (LDB or checkLDB() or LDB) then return end
+		if type(name) ~= "string" or not (LDB or checkLDB() or LDB) then
+			return
+		end
 		local pname = name .. "#" .. (rightClick and "R" or "L")
 		if not nameMap[pname] then
 			local obj = LDB:GetDataObjectByName(name)
-			if not obj then return end
-			nameMap[pname] = AB:CreateActionSlot(brokerHint, obj, "func", call, obj, rightClick and "RightButton" or "LeftButton")
+			if not obj then
+				return
+			end
+			nameMap[pname] = AB:CreateActionSlot(brokerHint, obj, "func", call, obj,
+				rightClick and "RightButton" or "LeftButton")
 		end
 		return nameMap[pname]
 	end
@@ -56,7 +65,9 @@ do -- category
 	local waiting = true
 	local function hasLaunchers()
 		for _, o in LDB:DataObjectIterator() do
-			if o.type == "launcher" then return true end
+			if o.type == "launcher" then
+				return true
+			end
 		end
 	end
 	local function onRegister()
@@ -82,4 +93,10 @@ do -- category
 		end
 	end
 end
-AB.CreateSimpleEditorPanel("opie.databroker.launcher", {"clickUsingRightButton", clickUsingRightButton=L"Simulate a right-click", flagValues={clickUsingRightButton=8}})
+AB.CreateSimpleEditorPanel("opie.databroker.launcher", {
+	"clickUsingRightButton",
+	clickUsingRightButton = L "Simulate a right-click",
+	flagValues = {
+		clickUsingRightButton = 8
+	}
+})

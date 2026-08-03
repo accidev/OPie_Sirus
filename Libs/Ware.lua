@@ -3,24 +3,42 @@ local Ware, REV, ADDON, T = {}, 3, ...
 
 local rpairs, rnext, rwipe, type, setmetatable = rtable.pairs, rtable.next, rtable.wipe, type, setmetatable
 local IsFrameWidget = function(v)
-	if type(v) == "table" then return type(v[0]) == "userdata" end
-	if type(v) ~= "userdata" then return false end
-	local ok, r = pcall(function() return v:GetObjectType() end)
+	if type(v) == "table" then
+		return type(v[0]) == "userdata"
+	end
+	if type(v) ~= "userdata" then
+		return false
+	end
+	local ok, r = pcall(function()
+		return v:GetObjectType()
+	end)
 	return ok and type(r) == "string"
 end
-local simpleTypes = {number=1, string=1, boolean=1, frameref=0}
+local simpleTypes = {
+	number = 1,
+	string = 1,
+	boolean = 1,
+	frameref = 0
+}
 local prototype, emptyTable = newproxy(true), {}
 
-local weakKeys_mt = {__mode="k"}
-local handleRT_mt = {__mode="k"} -- + __index later
+local weakKeys_mt = {
+	__mode = "k"
+}
+local handleRT_mt = {
+	__mode = "k"
+} -- + __index later
 local ownerHandle = {}
-local handleInfo  = setmetatable({}, weakKeys_mt)
-local handleRT    = setmetatable({}, handleRT_mt)
-local handleWAN   = setmetatable({}, weakKeys_mt)
-local refHandle   = setmetatable({}, weakKeys_mt)
-local refKey      = setmetatable({}, weakKeys_mt)
-local rtHandle    = setmetatable({}, {__mode="kv"})
-local newEnvHandle, SetAttribute, SetAttributeNoHandler do
+local handleInfo = setmetatable({}, weakKeys_mt)
+local handleRT = setmetatable({}, handleRT_mt)
+local handleWAN = setmetatable({}, weakKeys_mt)
+local refHandle = setmetatable({}, weakKeys_mt)
+local refKey = setmetatable({}, weakKeys_mt)
+local rtHandle = setmetatable({}, {
+	__mode = "kv"
+})
+local newEnvHandle, SetAttribute, SetAttributeNoHandler
+do
 	local INIT_SNIPPET = [=[--Ware_Init
 		__WARE = newtable()
 		__WARE.r0, __WARE._nextWAN, __WARE._nextID = _G, "r1", 2
@@ -84,7 +102,9 @@ local newEnvHandle, SetAttribute, SetAttributeNoHandler do
 		setmetatable(hi, nil)
 		return delegate
 	end
-	local handleInfoMeta = {__index=initDelegate}
+	local handleInfoMeta = {
+		__index = initDelegate
+	}
 	function newEnvHandle(owner)
 		local h = newproxy(prototype)
 		ownerHandle[owner], handleWAN[h], handleInfo[h] = h, "r0", setmetatable({nil, nil, h, owner}, handleInfoMeta)
@@ -153,11 +173,11 @@ local function emplaceReference(h)
 		scratch[sn], sn = pk, sn + 1
 		pwan, ph, pk = handleWAN[ph], checkRef(ph)
 		if pwan then
-			scratch[sn], scratch[sn+1], sn = pwan, nil, sn + 2
+			scratch[sn], scratch[sn + 1], sn = pwan, nil, sn + 2
 			break
 		end
 	end
-	for i=sn - 1, 1, -1 do
+	for i = sn - 1, 1, -1 do
 		if pwan then
 			SetAttribute(delegate, "idx", scratch[i])
 		end
@@ -174,21 +194,22 @@ local function allocWAN(h)
 	end
 	return wan
 end
-local IS_LIVE, freeWAN = 1 do
+local IS_LIVE, freeWAN = 1
+do
 	local q, f = {}, CreateFrame("Frame")
 	f:RegisterEvent("PLAYER_REGEN_ENABLED")
 	f:RegisterEvent("PLAYER_LOGOUT")
 	f:Hide()
 	f:SetScript("OnEvent", function(_, event)
 		IS_LIVE = event ~= "PLAYER_LOGOUT" and IS_LIVE
-		for i=InCombatLockdown() and 0 or IS_LIVE and #q or 0, 2, -2 do
-			freeWAN(q[i-1], q[i])
-			q[i-1], q[i] = nil, nil
+		for i = InCombatLockdown() and 0 or IS_LIVE and #q or 0, 2, -2 do
+			freeWAN(q[i - 1], q[i])
+			q[i - 1], q[i] = nil, nil
 		end
 	end)
 	function freeWAN(delegate, wan, enq)
 		if enq then
-			q[#q+1], q[#q+2] = delegate, wan
+			q[#q + 1], q[#q + 2] = delegate, wan
 		else
 			SetAttribute(delegate, "clr", wan)
 			SetAttributeNoHandler(delegate, wan, nil)
@@ -227,20 +248,24 @@ local function newtable(h, k, ...)
 		t = h[k]
 	end
 	local n = select("#", ...)
-	for i=1, n, 4 do
-		local l, a,b,c,d = i+4, select(i, ...)
-		for j=i, l < n and l or n do
-			t[j], a,b,c = a, b,c,d
+	for i = 1, n, 4 do
+		local l, a, b, c, d = i + 4, select(i, ...)
+		for j = i, l < n and l or n do
+			t[j], a, b, c = a, b, c, d
 		end
 	end
 	return t
 end
 local function unpack_ij(t, i, j)
-	local d = j-i
-	if     d >= 3 then return t[i], t[i+1], t[i+2], t[i+3], unpack_ij(t, i+4, j)
-	elseif d >= 2 then return t[i], t[i+1], t[i+2]
-	elseif d >= 1 then return t[i], t[i+1]
-	elseif d >= 0 then return t[i]
+	local d = j - i
+	if d >= 3 then
+		return t[i], t[i + 1], t[i + 2], t[i + 3], unpack_ij(t, i + 4, j)
+	elseif d >= 2 then
+		return t[i], t[i + 1], t[i + 2]
+	elseif d >= 1 then
+		return t[i], t[i + 1]
+	elseif d >= 0 then
+		return t[i]
 	end
 end
 local function cleanupExec(delegate, ...)
@@ -251,11 +276,11 @@ end
 local function execFor(hw, other, body, ...)
 	local hi = handleInfo[hw] or handleInfo[Ware.GetRestrictedEnvironment(hw)] or error("invalid handle", 3)
 	local delegate, n = hi[1], select("#", ...)
-	for i=1,n,3 do
-		local a,b,c = select(i, ...)
+	for i = 1, n, 3 do
+		local a, b, c = select(i, ...)
 		SetAttributeNoHandler(delegate, "a" .. i, a)
-		b = i < n and SetAttributeNoHandler(delegate, "a" .. i+1, b)
-		c = i+1 < n and SetAttributeNoHandler(delegate, "a" .. i+2, c)
+		b = i < n and SetAttributeNoHandler(delegate, "a" .. i + 1, b)
+		c = i + 1 < n and SetAttributeNoHandler(delegate, "a" .. i + 2, c)
 	end
 	SetAttributeNoHandler(delegate, "n", n)
 	SetAttributeNoHandler(delegate, "frameref-other", other and adjustType(other, hi[3]))
@@ -327,16 +352,19 @@ function Ware.PrepareWritableHandle(h)
 	return handleInfo[h] and (handleWAN[h] or not InCombatLockdown() and allocWAN(h)) and h or nil
 end
 function Ware.Run(hw, body, ...)
-	local _ = handleInfo[hw] == nil or handleInfo[hw][3] == hw or IsFrameWidget(hw) or error('Run: invalid widget/handle', 2)((0)[0])
+	local _ = handleInfo[hw] == nil or handleInfo[hw][3] == hw or IsFrameWidget(hw) or
+				  error('Run: invalid widget/handle', 2)((0)[0])
 	return execFor(hw, nil, body, ...)
 end
 function Ware.RunAttribute(hw, attr, ...)
 	local hi = handleInfo[hw]
-	local w = hi and hi[3] == hw and hi[4] or hi == nil and IsFrameWidget(hw) and hw or error('RunAttribute: invalid widget/handle', 2)((0)[0])
+	local w = hi and hi[3] == hw and hi[4] or hi == nil and IsFrameWidget(hw) and hw or
+				  error('RunAttribute: invalid widget/handle', 2)((0)[0])
 	return execFor(w, nil, w:GetAttribute(attr), ...)
 end
 function Ware.RunFor(hw, otherFrame, body, ...)
-	local _ = handleInfo[hw] == nil or handleInfo[hw][3] == hw or IsFrameWidget(hw) or error('RunFor: invalid widget/handle', 2)((0)[0])
+	local _ = handleInfo[hw] == nil or handleInfo[hw][3] == hw or IsFrameWidget(hw) or
+				  error('RunFor: invalid widget/handle', 2)((0)[0])
 	return execFor(hw, otherFrame, body, ...)
 end
 function Ware.IsWareHandle(h)
@@ -357,4 +385,8 @@ function Ware.wipe(ht)
 	return (hi and hwipe or rwipe)(ht)
 end
 
-(ADDON == "Ware" and _G or T).Ware = setmetatable(Ware, { __index = {REV = REV} })
+(ADDON == "Ware" and _G or T).Ware = setmetatable(Ware, {
+	__index = {
+		REV = REV
+	}
+})

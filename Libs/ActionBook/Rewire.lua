@@ -1,6 +1,8 @@
 local MAJ, REV, _GG, _, T = 1, 50, _G, ...
-if T.SkipLocalActionBook then return end
-local RW, EV, WR, AB, KR = {}, T.Evie, T.Ware, T.ActionBook:compatible(2,36), T.ActionBook:compatible("Kindred", 1,29)
+if T.SkipLocalActionBook then
+	return
+end
+local RW, EV, WR, AB, KR = {}, T.Evie, T.Ware, T.ActionBook:compatible(2, 36), T.ActionBook:compatible("Kindred", 1, 29)
 assert(EV and WR and AB and KR and 1, "Incompatible library bundle")
 local PYROLYSIS = {}
 
@@ -14,16 +16,17 @@ local Spell_CheckCastable = {}
 local namedMacros, namedMacroText, namedMacroTextOwnerPriority, coreNamedMacroText = {}, {}, {}
 local coreExecCleanup = {}
 local core = CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
-local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
+local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core)
+do
 	local bni = 1
-	for i=1,9 do
-		local bn repeat
+	for i = 1, 9 do
+		local bn
+		repeat
 			bn, bni = "RW!" .. bni, bni + 1
 		until GetClickFrame(bn) == nil
 		local bw = CreateFrame("Button", bn, core, "SecureActionButtonTemplate")
 		bw:SetAttribute("pressAndHoldAction", 1)
-		core:WrapScript(bw, "OnClick",
-		[=[-- Rewire:OnClick_Pre
+		core:WrapScript(bw, "OnClick", [=[-- Rewire:OnClick_Pre
 			if ns == 0 then return false end
 			idle[self], numIdle, numActive, ns = nil, numIdle - 1, numActive + 1, ns - 1
 			self:SetAttribute("macrotext", owner:RunAttribute("RunMacro", nil))
@@ -40,20 +43,23 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 	core:SetFrameRef("Kindred", KR:seclib())
 	core:SetFrameRef("ActionBook", AB:seclib())
 	core:SetAttribute("execPending", 0)
-	local toAlphabetString do
+	local toAlphabetString
+	do
 		local a = {}
 		for c in ("焼払解次善策氷雨"):gmatch("%S[\128-\191]*") do
-			a[#a+1] = c
+			a[#a + 1] = c
 		end
 		function toAlphabetString(v)
-			local s, n, r = "", #a repeat
+			local s, n, r = "", #a
+			repeat
 				r = v % n
-				s, v = s .. a[1+r], (v-r) / n
+				s, v = s .. a[1 + r], (v - r) / n
 			until v < 1
 			return s
 		end
 	end
-	local slashKey, slashCommand do
+	local slashKey, slashCommand
+	do
 		local sb, si = "REWIRE_ICE_", 1
 		repeat
 			slashKey, si = sb .. si .. "X", si + 1
@@ -64,12 +70,14 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 				slash[v] = k
 			end
 		end
-		si = 0 repeat
+		si = 0
+		repeat
 			slashCommand, si = "/" .. toAlphabetString(si), si + 1
 		until slash[slashCommand] == nil
 	end
 	_GG["SLASH_" .. slashKey .. "1"] = slashCommand
-	local si, psabName = 0 repeat
+	local si, psabName = 0
+	repeat
 		psabName, si = toAlphabetString(si), si + 1
 	until GetClickFrame(psabName) == nil
 	local psab = CreateFrame("Button", psabName, nil, "SecureActionButtonTemplate")
@@ -156,7 +164,7 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 		end
 	end
 	function core:quietCleanup()
-		for i=1, #coreExecCleanup do
+		for i = 1, #coreExecCleanup do
 			securecall(coreExecCleanup[i])
 		end
 	end
@@ -165,15 +173,29 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 	end
 	do -- SlashCmdList[slashKey](msg, box)
 		local runHandlers = {
-			[coreEnv.PYtokens.unshift_restore] = function() core:manageUnshift(true) end,
-			[coreEnv.PYtokens.nounshift] = function() core:manageUnshift(false) end,
-			[coreEnv.PYtokens.mute] = function() core:setMute(true) end,
-			[coreEnv.PYtokens.unmute] = function() core:setMute(false) end,
+			[coreEnv.PYtokens.unshift_restore] = function()
+				core:manageUnshift(true)
+			end,
+			[coreEnv.PYtokens.nounshift] = function()
+				core:manageUnshift(false)
+			end,
+			[coreEnv.PYtokens.mute] = function()
+				core:setMute(true)
+			end,
+			[coreEnv.PYtokens.unmute] = function()
+				core:setMute(false)
+			end
 		}
-		local pyRunID, pyRunIIndex, commentLeads = nil, 0, {[35]='#', [45]='-', [47047]='//'}
+		local pyRunID, pyRunIIndex, commentLeads = nil, 0, {
+			[35] = '#',
+			[45] = '-',
+			[47047] = '//'
+		}
 		SlashCmdList[slashKey] = function(_msg, box)
 			local sPY = coreEnv.PY
-			if not sPY.pendingResolve then return end
+			if not sPY.pendingResolve then
+				return
+			end
 			local runID, nii, qI, rt, h = sPY.id, sPY.nextIIndex, sPY.qI
 			if runID ~= pyRunID then
 				pyRunIIndex, pyRunID = 1, runID
@@ -188,8 +210,8 @@ local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core) do
 				elseif rt then
 					local noRun = not AreDangerousScriptsAllowed() and coreEnv.PYdangerCommands
 					for l in rt:gmatch("[^\r\n]+") do
-						local b1, b2 = l:byte(1,2)
-						if not (commentLeads[b1] or b2 and commentLeads[b1*1e3+b2]) then
+						local b1, b2 = l:byte(1, 2)
+						if not (commentLeads[b1] or b2 and commentLeads[b1 * 1e3 + b2]) then
 							local c = noRun and l:match("^/%S+")
 							c = c and c:lower()
 							if not (c and noRun[coreEnv.commandAlias[c] or c]) then
@@ -673,7 +695,7 @@ do -- core:setMute(mute)
 			error("Muted state persisted after macro execution")
 		end
 	end)
-	coreExecCleanup[#coreExecCleanup+1] = function()
+	coreExecCleanup[#coreExecCleanup + 1] = function()
 		if muteArmed then
 			muteCount = 0
 			core:setMute(false)
@@ -714,7 +736,7 @@ do -- core:manageUnshift(isRestore)
 			end
 		end
 	end
-	coreExecCleanup[#coreExecCleanup+1] = function()
+	coreExecCleanup[#coreExecCleanup + 1] = function()
 		if cleanupArmed and isModified then
 			modDepth = 1
 			core:manageUnshift(true)
@@ -735,33 +757,37 @@ end
 local function getAliases(p, i)
 	local v = _G[p .. i]
 	if v then
-		return v, getAliases(p, i+1)
+		return v, getAliases(p, i + 1)
 	end
 end
 
-local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpeculationID, metaFilters, metaFilterTypes, reVarsSP, resolveOptionsClauseValue do
+local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpeculationID, metaFilters, metaFilterTypes,
+	reVarsSP, resolveOptionsClauseValue
+do
 	local hintFunc, pri, cache, ht, ht2, cDepth = {}, {}, {}, {}, {}, 0
-	local DEPTH_LIMIT, UNKNOWN_PRIORITY, nInf = 20, -2^52, -math.huge
-	local speculationID, nextSpeculationID, SPECULATION_ID_WRAP = nil, 221125, 2^53
-	local store do
-		local function write(t, n, i, a,b,c,d, ...)
+	local DEPTH_LIMIT, UNKNOWN_PRIORITY, nInf = 20, -2 ^ 52, -math.huge
+	local speculationID, nextSpeculationID, SPECULATION_ID_WRAP = nil, 221125, 2 ^ 53
+	local store
+	do
+		local function write(t, n, i, a, b, c, d, ...)
 			if n > 0 then
-				t[i], t[i+1], t[i+2], t[i+3] = a,b,c,d
-				return write(t, n-4, i+4, ...)
+				t[i], t[i + 1], t[i + 2], t[i + 3] = a, b, c, d
+				return write(t, n - 4, i + 4, ...)
 			end
 		end
 		function store(ok, ...)
 			if ok then
 				local n = select("#", ...)
-				write(ht2, n+1, 0, n, ...)
+				write(ht2, n + 1, 0, n, ...)
 			end
 			return ok
 		end
 	end
-	metaFilters, metaFilterTypes = {}, {} do
+	metaFilters, metaFilterTypes = {}, {}
+	do
 		local function fillToSize(sz, stopFillAt)
 			if ht[0] < sz then
-				for i=ht[0]+1,stopFillAt do
+				for i = ht[0] + 1, stopFillAt do
 					ht[i] = nil
 				end
 				ht[0] = sz
@@ -839,7 +865,7 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 					ht[3], d = icon, d or fillToSize(3, 2)
 				end
 				if usable == true and (ht[1] == nil or hl < 1) then
-					ht[1], ht[2], d = true, 0, d or fillToSize(2,0)
+					ht[1], ht[2], d = true, 0, d or fillToSize(2, 0)
 				end
 				return d
 			end
@@ -853,7 +879,9 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 	end
 	function getCommandHintRaw(hslash, ...)
 		local hf = hintFunc[hslash]
-		if not hf then return false end
+		if not hf then
+			return false
+		end
 		return hf(...)
 	end
 	local function clearDepth(...)
@@ -862,12 +890,16 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 		return ...
 	end
 	local function prepCall(...)
-		if cDepth ~= 0 then error("invalid state") end
-		cDepth, speculationID, nextSpeculationID = 1, nextSpeculationID, nextSpeculationID ~= SPECULATION_ID_WRAP and nextSpeculationID + 1 or -nextSpeculationID
+		if cDepth ~= 0 then
+			error("invalid state")
+		end
+		cDepth, speculationID, nextSpeculationID = 1, nextSpeculationID, nextSpeculationID ~= SPECULATION_ID_WRAP and
+			nextSpeculationID + 1 or -nextSpeculationID
 		KR:ClearFuture(speculationID)
 		return clearDepth(securecall(...))
 	end
-	reVarsSP = {} do
+	reVarsSP = {}
+	do
 		local specVarVal, specVarID = {}, {}
 		local function vp__index(_, k)
 			if speculationID and specVarID[k] == speculationID then
@@ -878,7 +910,10 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 		local function vp__newindex(_, k, v)
 			specVarVal[k], specVarID[k] = v ~= nil and tostring(v) or v, speculationID
 		end
-		setmetatable(reVarsSP, {__index=vp__index, __newindex=vp__newindex})
+		setmetatable(reVarsSP, {
+			__index = vp__index,
+			__newindex = vp__newindex
+		})
 	end
 	local parseCommandOptions
 	do -- resolveOptionsClauseValue(v, resolveUnits, resolveVars) / parseCommandOptions
@@ -894,14 +929,25 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 			elseif a == "SetFutureUnit" then
 				return KR:SetFutureUnit(...)
 			end
-			error('Invalid s' .. (h == sRW and 'RW' or h == sKR and 'KR' or '') .. ':RunAttribute("' .. tostring(a) .. '")')
+			error('Invalid s' .. (h == sRW and 'RW' or h == sKR and 'KR' or '') .. ':RunAttribute("' .. tostring(a) ..
+					  '")')
 		end
 		sKR.RunAttribute, sRW.RunAttribute = sRunAttribute, sRunAttribute
-		local env = setmetatable({rtgsub = string.rtgsub, reVars = reVarsSP, KR = sKR, self=sRW}, {__index=coreEnv})
-		resolveOptionsClauseValue = setfenv(loadstring(("-- shadowRW:ResolveOptionsClauseValue\nreturn function(...)\n%s\nend"):format(core:GetAttribute("ResolveOptionsClauseValue")))(), env)
-		parseCommandOptions = setfenv(loadstring(("-- shadowRW:ParseCommandOptions\nreturn function(ct, v, modLock, futureID)\nlocal t\n%s\n return v, t end"):format(
-			core:GetAttribute("RunMacro"):match("%-%-# block:command_parse%s*\n(.-)%s*%-%-# end:command_parse%s")
-		))(), env)
+		local env = setmetatable({
+			rtgsub = string.rtgsub,
+			reVars = reVarsSP,
+			KR = sKR,
+			self = sRW
+		}, {
+			__index = coreEnv
+		})
+		resolveOptionsClauseValue = setfenv(loadstring(
+			("-- shadowRW:ResolveOptionsClauseValue\nreturn function(...)\n%s\nend"):format(core:GetAttribute(
+				"ResolveOptionsClauseValue")))(), env)
+		parseCommandOptions = setfenv(loadstring(
+			("-- shadowRW:ParseCommandOptions\nreturn function(ct, v, modLock, futureID)\nlocal t\n%s\n return v, t end"):format(
+				core:GetAttribute("RunMacro"):match("%-%-# block:command_parse%s*\n(.-)%s*%-%-# end:command_parse%s")))(),
+			env)
 	end
 	local function applyBias(pri, def, bias)
 		return bias == nInf and nInf or ((pri ~= true and pri or def or UNKNOWN_PRIORITY) + (bias or 0))
@@ -915,7 +961,7 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 		local reText = hf == nil and coreEnv.reMacroExt[slash]
 		local ctype = (coreEnv.commandFlags[slash] or reText and 1 or 0)
 		local minPriorityA = priBias ~= nInf and ((minPriority or nInf) - (priBias or 0)) or -nInf
-		if hf and pri > minPriorityA or reText or (ctype > 0 and (ctype < 2^22 or ctype % 2^23 < 2^22)) then
+		if hf and pri > minPriorityA or reText or (ctype > 0 and (ctype < 2 ^ 22 or ctype % 2 ^ 23 < 2 ^ 22)) then
 			if cDepth == 0 then
 				return prepCall(getCommandHint, minPriority, slash, args, modState, otarget, msg, priBias)
 			elseif cDepth > DEPTH_LIMIT then
@@ -952,7 +998,9 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 		end
 	end
 	function getMacroHint(macrotext, modState, minPriority, argsVar)
-		if not macrotext then return end
+		if not macrotext then
+			return
+		end
 		if cDepth == 0 then
 			return prepCall(getMacroHint, macrotext, modState, minPriority)
 		end
@@ -966,12 +1014,12 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 				if meta4 == "show" and args ~= "" then
 					m[-1], m[0] = "/use", args
 				elseif meta == nil or meta == "skip" or meta == "important" then
-					m[#m+1], m[#m+2] = slash, args
+					m[#m + 1], m[#m + 2] = slash, args
 				else
 					if m.metaKeys == nil then
 						m.metaKeys, m.metaArgs = {}, {}
 					end
-					local idx = #m.metaKeys+1
+					local idx = #m.metaKeys + 1
 					m.metaKeys[idx], m.metaArgs[idx] = meta, args
 				end
 			end
@@ -980,8 +1028,8 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 
 		local bestPri, bias, oldArgsVar, haveUnknown = lowPri, m[-1] and 1000 or 0, reVarsSP.args
 		reVarsSP.args = argsVar
-		for i=m[-1] and -1 or 1, #m, 2 do
-			local cmd, args = m[i], m[i+1]
+		for i = m[-1] and -1 or 1, #m, 2 do
+			local cmd, args = m[i], m[i + 1]
 			if cmd == "#skip" or cmd == "#important" then
 				local v = args == "" or KR:EvaluateCmdOptions(args, modState)
 				if v ~= nil then
@@ -1005,7 +1053,7 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 			store(true, nil, 0, nil, "", 0, 0, 0)
 			ht, ht2 = ht2, ht
 		end
-		for i=1,mk and #mk or 0 do
+		for i = 1, mk and #mk or 0 do
 			local k = mk[i]
 			local fi = metaFilters[k]
 			if fi then
@@ -1013,7 +1061,8 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 				local filterRun, parseConditional, filterFunc, filterType = fi[1], fi[2], fi[3], fi[4]
 				local v, vt = mv[i], nil
 				local ic = filterType == "replaceIconB" and ht[0] >= 3 and ht[3]
-				if filterType == "replaceIconB" and ic and ic ~= 134400 and (type(ic) ~= "string" or not ic:lower():find("inv_misc_questionmark", 1, true)) then
+				if filterType == "replaceIconB" and ic and ic ~= 134400 and
+					(type(ic) ~= "string" or not ic:lower():find("inv_misc_questionmark", 1, true)) then
 					v = nil
 				elseif parseConditional then
 					v, vt = KR:EvaluateCmdOptions(v, modState)
@@ -1045,36 +1094,37 @@ local setCommandHinter, getMacroHint, getCommandHint, getCommandHintRaw, getSpec
 	end
 end
 
-local getCommandKeyFlags do
-	local CF_SECURE_OPTIONS       = 2^0
-	local CF_RESOLVE_VAR_VAL      = 2^1    -- requires %variable resolution prior to invocation
-	local CF_COMMA_LIST_VAL       = 2^2    -- /castrandom value rules
-	local CF_CSEQUENCE_VAL        = 2^3    -- /castsequence value rules
-	local CF_RESOLVE_UNIT_VAL     = 2^4    -- resolve virtual units in clause values
-	local CF_IGNORES_VAL          = 2^5*1  -- value is ignored
-	local CF_NOBLANK_VAL          = 2^5*2  -- blank values are noops
-	local CF_BOOLEAN_VAL          = 2^5*3  -- ValueToBoolean'd values
-	local CF_TARVAL_NOT_TARGET    = 2^8*1  -- target, if specified and not "target", overrides value
-	local CF_TARVAL_NOT_FOCUS     = 2^8*2  -- target, if specified and not "focus", overrides value
-	local CF_TARVAL_NOT_PETTARGET = 2^8*3  -- target, if specified and not "pettarget", overrides value
-	local CF_TARVAL_ANY           = 2^8*4  -- target, if specified, overrides value
-	local CF_IGNORES_TARGET       = 2^8*5  -- target is ignored
-	local CF_EFFECT_TARGET        = 2^11*1 -- command affects target
-	local CF_EFFECT_FOCUS         = 2^11*2 -- command affects focus
-	local CF_EFFECT_CAST_USE      = 2^11*3
-	local CF_EFFECT_USE_CAST      = 2^11*4
-	local CF_EFFECT_EQUIP         = 2^11*5
-	local CF_EARG_CLEAR           = 2^14*1 -- new unit is "none" (/cleartarget)
-	local CF_EARG_SET_VALUE       = 2^14*2 -- new unit is specified by options (/target)
-	local CF_EARG_ASSIST_VALUE    = 2^14*3 -- new unit is option-value-target (/assist)
-	local CF_EARG_LAST_ANY        = 2^14*4 -- pop from history (i.e. /targetlasttarget)
-	local CF_EARG_LAST_ENEMY      = 2^14*5 -- pop last hostile
-	local CF_EARG_LAST_FRIEND     = 2^14*6 -- pop last friendly
-	local CF_INSECURE             = 2^18   -- execute insecurely
-	local CF_PERFECTLY_ORDINARY   = 2^19   -- PH: keyFlags == 0 is special; this avoids that
-	local CF_PREAPPLIED_BASE      = 2^20   -- PH: threshold: don't apply CF_SECURE_BASE
-	local CF_CHAT_LOCKDOWN        = 2^21   -- chat lockdown applies
-	local CF_FEEDBACK_BLACKBOX    = 2^22   -- PH: don't base feedback solely on flag presence
+local getCommandKeyFlags
+do
+	local CF_SECURE_OPTIONS = 2 ^ 0
+	local CF_RESOLVE_VAR_VAL = 2 ^ 1 -- requires %variable resolution prior to invocation
+	local CF_COMMA_LIST_VAL = 2 ^ 2 -- /castrandom value rules
+	local CF_CSEQUENCE_VAL = 2 ^ 3 -- /castsequence value rules
+	local CF_RESOLVE_UNIT_VAL = 2 ^ 4 -- resolve virtual units in clause values
+	local CF_IGNORES_VAL = 2 ^ 5 * 1 -- value is ignored
+	local CF_NOBLANK_VAL = 2 ^ 5 * 2 -- blank values are noops
+	local CF_BOOLEAN_VAL = 2 ^ 5 * 3 -- ValueToBoolean'd values
+	local CF_TARVAL_NOT_TARGET = 2 ^ 8 * 1 -- target, if specified and not "target", overrides value
+	local CF_TARVAL_NOT_FOCUS = 2 ^ 8 * 2 -- target, if specified and not "focus", overrides value
+	local CF_TARVAL_NOT_PETTARGET = 2 ^ 8 * 3 -- target, if specified and not "pettarget", overrides value
+	local CF_TARVAL_ANY = 2 ^ 8 * 4 -- target, if specified, overrides value
+	local CF_IGNORES_TARGET = 2 ^ 8 * 5 -- target is ignored
+	local CF_EFFECT_TARGET = 2 ^ 11 * 1 -- command affects target
+	local CF_EFFECT_FOCUS = 2 ^ 11 * 2 -- command affects focus
+	local CF_EFFECT_CAST_USE = 2 ^ 11 * 3
+	local CF_EFFECT_USE_CAST = 2 ^ 11 * 4
+	local CF_EFFECT_EQUIP = 2 ^ 11 * 5
+	local CF_EARG_CLEAR = 2 ^ 14 * 1 -- new unit is "none" (/cleartarget)
+	local CF_EARG_SET_VALUE = 2 ^ 14 * 2 -- new unit is specified by options (/target)
+	local CF_EARG_ASSIST_VALUE = 2 ^ 14 * 3 -- new unit is option-value-target (/assist)
+	local CF_EARG_LAST_ANY = 2 ^ 14 * 4 -- pop from history (i.e. /targetlasttarget)
+	local CF_EARG_LAST_ENEMY = 2 ^ 14 * 5 -- pop last hostile
+	local CF_EARG_LAST_FRIEND = 2 ^ 14 * 6 -- pop last friendly
+	local CF_INSECURE = 2 ^ 18 -- execute insecurely
+	local CF_PERFECTLY_ORDINARY = 2 ^ 19 -- PH: keyFlags == 0 is special; this avoids that
+	local CF_PREAPPLIED_BASE = 2 ^ 20 -- PH: threshold: don't apply CF_SECURE_BASE
+	local CF_CHAT_LOCKDOWN = 2 ^ 21 -- chat lockdown applies
+	local CF_FEEDBACK_BLACKBOX = 2 ^ 22 -- PH: don't base feedback solely on flag presence
 	local CF_SECURE_BASE = CF_SECURE_OPTIONS + CF_RESOLVE_VAR_VAL
 	local CF_CHAT_MESSAGE = CF_INSECURE + CF_PREAPPLIED_BASE + CF_CHAT_LOCKDOWN + CF_FEEDBACK_BLACKBOX
 	local keyFlags = {
@@ -1156,7 +1206,7 @@ local getCommandKeyFlags do
 		TABLEINSPECT = CF_INSECURE + CF_PREAPPLIED_BASE + CF_FEEDBACK_BLACKBOX,
 		DUMP = CF_INSECURE + CF_PREAPPLIED_BASE + CF_FEEDBACK_BLACKBOX,
 		EMOTE = CF_CHAT_MESSAGE,
-		SAY  = CF_CHAT_MESSAGE,
+		SAY = CF_CHAT_MESSAGE,
 		YELL = CF_CHAT_MESSAGE,
 		WHISPER = CF_CHAT_MESSAGE,
 		SMART_WHISPER = CF_CHAT_MESSAGE,
@@ -1169,18 +1219,22 @@ local getCommandKeyFlags do
 		INSTANCE_CHAT = CF_CHAT_MESSAGE,
 		GUILD = CF_CHAT_MESSAGE,
 		OFFICER = CF_CHAT_MESSAGE,
-		CHANNEL = CF_CHAT_MESSAGE,
+		CHANNEL = CF_CHAT_MESSAGE
 	}
 	function getCommandKeyFlags(commandKey)
 		local kf = keyFlags[commandKey]
 		if kf then
-			return kf > 0 and kf < CF_PREAPPLIED_BASE and CF_SECURE_BASE+kf or kf
+			return kf > 0 and kf < CF_PREAPPLIED_BASE and CF_SECURE_BASE + kf or kf
 		end
 		return IsSecureCmd(_G["SLASH_" .. commandKey .. "1"] or "-?-") and CF_SECURE_BASE or 0
 	end
 end
 local function init()
-	local ik = {USE=1, CAST=1, STOPMACRO=1}
+	local ik = {
+		USE = 1,
+		CAST = 1,
+		STOPMACRO = 1
+	}
 	for _, k in pairs(hash_ChatTypeInfoList) do
 		local cf = ik[k] == nil and getCommandKeyFlags(k) or 0
 		ik[k] = 1
@@ -1205,9 +1259,13 @@ local function init()
 	end)
 	RW:RegisterCommand("/varset", true, true, core)
 	RW:SetCommandHint("/varset", math.huge, function(_, _, v)
-		if not v then return end
+		if not v then
+			return
+		end
 		local vname, vnEnd = v:match("^%s*([a-zA-Z\128-\255][a-zA-Z0-9_\128-\255]*)()")
-		if not vname then return end
+		if not vname then
+			return
+		end
 		local val = v:match("^%s+(.-)%s*$", vnEnd)
 		val = val and resolveOptionsClauseValue(val, false, true, 2)
 		RW:SetSpeculativeMacroVarValue(vname, val)
@@ -1235,23 +1293,27 @@ local function init()
 		end
 	end)
 	local iconAtlasCache = {}
-	local iconReplCache = setmetatable({}, {__index=function(t,k)
-		if not k then return end
-		local v, a = (tonumber(k))
-		if not v then
-			if k:match("[/\\]") then
-				v = k
-			elseif k ~= "" then
-				if C_Texture.GetAtlasInfo(k) then
-					v, a = k, true
-				else
-					v = "Interface\\Icons\\" .. k
+	local iconReplCache = setmetatable({}, {
+		__index = function(t, k)
+			if not k then
+				return
+			end
+			local v, a = (tonumber(k))
+			if not v then
+				if k:match("[/\\]") then
+					v = k
+				elseif k ~= "" then
+					if C_Texture.GetAtlasInfo(k) then
+						v, a = k, true
+					else
+						v = "Interface\\Icons\\" .. k
+					end
 				end
 			end
+			t[k], iconAtlasCache[k] = v ~= 0 and v, a or v and false
+			return v
 		end
-		t[k], iconAtlasCache[k] = v ~= 0 and v, a or v and false
-		return v
-	end})
+	})
 	local function iconBC(_oico, meta, value, _target)
 		return true, meta == "iconb" and nil, iconReplCache[value], iconAtlasCache[value]
 	end
@@ -1268,26 +1330,31 @@ local function init()
 		return not not value, value or ""
 	end)
 end
-local caEscapeCache, caAliasCache, caIsOptional, cuHints, caFlush = {}, {}, {}, {} do
-	setmetatable(caEscapeCache, {__index=function(t, k)
-		if k then
-			local v = coreEnv.castEscapes[k:lower()] or false
-			t[k] = v
-			return v
+local caEscapeCache, caAliasCache, caIsOptional, cuHints, caFlush = {}, {}, {}, {}
+do
+	setmetatable(caEscapeCache, {
+		__index = function(t, k)
+			if k then
+				local v = coreEnv.castEscapes[k:lower()] or false
+				t[k] = v
+				return v
+			end
 		end
-	end})
-	setmetatable(caAliasCache, {__index=function(t, k)
-		if k then
-			local at = coreEnv.castAliases
-			local v = at[k:lower()]
-			repeat
-				local vl = v and v:lower()
-				v = at[vl] or v
-			until not at[vl]
-			t[k] = v
-			return v
+	})
+	setmetatable(caAliasCache, {
+		__index = function(t, k)
+			if k then
+				local at = coreEnv.castAliases
+				local v = at[k:lower()]
+				repeat
+					local vl = v and v:lower()
+					v = at[vl] or v
+				until not at[vl]
+				t[k] = v
+				return v
+			end
 		end
-	end})
+	})
 	function caFlush()
 		wipe(caEscapeCache)
 		wipe(caAliasCache)
@@ -1323,9 +1390,11 @@ function RW:seclib()
 	return core
 end
 function RW:RegisterCommand(slash, isConditional, allowVars, handlerFrame)
-	assert(type(slash) == "string" and (handlerFrame == nil or type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function"),
+	assert(type(slash) == "string" and
+			   (handlerFrame == nil or type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function"),
 		'Syntax: Rewire:RegisterCommand("/slash", parseConditional, allowVars[, handlerFrame])')
-	assert(handlerFrame == nil or handlerFrame:GetAttribute("RunSlashCmd"), 'Handler frame must have "RunSlashCmd" attribute set.')
+	assert(handlerFrame == nil or handlerFrame:GetAttribute("RunSlashCmd"),
+		'Handler frame must have "RunSlashCmd" attribute set.')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local ct = (isConditional and 1 or 0) + (allowVars and 2 or 0)
 	return RW:RegisterCommandEx(slash, ct, handlerFrame)
@@ -1335,7 +1404,7 @@ function RW:AddCommandAliases(primary, ...)
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local commandAlias = coreEnvW.commandAlias
 	local shortLen, shortAlias = PYROLYSIS and strlenutf8(coreEnv.PYshortName[primary] or primary), nil
-	for i=1, select("#", ...) do
+	for i = 1, select("#", ...) do
 		local v = select(i, ...)
 		commandAlias[v] = primary
 		local aliasLen = shortLen and strlenutf8(v)
@@ -1349,20 +1418,23 @@ function RW:AddCommandAliases(primary, ...)
 	coreEnvW.commandAliasChanged = 1
 end
 function RW:GetCommandInfo(slash)
-	assert(type(slash) == "string", 'Syntax: isConditional, allowVars, isCommaListArg, isSequenceListArg, resolveUnitTargets = Rewire:GetCommandInfo("/slash")')
+	assert(type(slash) == "string",
+		'Syntax: isConditional, allowVars, isCommaListArg, isSequenceListArg, resolveUnitTargets = Rewire:GetCommandInfo("/slash")')
 	local ct = coreEnv.commandFlags[slash]
 	if ct then
 		return ct % 2 >= 1, ct % 4 >= 2, ct % 8 >= 4, ct % 16 >= 8, ct % 32 >= 16
 	end
 end
 function RW:ImportSlashCmd(key, isConditional, allowVars, priority, hint)
-	assert(type(key) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"), 'Syntax: Rewire:ImportSlashCmd("KEY", parseConditional, allowVars[, hintPriority, hintFunc])')
+	assert(type(key) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"),
+		'Syntax: Rewire:ImportSlashCmd("KEY", parseConditional, allowVars[, hintPriority, hintFunc])')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local cf = (isConditional and 1 or 0) + (allowVars and 2 or 0)
 	return RW:ImportSlashCmdEx(key, cf, priority, hint)
 end
 function RW:SetCommandHint(slash, priority, hint)
-	assert(type(slash) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"), 'Syntax: Rewire:SetCommandHint("/slash", priority, hintFunc)')
+	assert(type(slash) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"),
+		'Syntax: Rewire:SetCommandHint("/slash", priority, hintFunc)')
 	if slash ~= "/use" and slash ~= "/cast" then
 		setCommandHinter(slash, priority, hint)
 	else
@@ -1370,16 +1442,20 @@ function RW:SetCommandHint(slash, priority, hint)
 	end
 end
 function RW:SetClickHint(buttonName, priority, hint)
-	assert(type(buttonName) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"), 'Syntax: Rewire:SetClickHint("buttonName", priority, hintFunc)')
+	assert(type(buttonName) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"),
+		'Syntax: Rewire:SetClickHint("buttonName", priority, hintFunc)')
 	setCommandHinter("/click " .. buttonName, priority, hint)
 end
 function RW:SetMetaHintFilter(meta, filterType, isConditional, hint)
-	assert(type(meta) == "string" and type(isConditional) == "boolean" and type(hint) == "function", 'Syntax: Rewire:SetMetaHintFilter("meta", "filterType", isConditional, hintFunc)')
+	assert(type(meta) == "string" and type(isConditional) == "boolean" and type(hint) == "function",
+		'Syntax: Rewire:SetMetaHintFilter("meta", "filterType", isConditional, hintFunc)')
 	local filterRun = assert(metaFilterTypes[filterType], 'Unsupported meta hint filter type')
 	metaFilters[meta:lower()] = {filterRun, isConditional, hint, filterType}
 end
 function RW:SetNamedMacroHandler(name, handlerFrame, hintFunc, skipNotifyAB)
-	assert(type(name) == "string" and type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function" and (hintFunc == nil or type(hintFunc) == "function"),
+	assert(
+		type(name) == "string" and type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function" and
+			(hintFunc == nil or type(hintFunc) == "function"),
 		'Syntax: Rewire:SetNamedMacroHandler(name, handlerFrame, hintFunc?, skipNotifyAB?)')
 	assert(handlerFrame:GetAttribute("RunNamedMacro"), 'Handler frame must have "RunNamedMacro" attribute set.')
 	if handlerFrame ~= GetFrameHandleFrame(coreEnv.macros[name]) then
@@ -1390,7 +1466,8 @@ function RW:SetNamedMacroHandler(name, handlerFrame, hintFunc, skipNotifyAB)
 	namedMacros[name] = hintFunc
 end
 function RW:ClearNamedMacroHandler(name, handlerFrame, skipNotifyAB)
-	assert(type(handlerFrame) == "table" and type(name) == "string", 'Syntax: Rewire:ClearNamedMacroHandler("name", handlerFrame)')
+	assert(type(handlerFrame) == "table" and type(name) == "string",
+		'Syntax: Rewire:ClearNamedMacroHandler("name", handlerFrame)')
 	if GetFrameHandleFrame(coreEnv.macros[name]) == handlerFrame then
 		assert(not InCombatLockdown(), 'Combat lockdown in effect')
 		coreEnvW.macros[name] = coreNamedMacroText[name] == nil and nil
@@ -1404,7 +1481,8 @@ function RW:IsNamedMacroKnown(name)
 	return coreEnv.macros[name] ~= nil
 end
 function RW:RegisterNamedMacroTextOwner(owner, priority)
-	assert(owner ~= nil and type(priority) == "number", 'Syntax: ownerToken = Rewire:RegisterNamedMacroTextOwner(owner, priority)')
+	assert(owner ~= nil and type(priority) == "number",
+		'Syntax: ownerToken = Rewire:RegisterNamedMacroTextOwner(owner, priority)')
 	assert(namedMacroTextOwnerPriority[owner] == nil, 'Duplicate registration')
 	namedMacroTextOwnerPriority[owner] = priority
 	return owner
@@ -1462,7 +1540,8 @@ function RW:GetCommandAction(slash, args, target, modState, msg)
 	return getCommandHint(nil, slash, args, modState, target, msg)
 end
 function RW:SetCastEscapeAction(castArg, action, isOptional)
-	assert(type(castArg) == "string" and (type(action) == "number" and action % 1 == 0 or action == nil) and (type(isOptional) == "boolean" or isOptional == nil),
+	assert(type(castArg) == "string" and (type(action) == "number" and action % 1 == 0 or action == nil) and
+			   (type(isOptional) == "boolean" or isOptional == nil),
 		'Syntax: Rewire:SetCastEscapeAction("castAction", abActionID or nil[, isOptional])')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local lowArg = castArg:lower()
@@ -1474,7 +1553,8 @@ function RW:GetCastEscapeAction(castArg)
 	return caEscapeCache[castArg]
 end
 function RW:SetCastAlias(castArg, aliasTo, isOptional)
-	assert(type(castArg) == "string" and (aliasTo == nil or type(aliasTo) == "string") and (isOptional == true or not isOptional),
+	assert(type(castArg) == "string" and (aliasTo == nil or type(aliasTo) == "string") and
+			   (isOptional == true or not isOptional),
 		'Syntax: Rewire:SetCastAlias("castAction", "aliasTo" or nil[, isOptional])')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local lowArg = castArg:lower()
@@ -1509,7 +1589,8 @@ function RW:IsSpellCastable(id, castContext, laxRank)
 
 	local name = (cc == nil or defer) and GetSpellInfo(id)
 	if name and (caEscapeCache[name] or caAliasCache[name]) then
-		local disallowRewireEscapes = castContext == true or castContext and type(castContext) == "number" and castContext % 2 < 1
+		local disallowRewireEscapes = castContext == true or castContext and type(castContext) == "number" and
+										  castContext % 2 < 1
 		if disallowRewireEscapes ~= true or (disallowRewireEscapes == true and not caIsOptional[name:lower()]) then
 			return disallowRewireEscapes ~= true, "rewire-escape"
 		end
@@ -1543,7 +1624,8 @@ function RW:SetSpeculativeMacroVarValue(vname, value)
 	reVarsSP[vname] = value
 end
 function RW:SetMacroVarValue(vname, value)
-	assert(type(vname) == "string" and (value == nil or type(value) == "string"), 'Syntax: Rewire:SetMacroVarValue("vname", "value" or nil)')
+	assert(type(vname) == "string" and (value == nil or type(value) == "string"),
+		'Syntax: Rewire:SetMacroVarValue("vname", "value" or nil)')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	coreEnvW.reVars[vname] = value
 end
@@ -1556,7 +1638,9 @@ RW.GetSpeculationID = getSpeculationID
 
 -- HIDDEN, UNSUPPORTED METHODS: May vanish at any time.
 local hum = {}
-setmetatable(RW, {__index=hum})
+setmetatable(RW, {
+	__index = hum
+})
 hum.HUM = hum
 function hum:AllMacroVars()
 	return nextReVar
@@ -1565,16 +1649,19 @@ function hum:IsPyrolysisActive()
 	return true
 end
 function hum:RegisterCommandEx(slash, flags, handlerFrame)
-	assert(type(slash) == "string" and type(flags) == "number" and (handlerFrame == nil or type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function"),
+	assert(type(slash) == "string" and type(flags) == "number" and
+			   (handlerFrame == nil or type(handlerFrame) == "table" and type(handlerFrame.GetAttribute) == "function"),
 		'Syntax: Rewire:RegisterCommandEx("/slash", flags[, handlerFrame])')
 	assert(flags % 1 == 0 and flags >= 0, 'RegisterCommandEx: invalid flags')
-	assert(handlerFrame == nil or handlerFrame:GetAttribute("RunSlashCmd"), 'Handler frame must have "RunSlashCmd" attribute set.')
+	assert(handlerFrame == nil or handlerFrame:GetAttribute("RunSlashCmd"),
+		'Handler frame must have "RunSlashCmd" attribute set.')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	setCommandType(slash, flags, handlerFrame)
 end
 function hum:ImportSlashCmdEx(key, flags, priority, hint)
-	assert(type(key) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"), 'Syntax: Rewire:ImportSlashCmdEx("KEY", flags[, hintPriority, hintFunc])')
-	assert(type(flags) == "number" and flags % 1 == 0 and flags >=0, 'ImportSlashCmdEx: invalid flags')
+	assert(type(key) == "string" and (hint == nil or type(hint) == "function" and type(priority) == "number"),
+		'Syntax: Rewire:ImportSlashCmdEx("KEY", flags[, hintPriority, hintFunc])')
+	assert(type(flags) == "number" and flags % 1 == 0 and flags >= 0, 'ImportSlashCmdEx: invalid flags')
 	assert(not InCombatLockdown(), 'Combat lockdown in effect')
 	local primary = _G["SLASH_" .. key .. "1"]
 	RW:RegisterCommandEx(primary, flags)
@@ -1589,4 +1676,6 @@ function hum:GetCommandFlags(slash)
 	return coreEnv.commandFlags[slash]
 end
 
-AB:RegisterModule("Rewire", {compatible=RW.compatible})
+AB:RegisterModule("Rewire", {
+	compatible = RW.compatible
+})

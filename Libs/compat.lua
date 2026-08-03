@@ -6,11 +6,27 @@ do
 	local mt = getmetatable(tx)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx then
-		if not idx.SetTextureSliceMargins  then idx.SetTextureSliceMargins  = function() end end
-		if not idx.GetTextureSliceMargins  then idx.GetTextureSliceMargins  = function() return 0, 0, 0, 0 end end
-		if not idx.SetTexelSnappingBias    then idx.SetTexelSnappingBias    = function() end end
-		if not idx.SetSnapToPixelGrid      then idx.SetSnapToPixelGrid      = function() end end
-		if not idx.SetVertexOffset         then idx.SetVertexOffset         = function() end end
+		if not idx.SetTextureSliceMargins then
+			idx.SetTextureSliceMargins = function()
+			end
+		end
+		if not idx.GetTextureSliceMargins then
+			idx.GetTextureSliceMargins = function()
+				return 0, 0, 0, 0
+			end
+		end
+		if not idx.SetTexelSnappingBias then
+			idx.SetTexelSnappingBias = function()
+			end
+		end
+		if not idx.SetSnapToPixelGrid then
+			idx.SetSnapToPixelGrid = function()
+			end
+		end
+		if not idx.SetVertexOffset then
+			idx.SetVertexOffset = function()
+			end
+		end
 	end
 	f, tx, mt, idx = nil, nil, nil, nil
 end
@@ -32,7 +48,8 @@ do
 	local mt = getmetatable(eb)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx and not idx.SetHyperlinkPropagateToParent then
-		idx.SetHyperlinkPropagateToParent = function() end
+		idx.SetHyperlinkPropagateToParent = function()
+		end
 	end
 	eb:SetAutoFocus(false)
 	eb:EnableKeyboard(false)
@@ -45,7 +62,8 @@ do
 	local mt = getmetatable(sl)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx and not idx.SetObeyStepOnDrag then
-		idx.SetObeyStepOnDrag = function() end
+		idx.SetObeyStepOnDrag = function()
+		end
 	end
 	sl = nil
 end
@@ -56,7 +74,10 @@ do
 	local mt = getmetatable(fs)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx then
-		if not idx.SetScript     then idx.SetScript     = function() end end
+		if not idx.SetScript then
+			idx.SetScript = function()
+			end
+		end
 		if not idx.GetLineHeight then
 			idx.GetLineHeight = function(self)
 				local _, size = self:GetFont()
@@ -91,7 +112,10 @@ do
 					end
 				end
 			end
-			if not idx.SetTarget then idx.SetTarget = function() end end
+			if not idx.SetTarget then
+				idx.SetTarget = function()
+				end
+			end
 		end
 	end
 	f, ag, anim = nil, nil, nil
@@ -116,7 +140,9 @@ do
 				i = i + 1
 			end
 		end
-		if #pending == 0 then sf:Hide() end
+		if #pending == 0 then
+			sf:Hide()
+		end
 	end)
 	local function safeAfter(a, b, c)
 		local delay, fn
@@ -131,17 +157,25 @@ do
 		end
 	end
 	local evie = T.Evie and T.Evie.raw
-	if type(evie) == "table" then evie.After = safeAfter end
+	if type(evie) == "table" then
+		evie.After = safeAfter
+	end
 end
 
-if not C_Widget then C_Widget = {} end
+if not C_Widget then
+	C_Widget = {}
+end
 if not C_Widget.IsFrameWidget then
 	C_Widget.IsFrameWidget = function(v)
 		return type(v) == "table" and type(v[0]) == "userdata"
 	end
 end
 
-if not AreDangerousScriptsAllowed then AreDangerousScriptsAllowed = function() return true end end
+if not AreDangerousScriptsAllowed then
+	AreDangerousScriptsAllowed = function()
+		return true
+	end
+end
 
 if not C_QuestLog then
 	C_QuestLog = {
@@ -151,58 +185,109 @@ if not C_QuestLog then
 		end,
 		IsOnQuest = function(qid)
 			for i = 1, GetNumQuestLogEntries() do
-				if select(9, GetQuestLogTitle(i)) == qid then return true end
+				if select(9, GetQuestLogTitle(i)) == qid then
+					return true
+				end
 			end
 		end,
 		IsComplete = function(qid)
 			for i = 1, GetNumQuestLogEntries() do
 				local _, _, _, _, _, _, isComplete, _, id = GetQuestLogTitle(i)
-				if id == qid then return isComplete end
+				if id == qid then
+					return isComplete
+				end
 			end
-		end,
+		end
 	}
 end
 
-if not C_PetJournal then C_PetJournal = {} end
+if not C_PetJournal then
+	C_PetJournal = {}
+end
 if not C_PetJournal.IsCurrentlySummoned then
 	C_PetJournal.IsCurrentlySummoned = C_PetJournal.GetSummonedPetID and function(guid)
 		return guid ~= nil and C_PetJournal.GetSummonedPetID() == guid
-	end or function() return false end
+	end or function()
+		return false
+	end
 end
 if not C_PetJournal.DismissSummonedPet then
 	C_PetJournal.DismissSummonedPet = DismissCompanion and function()
 		DismissCompanion("CRITTER")
-	end or function() end
+	end or function()
+	end
 end
-if not C_PetJournal.SummonPetByGUID          then C_PetJournal.SummonPetByGUID          = C_PetJournal.SummonPetByPetID or function() end end
-if not C_PetJournal.GetPetCooldownByGUID     then C_PetJournal.GetPetCooldownByGUID     = function() return 0, 0, 1 end end
-if not C_PetJournal.GetPetInfoBySpeciesID    then C_PetJournal.GetPetInfoBySpeciesID    = function() return nil end end
-if not C_PetJournal.FindPetIDByName          then C_PetJournal.FindPetIDByName          = function() return nil end end
+if not C_PetJournal.SummonPetByGUID then
+	C_PetJournal.SummonPetByGUID = C_PetJournal.SummonPetByPetID or function()
+	end
+end
+if not C_PetJournal.GetPetCooldownByGUID then
+	C_PetJournal.GetPetCooldownByGUID = function()
+		return 0, 0, 1
+	end
+end
+if not C_PetJournal.GetPetInfoBySpeciesID then
+	C_PetJournal.GetPetInfoBySpeciesID = function()
+		return nil
+	end
+end
+if not C_PetJournal.FindPetIDByName then
+	C_PetJournal.FindPetIDByName = function()
+		return nil
+	end
+end
 
-if not C_ToyBox then C_ToyBox = {} end
-if not C_ToyBox.IsToyUsable then C_ToyBox.IsToyUsable = function() return true end end
+if not C_ToyBox then
+	C_ToyBox = {}
+end
+if not C_ToyBox.IsToyUsable then
+	C_ToyBox.IsToyUsable = function()
+		return true
+	end
+end
 
-if not C_MountJournal then C_MountJournal = {} end
-if not C_MountJournal.GetMountIDs           then C_MountJournal.GetMountIDs           = function() return {} end end
-if not C_MountJournal.GetMountInfoExtraByID then C_MountJournal.GetMountInfoExtraByID = function() return nil end end
-if not C_MountJournal.SummonByID            then C_MountJournal.SummonByID            = function() end end
+if not C_MountJournal then
+	C_MountJournal = {}
+end
+if not C_MountJournal.GetMountIDs then
+	C_MountJournal.GetMountIDs = function()
+		return {}
+	end
+end
+if not C_MountJournal.GetMountInfoExtraByID then
+	C_MountJournal.GetMountInfoExtraByID = function()
+		return nil
+	end
+end
+if not C_MountJournal.SummonByID then
+	C_MountJournal.SummonByID = function()
+	end
+end
 -- force nil so mount spells route through the spell handler (GetSpellInfo/GetSpellTexture) instead
 
 if not FindSpellBookSlotBySpellID then
 	FindSpellBookSlotBySpellID = function(spellID)
-		if type(spellID) ~= "number" or spellID == 0 then return nil end
+		if type(spellID) ~= "number" or spellID == 0 then
+			return nil
+		end
 		for tab = 1, GetNumSpellTabs() do
 			local _, _, offset, count = GetSpellTabInfo(tab)
 			for i = offset + 1, offset + count do
 				local link = GetSpellLink(i, "spell")
 				local sid = link and tonumber(link:match("|Hspell:(%d+)"))
-				if sid == spellID then return i end
+				if sid == spellID then
+					return i
+				end
 			end
 		end
 	end
 end
 
-if not DoesSpellExist     then DoesSpellExist     = function(name) return not not (GetSpellInfo(name)) end end
+if not DoesSpellExist then
+	DoesSpellExist = function(name)
+		return not not (GetSpellInfo(name))
+	end
+end
 
 if not C_EquipmentSet then
 	local function iterSets()
@@ -220,19 +305,25 @@ if not C_EquipmentSet then
 		GetEquipmentSetInfo = function(id)
 			for i = 1, iterSets() do
 				local name, icon, sid = GetEquipmentSetInfo(i)
-				if sid == id then return name, icon end
+				if sid == id then
+					return name, icon
+				end
 			end
 		end,
 		GetEquipmentSetID = function(name)
 			for i = 1, iterSets() do
 				local n, _, id = GetEquipmentSetInfo(i)
-				if n == name then return id end
+				if n == name then
+					return id
+				end
 			end
 		end,
 		UseEquipmentSet = function(id)
-			if UseEquipmentSet then UseEquipmentSet(id) end
+			if UseEquipmentSet then
+				UseEquipmentSet(id)
+			end
 			return true
-		end,
+		end
 	}
 end
 
@@ -241,29 +332,49 @@ if not C_Minimap then
 		GetNumTrackingTypes = GetNumTrackingTypes,
 		GetTrackingInfo = function(id)
 			local name, tex, active = GetTrackingInfo(id)
-			if not name then return nil end
-			return {name = name, texture = tex, active = active}
+			if not name then
+				return nil
+			end
+			return {
+				name = name,
+				texture = tex,
+				active = active
+			}
 		end,
 		SetTracking = function(id, enable)
-			if SetTracking then SetTracking(enable and id or 0) end
-		end,
+			if SetTracking then
+				SetTracking(enable and id or 0)
+			end
+		end
 	}
 end
 
-if not C_KeyBindings then C_KeyBindings = {GetBindingByKey = GetBindingByKey or function() return nil end} end
+if not C_KeyBindings then
+	C_KeyBindings = {
+		GetBindingByKey = GetBindingByKey or function()
+			return nil
+		end
+	}
+end
 
-if not IsMetaKeyDown     then IsMetaKeyDown     = function() return false end end
+if not IsMetaKeyDown then
+	IsMetaKeyDown = function()
+		return false
+	end
+end
 
 if not C_CurveUtil then
-	C_CurveUtil = {EvaluateColorValueFromBoolean = function(b, v1, v2) return b and v1 or v2 end}
+	C_CurveUtil = {
+		EvaluateColorValueFromBoolean = function(b, v1, v2)
+			return b and v1 or v2
+		end
+	}
 end
 
 if RAID_CLASS_COLORS then
 	for _, c in pairs(RAID_CLASS_COLORS) do
 		if not c.colorStr and c.r then
-			c.colorStr = string.format("ff%02x%02x%02x",
-				math.floor(c.r * 255 + 0.5),
-				math.floor(c.g * 255 + 0.5),
+			c.colorStr = string.format("ff%02x%02x%02x", math.floor(c.r * 255 + 0.5), math.floor(c.g * 255 + 0.5),
 				math.floor(c.b * 255 + 0.5))
 		end
 	end
@@ -280,7 +391,13 @@ end
 if not strcmputf8i then
 	strcmputf8i = function(a, b)
 		local la, lb = (a or ""):lower(), (b or ""):lower()
-		if la < lb then return -1 elseif la > lb then return 1 else return 0 end
+		if la < lb then
+			return -1
+		elseif la > lb then
+			return 1
+		else
+			return 0
+		end
 	end
 end
 
@@ -302,8 +419,12 @@ if not GetSpellBookItemInfo then
 	GetSpellBookItemInfo = function(index, bookType)
 		local link = GetSpellLink(index, bookType)
 		local id = link and tonumber(link:match("|Hspell:(%d+)"))
-		if id then return "SPELL", id end
+		if id then
+			return "SPELL", id
+		end
 	end
 end
 
-if not REVERT         then REVERT         = "Revert" end
+if not REVERT then
+	REVERT = "Revert"
+end

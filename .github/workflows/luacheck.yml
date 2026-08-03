@@ -1,0 +1,35 @@
+name: Luacheck
+
+on:
+  push:
+    paths:
+      - '**.lua'
+      - '.luacheckrc'
+      - '.github/workflows/luacheck.yml'
+  pull_request:
+    paths:
+      - '**.lua'
+      - '.luacheckrc'
+      - '.github/workflows/luacheck.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: luacheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  luacheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install luacheck
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends lua-check
+          luacheck --version
+
+      - name: Run luacheck
+        run: luacheck .

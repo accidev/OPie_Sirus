@@ -6,6 +6,10 @@
 ## Notes-ruRU: Объединяет умения в кольца, которые появляются при нажатии назначенных клавиш.
 ## SavedVariables: OPie_SavedData
 ## SavedVariablesPerCharacter: OPie_SavedDataPC
+
+## X-Sirus-Update: https://github.com/accidev/OPie_Sirus/tree/main
+## X-Sirus-Category: 17
+
 Meta\PackTag-6.lua
 Libs\Evie.lua
 Libs\compat.lua
@@ -22,6 +26,7 @@ OPieCore.lua
 UI\RingView.lua
 CustomRings.lua
 UI\ConfigHost.lua
+UI\BlizzOptions.lua
 UI\Options\Home.lua
 UI\Options\Options.lua
 UI\Options\Bindings.lua

@@ -944,9 +944,9 @@ do
 			end
 		end)
 		function f:SetIcon(ico, forced, ext)
-			local plainTexture, atlas = setIcon(self.icon, forced or ico, ext)
+			local plainTexture = setIcon(self.icon, forced or ico, ext)
 			self:SetText(forced and L "Customized icon" or L "Based on slice action")
-			isd:SetFirstAsset(atlas or plainTexture)
+			isd:SetFirstAsset(plainTexture)
 			isd:SetSelectedAsset(forced)
 		end
 	end
@@ -1806,7 +1806,7 @@ do
 		rankFilter.maxOnly = on
 		self.maxRankOnly:SetChecked(on)
 		selectCategory(1)
-		self.slider:SetMinMaxValues(0, math.max(0, AB:GetNumCategories() - #cats))
+		self.slider:SetMinMaxValues(0, math.max(0, AB:GetNumCategories() - NUM_VISIBLE_CATS))
 		self.slider:SetValue(0)
 	end)
 end

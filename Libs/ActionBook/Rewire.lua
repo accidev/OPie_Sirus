@@ -649,9 +649,9 @@ function core:clearNamedMacroHinter(name, skipNotifyAB)
 end
 do -- core:setMute(mute)
 	local f, oSFX, oES, oUEM = CreateFrame("Frame")
-	local muteArmed, muteReqState, muteCount = false, false, 0
+	local muteArmed, muteReqState = false, false
 	function core:setMute(mute)
-		local arm, disarm = mute and not muteArmed, muteCount == 0 and not mute
+		local arm, disarm = mute and not muteArmed, not mute
 		if arm then
 			oSFX, oES = GetCVar("Sound_EnableSFX"), GetCVar("Sound_EnableErrorSpeech")
 			UIErrorsFrame:UnregisterEvent("UI_ERROR_MESSAGE")
@@ -671,7 +671,6 @@ do -- core:setMute(mute)
 	end
 	f:SetScript("OnUpdate", function()
 		local ost = muteReqState
-		muteCount = 0
 		core:setMute(false)
 		if ost then
 			error("Muted state persisted after macro execution")
@@ -679,7 +678,6 @@ do -- core:setMute(mute)
 	end)
 	coreExecCleanup[#coreExecCleanup + 1] = function()
 		if muteArmed then
-			muteCount = 0
 			core:setMute(false)
 		end
 	end

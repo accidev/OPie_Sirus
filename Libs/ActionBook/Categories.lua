@@ -90,7 +90,7 @@ do
 		local top = {}
 		for i = 1, GetNumSpellTabs() + 12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
-			if not ofs then
+			if not ofs or (c or 0) == 0 and i > GetNumSpellTabs() then
 				break
 			end
 			if not isSkippedTab(i, tabName, ico) then
@@ -112,7 +112,7 @@ do
 		local top = spellRankFilter.maxOnly and collectTopRanks()
 		for i = 1, GetNumSpellTabs() + 12 do
 			local tabName, ico, ofs, c = GetSpellTabInfo(i)
-			if not ofs then
+			if not ofs or (c or 0) == 0 and i > GetNumSpellTabs() then
 				break
 			end
 			local isSkipped = isSkippedTab(i, tabName, ico)
@@ -184,7 +184,7 @@ do
 		local function describeFlyout(fid)
 			fid = tonumber(fid)
 			local name = fid and GetFlyoutInfo(fid)
-			local _, _, icon = fid and GetSpellInfo(fid)
+			local icon = fid and select(3, GetSpellInfo(fid)) or nil
 			return L "Spell flyout", name or tostring(fid), icon, nil, nil, nil, "collection"
 		end
 		AB:RegisterActionType("opie.flyout", createFlyout, describeFlyout, 1)
@@ -232,10 +232,8 @@ do
 		AB:AugmentCategory(L "Pet abilities", function(_, add)
 			wipe(mark)
 			for i = 1, HasPetSpells() or 0 do
-				local spellType, id = GetSpellBookItemInfo(i, "pet")
-				if spellType == "PETACTION" then
-					id = nil
-				elseif not id or id == 0 then
+				local _, id = GetSpellBookItemInfo(i, "pet")
+				if not id or id == 0 then
 					local name, rank = GetSpellBookItemName(i, "pet")
 					if name then
 						local link = GetSpellLink(name, rank)

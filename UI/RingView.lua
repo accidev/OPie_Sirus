@@ -617,7 +617,8 @@ local function callElementUpdate(self, f, si, ni, a1, a2)
 end
 vis.sliceBindConflict = {}
 local function updateSliceBindings(imode, curModState)
-	local showSliceBinds, useSliceBinds = configCache.ShowKeys, configCache.SliceBinding
+	local showSliceBinds, useSliceBinds = configCache.ShowKeys,
+										  configCache.SliceBinding or configCache.InteractionMode == 3
 	curModState = curModState or GetModifierKeyState()
 	imode = showSliceBinds and (imode or PC:GetCurrentInputs())
 	local _, sliceBind, sliceBind2, c1, c2
@@ -776,7 +777,9 @@ function iapi:Show(_, _, fastOpen)
 	local baseSize, scale, radius = configCache.MIReserveSize, max(0.1, configCache.RingScale)
 	radius = calculateRingRadius(count or 3, baseSize, baseSize, configCache.MIMinRadius, 90 - (offset or 0))
 	vis.count, vis.offset, vis.radius = count, offset, radius
-	vis.oldSlice, vis.angle, vis.omState, vis.rotPeriod, vis.oldEA, vis.glowTarget, vis.glowEnd = -1
+	vis.oldSlice, vis.angle, vis.omState, vis.rotPeriod, vis.oldEA, vis.glowEnd = -1
+	vis.glowTarget = 0
+	centerGlow:SetAlpha(0)
 	GhostIndication:Reset()
 	SwitchIndicatorFactory(configCache.IndicatorFactory)
 	centerPointer:SetShown(configCache.InteractionMode ~= 3)

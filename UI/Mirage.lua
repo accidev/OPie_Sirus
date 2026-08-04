@@ -349,9 +349,6 @@ end
 function Indicator:SetShortLabel(text)
 	getWidgetData(self, IndicatorData).label:SetText(text)
 end
-function Indicator:SetCooldownDuration(duration)
-	return Indicator.SetCooldown(self, duration, duration)
-end
 
 local function CreateIndicator(name, parent, size, nested, gx)
 	local cf, d, w, ef = CreateFrame("Frame", name, parent)

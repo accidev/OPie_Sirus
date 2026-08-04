@@ -106,14 +106,11 @@ securecall(function() -- instance:arena/bg/ratedbg/lfr/raid/scenario + outland/n
 	local mapTypes = {
 		party = "dungeon",
 		pvp = "battleground/bg",
-		ratedbg = "ratedbg/rgb",
 		none = "world"
 	}
 	local function syncInstance()
-		local _, itype, did = GetInstanceInfo()
-		local stype = itype == "raid" and did == 7 and "/lfr"
+		local _, itype = GetInstanceInfo()
 		itype = mapTypes[itype] or itype or "daze"
-		itype = stype and (itype .. stype) or itype
 		KR:SetStateConditionalValue("in", itype)
 	end
 	EV.PLAYER_ENTERING_WORLD = syncInstance

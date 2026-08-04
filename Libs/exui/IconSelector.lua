@@ -206,7 +206,7 @@ function internal.ConfigureIconGrid(d)
 	local rows, cols, cw, ch = d.rows, d.columns, d.cellWidth, d.cellHeight
 	sb:SetStepsPerPage(rows, math.min(math.max(1, rows - 2), 5))
 	sb:SetWindowRange(rows)
-	sb:SetMinMaxValues(0, math.ceil((#icontex - cols * rows) / cols))
+	sb:SetMinMaxValues(0, math.ceil((#icontex - (cols * rows - 1)) / cols))
 	d.self:SetSize(42 + cols * cw, 40 + ch * rows)
 	local usedIcons = cols * rows - 1
 	for i = 0, usedIcons do
@@ -300,7 +300,7 @@ function internal.FilterIcons(d, query, _editbox)
 end
 function internal.SetIconList(d, iconList, filter, viewIndexOffset)
 	d.iconList, d.filter, d.viewIndexOffset = iconList, filter, viewIndexOffset or d.viewIndexOffset
-	d.scrollBar:SetMinMaxValues(0, math.ceil((#d.iconList - d.columns * d.rows) / d.columns))
+	d.scrollBar:SetMinMaxValues(0, math.ceil((#d.iconList - (d.columns * d.rows - 1)) / d.columns))
 end
 
 local function CreateIconSelector(name, parent, outerTemplate, id)

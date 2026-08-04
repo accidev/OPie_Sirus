@@ -1,7 +1,7 @@
 local _, T = ...
 -- See https://www.townlong-yak.com/addons/opie/localization
 
-local C, z, V, K = GetLocale(), nil
+local C, V, K = GetLocale()
 V = C == "ruRU" and { -- 214/215 (100%)
 "%d |4минуту:минуты:минут; назад (%s)", "%s для отмены",
 "%s для поиска в текущих результатах", "(Все комплекты)",

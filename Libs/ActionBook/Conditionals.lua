@@ -356,61 +356,42 @@ securecall(function() -- professions
 		[GetSpellName(20221) or ""] = "gobeng",
 		[GetSpellName(20222) or ""] = "gobeng",
 		[GetSpellName(20220) or ""] = "nomeng",
-		[GetSpellName(20219) or ""] = "nomeng"
+		[GetSpellName(20219) or ""] = "nomeng",
+		[GetSpellName(25229) or ""] = "jc",
+		[GetSpellName(45357) or ""] = "scri"
 	}
-	local spellIDProfs = {
-		[264636] = "cook3",
-		[264620] = "tail3",
-		[264626] = "tail6",
-		[271662] = "fish5",
-		[264588] = "lw6",
-		[264590] = "lw7",
-		[264479] = "eng2",
-		[264481] = "eng3",
-		[264483] = "eng4",
-		[264485] = "eng5",
-		[264488] = "eng6",
-		[264490] = "eng7",
-		[310542] = "eng9"
-		-- eng8 is in sync code, because factions
-	}
+	local absentProfs = "cook3 tail3 tail6 fish5 lw6 lw7 eng2 eng3 eng4 eng5 eng6 eng7 eng8 eng9 jc scri arch"
 	map[""] = nil
 	syncProfInner = function()
-		local idx, wasCollapsed
-		for i = 1, GetNumSkillLines() do
-			local text, isHeader, isExpanded = GetSkillLineInfo(i)
-			if isHeader and text == TRADE_SKILLS then
-				idx, wasCollapsed = i, not isExpanded
-				ExpandSkillHeader(i)
-				break
+		local collapsed, i = nil, 1
+		while i <= GetNumSkillLines() do
+			local text, isHeader, isExpanded, curSkill = GetSkillLineInfo(i)
+			if isHeader then
+				if text and not isExpanded then
+					collapsed = collapsed or {}
+					collapsed[text] = true
+					ExpandSkillHeader(i)
+				end
+			elseif map[text] then
+				ct[map[text]] = curSkill
+			end
+			i = i + 1
+		end
+		for j = collapsed and GetNumSkillLines() or 0, 1, -1 do
+			local text, isHeader = GetSkillLineInfo(j)
+			if isHeader and collapsed[text] then
+				CollapseSkillHeader(j)
 			end
 		end
-		if not idx then
-			return
-		end
-		local j, text, isHeader, _, curSkill = idx + 1
-		repeat
-			j, text, isHeader, _, curSkill = j + 1, GetSkillLineInfo(j)
-			local skey = map[text]
-			if skey and not isHeader then
-				ct[skey] = curSkill
-			end
-		until isHeader or not text
-		if wasCollapsed then
-			CollapseSkillHeader(idx)
-		end
+		return collapsed ~= nil
 	end
+	local syncPending, lastSync = nil, 0
 	local function syncProf()
 		ct, ot = ot, ct
 		for k in pairs(ct) do
 			ct[k] = nil
 		end
-		syncProfInner()
-		for sid, cnd in pairs(spellIDProfs) do
-			ct[cnd] = GetSpellInfo(GetSpellInfo(sid) or "\1") and 1 or nil
-		end
-		ct["eng8"] = GetSpellInfo(GetSpellInfo(UnitFactionGroup("player") == "Horde" and 265807 or 264492) or "\1") and
-						 1 or nil
+		local touched = syncProfInner()
 		for k, v in pairs(ct) do
 			if ot[k] ~= v then
 				KR:SetThresholdConditionalValue(k, v)
@@ -423,11 +404,14 @@ securecall(function() -- professions
 				ot[k] = nil
 			end
 		end
+		if touched then
+			lastSync = GetTime()
+		end
 	end
 	for _, v in pairs(map) do
 		KR:SetThresholdConditionalValue(v, false)
 	end
-	for _, v in pairs(spellIDProfs) do
+	for v in absentProfs:gmatch("%S+") do
 		KR:SetThresholdConditionalValue(v, false)
 	end
 	for alias, real in
@@ -435,7 +419,17 @@ securecall(function() -- professions
 			"(%a+):(%a+)") do
 		KR:SetAliasConditional(alias, real)
 	end
-	EV.PLAYER_LOGIN, EV.CHAT_MSG_SKILL = syncProf, syncProf
+	local function syncProfSoon()
+		if syncPending or GetTime() - lastSync < 2 then
+			return
+		end
+		syncPending = true
+		EV.After(0.5, function()
+			syncPending = nil
+			syncProf()
+		end)
+	end
+	EV.PLAYER_LOGIN, EV.CHAT_MSG_SKILL, EV.SKILL_LINES_CHANGED = syncProf, syncProfSoon, syncProfSoon
 end)
 securecall(function() -- pet:stable id; havepet:stable id
 	if playerClass ~= "HUNTER" then

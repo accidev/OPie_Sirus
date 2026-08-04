@@ -386,6 +386,7 @@ AB:AugmentCategory(L "Macros", function(_, add)
 end)
 do
 	local profCatName = TRADE_SKILLS or "Professions"
+	local secCatName = ((SECONDARY_SKILLS or ""):gsub("%s*:%s*$", ""))
 	local PROF_SECONDARY = {
 		["Горное дело"] = {"Выплавка металлов"},
 		["Ювелирное дело"] = {"Просеивание"},
@@ -399,7 +400,7 @@ do
 			local name, isHeader = GetSkillLineInfo(i)
 			if name then
 				if isHeader then
-					inProfsHeader = (name == profCatName)
+					inProfsHeader = (name == profCatName) or (secCatName ~= "" and name == secCatName)
 				elseif inProfsHeader then
 					profSkills[name] = true
 				end

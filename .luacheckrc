@@ -282,6 +282,7 @@ read_globals = {
 	"RegisterCVar",
 	"RegisterStateDriver",
 	"ReputationFrame",
+	"SECONDARY_SKILLS",
 	"SLASH_CAST1",
 	"SLASH_CASTRANDOM1",
 	"SLASH_CASTSEQUENCE1",

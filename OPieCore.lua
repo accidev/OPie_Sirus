@@ -1021,6 +1021,9 @@ local function OR_DeleteRing(name, data)
 			if v.Bindings then
 				v.Bindings[name] = nil
 			end
+			if v.Bindings2 then
+				v.Bindings2[name] = nil
+			end
 			if v.RingOptions then
 				for k2, _v2 in pairs(v.RingOptions) do
 					if type(k2) ~= "string" or k2:match(rnOpt) then
@@ -1689,6 +1692,7 @@ function private:DeleteProfile(ident)
 end
 function private:ResetRingBindings()
 	wipe(configInstance.Bindings)
+	wipe(configInstance.Bindings2)
 	sfBindsAll = true
 	OR_PerfomDelayedSync()
 end

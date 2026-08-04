@@ -10,7 +10,7 @@ local function SetStanceBarVisibility(_, hidden, ringID)
 	if ringID ~= nil then
 		return false
 	end
-	hidden = hidden ~= false
+	hidden = hidden == true
 	if InCombatLockdown() then
 		pendingValue = hidden
 		return

@@ -1,7 +1,7 @@
 local _, T = ...
 -- See https://www.townlong-yak.com/addons/opie/localization
 
-local C, z, V, K = GetLocale(), nil
+local C, V, K = GetLocale()
 V = C == "ruRU" and { -- 214/215 (100%)
 "%d |4минуту:минуты:минут; назад (%s)", "%s для отмены",
 "%s для поиска в текущих результатах", "(Все комплекты)",
@@ -10,7 +10,8 @@ V = C == "ruRU" and { -- 214/215 (100%)
 "Дополнительная прокрутка после использования",
 "Все персонажи   %s", "Все параметры", "Все персонажи",
 "Разрешить быстрое применение",
-"Нажать Alt для установки условной привязки", z,
+"Нажать Alt для установки условной привязки",
+"Произошла ошибка при загрузке OPie.",
 "Анимировать переходы", "Анимация",
 "Все внесенные изменения в настоящее время не будут сохраняться.",
 "Внешний вид", "Привязать ко всем специализациям",
@@ -136,7 +137,8 @@ V = C == "ruRU" and { -- 214/215 (100%)
 "Только высший ранг", "Метки на местности", "Боевой пропуск",
 "Открыть боевой пропуск", "Открыть задания",
 "Завершить ежедневные задания", "Завершить все задания",
-"Собрать награды", "Обзор", "Левый клик: открыть настройки"} or nil
+"Собрать награды", "Обзор", "Левый клик: открыть настройки",
+"Открыть OPie", "Показывать иконку на миникарте", "В игре: %s"} or nil
 
 K = V and
 				{"%d |4minute:minutes; ago (%s)", "%s to cancel", "%s to search within current results", "(All sets)",
@@ -207,7 +209,8 @@ K = V and
 				 "You can support further development by visiting:", "%s — author of the original addon.",
 				 "%s — adaptation for World of Warcraft 3.3.5a.", "%s — optimization for Sirus.", "Highest ranks only",
 				 "World Markers", "Battle Pass", "Open Battle Pass", "Open quests", "Complete daily quests",
-				 "Complete all quests", "Collect rewards", "Overview", "Left click: Open settings"}
+				 "Complete all quests", "Collect rewards", "Overview", "Left click: Open settings", "Open OPie",
+				 "Show minimap icon", "In-game: %s"}
 
 local L = K and {}
 for i = 1, K and #K or 0 do

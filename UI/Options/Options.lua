@@ -228,8 +228,11 @@ do -- Widget construction
 		return OPC_AlterOptionW(self, nv)
 	end
 	local function onEnabledChange(self)
-		local a = isEnabled(self) and 1 or 0.6
-		widgetControl[self].text:SetVertexColor(a, a, a)
+		local a, c = isEnabled(self) and 1 or 0.6, widgetControl[self]
+		c.text:SetVertexColor(a, a, a)
+		if c.textTop then
+			c.textTop:SetVertexColor(a, a, a)
+		end
 	end
 	local function onDropDownSelect(_, nv, drop)
 		return OPC_AlterOptionW(drop, nv)

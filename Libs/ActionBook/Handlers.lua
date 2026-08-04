@@ -201,7 +201,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 			end
 		end
 		local sbslot
-		if msid and msid ~= 161691 then
+		if msid then
 			if sbslotCache[msid] == nil then
 				sbslotCache[msid] = FindSpellBookSlotBySpellID(msid) or false
 			end
@@ -696,12 +696,19 @@ securecall(function() -- macrotext
 end)
 securecall(function() -- macro: name
 	local map, sm = {}, {}
+	local function macroIndexByName(name)
+		if type(GetMacroIndexByName) ~= "function" then
+			return nil
+		end
+		local idx = GetMacroIndexByName(name)
+		return idx and idx > 0 and idx or nil
+	end
 	do
 		local wmSynced, owner = true, RW:RegisterNamedMacroTextOwner("ab-macro-wrapper", 10)
 		local function syncWMacros()
 			local notify, numGlobal, numChar = false, GetNumMacros()
 			for k in pairs(sm) do
-				if not GetMacroInfo(k) then
+				if not GetMacroInfo(macroIndexByName(k) or k) then
 					notify, sm[k] = RW:SetNamedMacroText(k, nil, owner, true) or notify, nil
 				end
 			end
@@ -729,7 +736,7 @@ securecall(function() -- macro: name
 	end
 	RW:SetMetaHintFilter("abmacrowrap", "macroFallback", false, function(_meta, v)
 		if sm[v] then
-			local n, ico = GetMacroInfo(v)
+			local n, ico = GetMacroInfo(macroIndexByName(v) or v)
 			return true, not not n, ico, v
 		end
 	end)
@@ -911,16 +918,6 @@ securecall(function() -- raidmark
 		return L "Raid Marker", _G["RAID_TARGET_" .. id], "Interface/TargetingFrame/UI-RaidTargetingIcon_" .. id
 	end
 	AB:RegisterActionType("raidmark", createRaidMark, describeRaidMark, 1)
-	if _G["SLASH_TARGET_MARKER1"] then
-		RW:ImportSlashCmd("TARGET_MARKER", true, false, 40, function(_, _, clause, target)
-			clause = tonumber(clause)
-			if clause == 0 then
-				return true, removeHint()
-			elseif clause then
-				return true, raidmarkHint(clause, nil, target)
-			end
-		end)
-	end
 end)
 securecall(function() -- worldmark
 	local map, ORDER = {}, WORLD_RAID_MARKER_ORDER

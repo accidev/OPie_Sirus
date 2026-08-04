@@ -691,7 +691,6 @@ do -- + Click dispatcher
 			local message = ...
 			local cs, oi, bad = AI_ClickStack[message], AI_ClickStackIndex
 			self:SetAttribute('type', nil)
-			self:SetAttribute('typerelease', nil)
 			AI_ClickStackIndex, ORL_JumpCount = oi-1
 			bad = message ~= oi or cs == nil or AB:GetAttribute("execID") == cs[1]
 			if message == oi and cs and cs[3] then
@@ -919,7 +918,7 @@ local function OR_SyncRingRE(name, props)
 	data.CenterAction, data.MotionAction = centerAction or nil, motionAction or nil
 	data.ClickPriority = OR_GetRingOption(name, "ClickPriority") or nil
 	data.ReOpenAction = OR_GetRingOption(name, "ReOpenAction")
-	data.NoClose, data.NoPointer = noClose or nil, imode == 3 or nil
+	data.NoPointer = imode == 3 or nil
 	data.NoCloseOnSlice = OR_GetRingOption(name, "NoCloseOnSlice") or nil
 	data.PrimaryAction, data.PrimaryActionUp = primaryAction, primaryActionUp
 	data.LeftAction, data.LeftAction2 = leftAction, leftAction2

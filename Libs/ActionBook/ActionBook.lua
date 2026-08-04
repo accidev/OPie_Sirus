@@ -24,7 +24,7 @@ do
 	end
 	local base, api, inner = newproxy(true), {}, setmetatable({}, {
 		__mode = "k"
-	}), {}
+	})
 	function istore()
 		local r, d = newproxy(base), {
 			[0] = 0

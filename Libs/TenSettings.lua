@@ -535,6 +535,7 @@ do -- TenSettingsFrame
 		do
 			cf:Hide()
 			cf:SetScript("OnMouseWheel", noop)
+			cf:EnableMouseWheel(true)
 			local cn = container_notifications
 			cf.OnCommit, cf.OnDefault, cf.OnRefresh, cf.OnCancel = cn.okay, cn.default, cn.refresh, cn.cancel
 			cf:SetSize(CONTAINER_WIDTH, CONTAINER_HEIGHT)
@@ -878,6 +879,7 @@ do -- M:ShowFrameOverlay(self, overlayFrame)
 		end)
 		container:SetScript("OnMouseWheel", function()
 		end)
+		container:EnableMouseWheel(true)
 		container.fader = container:CreateTexture(nil, "BACKGROUND", nil, -6)
 		container.fader:SetTexture(0, 0, 0, 0.55)
 		local close = CreateFrame("Button", nil, container, "UIPanelCloseButton")

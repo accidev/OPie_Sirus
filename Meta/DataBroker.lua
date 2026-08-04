@@ -41,7 +41,7 @@ do -- action handler
 		if not obj then
 			return
 		end
-		return true, 0, obj.icon, obj.label or obj.text, 0, 0, 0, obj.OnTooltipShow, nil, obj
+		return true, 0, obj.icon, obj.label or obj.text, 0, 0, 0, obj.OnTooltipShow, obj, obj
 	end
 	local function createBroker(name, flags)
 		local rightClick = flags == 8

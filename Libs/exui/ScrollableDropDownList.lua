@@ -26,6 +26,7 @@ do
 		block:Hide()
 		block:SetScript("OnHide", releaseBlock)
 		block:SetScript("OnMouseWheel", int.OnMouseWheel)
+		block:EnableMouseWheel(true)
 		block:SetHitRectInsets(-4, -24, -8, -8)
 		local bb = block:CreateTexture(nil, "BACKGROUND")
 		bb:SetTexture(0.3, 0.3, 0.3)

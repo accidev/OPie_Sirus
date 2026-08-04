@@ -194,7 +194,7 @@ do
 			controller:SetOffset(nv, isInternal)
 		end)
 		edFrame:SetScript("OnEvent", function(_, e, iid, ok)
-			if e == "GET_ITEM_INFO_RECEIVED" and iid and ok then
+			if e == "ITEM_DATA_LOAD_RESULT" and iid and ok then
 				controller:CheckPendingItemIDs()
 			end
 		end)
@@ -298,7 +298,7 @@ do
 		for i = numRowsPV + 1, #rows do
 			rows[i]:Hide()
 		end
-		edFrame[hadPendingGIIR and "RegisterEvent" or "UnregisterEvent"](edFrame, "GET_ITEM_INFO_RECEIVED")
+		edFrame[hadPendingGIIR and "RegisterEvent" or "UnregisterEvent"](edFrame, "ITEM_DATA_LOAD_RESULT")
 	end
 	function controller:GetNumRows()
 		return #idList
@@ -316,7 +316,7 @@ do
 			end
 		end
 		if allDone or not edFrame:IsVisible() then
-			edFrame:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
+			edFrame:UnregisterEvent("ITEM_DATA_LOAD_RESULT")
 			edFrame:SetScript("OnShow", not allDone and controller.CheckPendingItemIDs or nil)
 		end
 	end
@@ -325,9 +325,9 @@ do
 		for k, v in pairs(exclude) do
 			clone[k] = v
 		end
-		config.undo:push("opie.autoquest.state", controller.RestoreState, 1, clone)
+		config.undo:push("opie.autoquest.state", controller.RestoreState, clone)
 	end
-	function controller:RestoreState(msg, clone)
+	function controller.RestoreState(msg, clone)
 		if msg == "archive-unwind" then
 			controller:SaveState()
 		end

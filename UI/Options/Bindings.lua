@@ -264,9 +264,12 @@ end
 function subBindings:default()
 	for i = 0, #self.options do
 		local on = i == 0 and "SliceBindingString" or self.options[i]
-		PC:SetOption(on, nil)
-		if self.scope then
-			PC:SetOption(on, nil, self.scope)
+		for j = 1, i == 0 and 1 or 2 do
+			local opt = j == 2 and on .. "2" or on
+			PC:SetOption(opt, nil)
+			if self.scope then
+				PC:SetOption(opt, nil, self.scope)
+			end
 		end
 	end
 end

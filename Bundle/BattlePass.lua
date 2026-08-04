@@ -28,10 +28,10 @@ local function canOpen()
 end
 local function togglePanel(page)
 	if BattlePassFrame:IsShown() and BattlePassFrame:GetSelectedPage() == page then
-		BattlePassFrame:Hide()
+		HideUIPanel(BattlePassFrame)
 	elseif canOpen() then
 		BattlePassFrame:SetPage(page)
-		BattlePassFrame:Show()
+		ShowUIPanel(BattlePassFrame)
 	end
 end
 

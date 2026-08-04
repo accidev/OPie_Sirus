@@ -1,24 +1,5 @@
 local _, T = ...
 
-do
-	local f = CreateFrame("Frame")
-	local tx = f:CreateTexture()
-	local mt = getmetatable(tx)
-	local idx = mt and type(mt.__index) == "table" and mt.__index
-	if idx then
-		if not idx.SetTextureSliceMargins then
-			idx.SetTextureSliceMargins = function()
-			end
-		end
-		if not idx.GetTextureSliceMargins then
-			idx.GetTextureSliceMargins = function()
-				return 0, 0, 0, 0
-			end
-		end
-	end
-	f, tx, mt, idx = nil, nil, nil, nil
-end
-
 -- frame metatable — only SetAttributeNoHandler; other retail methods intentionally omitted
 -- (Lua closures in frame metatable are tainted, propagating via NamePlate secure thread)
 do
@@ -62,10 +43,6 @@ do
 	local mt = getmetatable(fs)
 	local idx = mt and type(mt.__index) == "table" and mt.__index
 	if idx then
-		if not idx.SetScript then
-			idx.SetScript = function()
-			end
-		end
 		if not idx.GetLineHeight then
 			idx.GetLineHeight = function(self)
 				local _, size = self:GetFont()
@@ -98,10 +75,6 @@ do
 					if self.__fromAlpha ~= nil and self.SetChange then
 						self:SetChange(v - self.__fromAlpha)
 					end
-				end
-			end
-			if not idx.SetTarget then
-				idx.SetTarget = function()
 				end
 			end
 		end
@@ -170,21 +143,6 @@ if not C_QuestLog then
 		IsQuestFlaggedCompleted = IsQuestFlaggedCompleted or function(qid)
 			qid = tonumber(qid)
 			return qid ~= nil and IsQuestCompleted(qid) or false
-		end,
-		IsOnQuest = function(qid)
-			for i = 1, GetNumQuestLogEntries() do
-				if select(9, GetQuestLogTitle(i)) == qid then
-					return true
-				end
-			end
-		end,
-		IsComplete = function(qid)
-			for i = 1, GetNumQuestLogEntries() do
-				local _, _, _, _, _, _, isComplete, _, id = GetQuestLogTitle(i)
-				if id == qid then
-					return isComplete
-				end
-			end
 		end
 	}
 end
@@ -235,10 +193,6 @@ end
 if not C_MountJournal.GetMountInfoExtraByID then
 	C_MountJournal.GetMountInfoExtraByID = function()
 		return nil
-	end
-end
-if not C_MountJournal.SummonByID then
-	C_MountJournal.SummonByID = function()
 	end
 end
 -- force nil so mount spells route through the spell handler (GetSpellInfo/GetSpellTexture) instead
@@ -330,7 +284,7 @@ if not C_Minimap then
 		end,
 		SetTracking = function(id, enable)
 			if SetTracking then
-				SetTracking(enable and id or 0)
+				SetTracking(enable and id or nil)
 			end
 		end
 	}

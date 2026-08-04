@@ -350,7 +350,7 @@ do -- config.bind
 		fs:SetMaxLines(1)
 		fs:ClearAllPoints()
 		fs:SetPoint("LEFT", 6, -0.5)
-		fs:SetPoint("RIGHT", 6, -0.5)
+		fs:SetPoint("RIGHT", -6, -0.5)
 		fs:SetJustifyH("CENTER")
 		btn.IsCapturingBinding, btn.SetBindingText, btn.ToggleAlternateEditor = IsCapturingBinding, SetBindingText,
 			ToggleAlternateEditor
@@ -408,8 +408,10 @@ end
 do -- minimap button
 	local EV, GT = T.Evie, T.NotGameTooltip or GameTooltip
 	local mmPrefs = PC:RegisterPVar("MinimapButton", {})
+	local ownButton, DBIcon
 	local function createOwnButton()
 		local btn = CreateFrame("Button", "OPieMinimapButton", Minimap)
+		ownButton = btn
 		btn:SetSize(31, 31)
 		btn:SetFrameStrata("MEDIUM")
 		btn:SetFrameLevel(8)
@@ -477,14 +479,41 @@ do -- minimap button
 			GT:Hide()
 		end)
 	end
+	local function applyMinimapButtonState()
+		local hide = mmPrefs.hide == true
+		if DBIcon then
+			if DBIcon.Refresh then
+				DBIcon:Refresh("OPie", mmPrefs)
+			elseif hide then
+				DBIcon:Hide("OPie")
+			else
+				DBIcon:Show("OPie")
+			end
+		elseif ownButton then
+			if hide then
+				ownButton:Hide()
+			else
+				ownButton:Show()
+			end
+		end
+	end
+	function T.IsMinimapButtonShown()
+		return mmPrefs.hide ~= true
+	end
+	function T.SetMinimapButtonShown(show)
+		mmPrefs.hide = not show or nil
+		applyMinimapButtonState()
+	end
 	EV.PLAYER_LOGIN = function()
-		local DBIcon = LibStub and LibStub("LibDBIcon-1.0", true)
+		local lib = LibStub and LibStub("LibDBIcon-1.0", true)
 		local LDB = LibStub and LibStub("LibDataBroker-1.1", true)
 		local obj = LDB and LDB.GetDataObjectByName and LDB:GetDataObjectByName("OPie")
-		if DBIcon and obj and not (DBIcon.IsRegistered and DBIcon:IsRegistered("OPie")) then
-			DBIcon:Register("OPie", obj, mmPrefs)
+		if lib and obj and not (lib.IsRegistered and lib:IsRegistered("OPie")) then
+			DBIcon = lib
+			lib:Register("OPie", obj, mmPrefs)
 		else
 			createOwnButton()
+			applyMinimapButtonState()
 		end
 		return "remove"
 	end

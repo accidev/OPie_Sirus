@@ -7,50 +7,63 @@ local DropDown, DropDownData, internal = {}, {}, {}
 local DropDownProps = {
 	api = DropDown,
 	scripts = {"OnHide"},
-	pulseAnim = nil
+	pulseTex = nil
 }
 AddObjectMethods({"DropDown"}, DropDownProps)
 
 function DropDown:HandlesGlobalMouseEvent(button)
-	return button == "LeftButton" and self:IsEnabled()
+	local e = self:IsEnabled()
+	return button == "LeftButton" and not not (e and e ~= 0)
 end
 function DropDown:Pulse()
 	local d = assert(getWidgetData(self, DropDownData), 'invalid object type')
-	if not d.pulseAnim then
+	if not d.pulseTex then
 		local tex = d.bg
-		local atl, l, sl = tex:GetAtlas(), tex:GetDrawLayer()
+		local l, sl = tex:GetDrawLayer()
 		local r = tex:GetParent():CreateTexture(nil, l, nil, (sl or 0) + 1)
 		r:SetAllPoints(tex)
-		r[atl and "SetAtlas" or "SetTexture"](r, atl or tex:GetTexture())
+		r:SetTexture(tex:GetTexture())
 		r:SetTexCoord(tex:GetTexCoord())
-		r:SetVertexColor(0, 0.5, 0.75, 0)
+		r:SetVertexColor(0, 0.5, 0.75)
 		r:SetBlendMode("ADD")
-		r:SetTextureSliceMargins(tex:GetTextureSliceMargins())
-		local ag = d.self:CreateAnimationGroup()
-		ag:SetLooping("BOUNCE")
-		ag:SetScript("OnLoop", internal.OnPulseLoop)
-		local aa = ag:CreateAnimation("Alpha")
-		aa:SetTarget(r)
-		aa:SetDuration(1 / 3)
-		aa:SetFromAlpha(1)
-		aa:SetToAlpha(0)
-		aa:SetSmoothing("IN_OUT")
-		d.pulseAnim = ag
+		r:Hide()
+		d.pulseTex, d.pulseDriver = r, CreateFrame("Frame", nil, d.self)
+		d.pulseDriver:Hide()
+		d.pulseDriver:SetScript("OnUpdate", internal.OnPulseUpdate)
+		d.pulseDriver.owner = d.self
 	end
-	d.pulseCyclesLeft = 6
-	d.pulseAnim:Restart(true)
+	d.pulseElapsed, d.pulseCyclesLeft = 0, 6
+	d.pulseTex:SetAlpha(0)
+	d.pulseTex:Show()
+	d.pulseDriver:Show()
+end
+function internal.StopPulse(d)
+	if d.pulseDriver then
+		d.pulseDriver:Hide()
+		d.pulseTex:Hide()
+	end
 end
 
-function internal.OnPulseLoop(self, ls)
-	local d = ls == "FORWARD" and getWidgetData(self:GetParent(), DropDownData)
-	if not d then
-		return
+local PULSE_PERIOD = 1 / 3
+function internal.OnPulseUpdate(self, elapsed)
+	local d = getWidgetData(self.owner, DropDownData)
+	if not d or not d.pulseTex then
+		return self:Hide()
 	end
-	local cl = (d.pulseCyclesLeft or 1) - 1
-	d.pulseCyclesLeft = cl > 0 and cl or nil
-	if cl <= 0 then
-		d.pulseAnim:Finish()
+	local e = (d.pulseElapsed or 0) + elapsed
+	while e >= PULSE_PERIOD do
+		e = e - PULSE_PERIOD
+		local cl = (d.pulseCyclesLeft or 1) - 1
+		d.pulseCyclesLeft = cl
+		if cl <= 0 then
+			d.pulseElapsed = 0
+			return internal.StopPulse(d)
+		end
 	end
+	d.pulseElapsed = e
+	local half = PULSE_PERIOD / 2
+	local a = e < half and (e / half) or (2 - e / half)
+	d.pulseTex:SetAlpha(a > 0 and (a < 1 and a or 1) or 0)
 end
 function internal.OnDropArrowClick(self)
 	ToggleDropDownMenu(nil, nil, self, self, 8, 8)
@@ -61,9 +74,7 @@ function internal.OnDropHide(self, ...)
 	if UIDROPDOWNMENU_OPEN_MENU == self and DropDownList1:IsVisible() then
 		securecall(CloseDropDownMenus)
 	end
-	if d.pulseAnim and d.pulseAnim:IsPlaying() then
-		d.pulseAnim:Stop()
-	end
+	internal.StopPulse(d)
 	CallObjectScript(d.self, "OnHide", ...)
 end
 

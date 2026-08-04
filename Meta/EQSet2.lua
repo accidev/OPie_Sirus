@@ -51,7 +51,7 @@ do -- action handler
 			function EV.EQUIPMENT_SETS_CHANGED()
 				namesStale = true
 			end
-			function EV.PLAYER_REGEN_DISABLED()
+			function EV.PLAYER_REGEN_ENABLED()
 				if namesStale then
 					bufferSetNames()
 				end

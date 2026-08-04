@@ -11,7 +11,8 @@ local FM, core = {}, CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
 local cenvW, cenv = WR.GetRestrictedEnvironment(core)
 cenvW.KR, cenvW.flags, cenvW.cargcache, cenvW.crm = KR:seclib(), WR.newtable, WR.newtable, 2 ^ 24
 WR.newtable(cenvW, "crand", math.random(2 ^ 24) - 1)
-cenvW.NO_FLAGS_MESSAGE = AB.L "No flags are active."
+local NO_FLAGS_MESSAGE = AB.L "No flags are active."
+cenvW.NO_FLAGS_MESSAGE = NO_FLAGS_MESSAGE
 core:SetAttribute("RunSlashCmd", [=[-- flag-RunSlashCmd
 	local slash, clause, target = ...
 	local flag, nv
@@ -114,8 +115,9 @@ do
 		core:GetAttribute("EvaluateMacroConditional")))({}, flagProxy, function()
 		return {}
 	end)
-	local runSlashI = loadstring(("local KR, self, flags, crand, crm = false, ... return function(...) %s end"):format(
-		core:GetAttribute("RunSlashCmd")))(core, flagProxy, crandProxy, cenv.crm)
+	local runSlashI = loadstring(
+		("local KR, self, flags, crand, crm, NO_FLAGS_MESSAGE = false, ... return function(...) %s end"):format(
+			core:GetAttribute("RunSlashCmd")))(core, flagProxy, crandProxy, cenv.crm, NO_FLAGS_MESSAGE)
 
 	function flagHint(...)
 		local _;
@@ -127,6 +129,16 @@ do
 		runSlashI(slash, args2, target)
 	end
 	function dumpFlags(clause)
+		if (clause or "") == "" then
+			local names
+			for f in rtable.pairs(cenv.flags) do
+				names = names and (names .. " " .. f) or f
+			end
+			clause = names
+		end
+		if (clause or "") == "" then
+			return print(NO_FLAGS_MESSAGE)
+		end
 		runSlashI("/dumpflag", clause, nil)
 	end
 end

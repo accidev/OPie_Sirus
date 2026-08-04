@@ -4,6 +4,10 @@ local GFX = ([[Interface\AddOns\%s\gfx\]]):format((...))
 local GameTooltip = T.NotGameTooltip or GameTooltip
 
 local REQ_POINTER, DISABLED_TEXT = {1, 1}, "|cffa0a0a0" .. L "Disabled"
+local function isEnabled(w)
+	local e = w:IsEnabled()
+	return not not (e and e ~= 0)
+end
 local OPC_Options = {{
 	"section",
 	caption = L "Interaction"
@@ -224,7 +228,7 @@ do -- Widget construction
 		return OPC_AlterOptionW(self, nv)
 	end
 	local function onEnabledChange(self)
-		local a = self:IsEnabled() and 1 or 0.6
+		local a = isEnabled(self) and 1 or 0.6
 		widgetControl[self].text:SetVertexColor(a, a, a)
 	end
 	local function onDropDownSelect(_, nv, drop)
@@ -256,7 +260,7 @@ do -- Widget construction
 		local text = c.menu and c.menu[v]
 		if text then
 			c.cv = v
-			if not c.widget:IsEnabled() then
+			if not isEnabled(c.widget) then
 				text = not c.outOfScope and c.otherwise or ("|cffa0a0a0" .. text)
 			end
 			c.text:SetText(text)
@@ -264,7 +268,7 @@ do -- Widget construction
 	end
 	local function onTwofEnter(self)
 		local c = widgetControl[self]
-		local isOutOfScope = c.outOfScope and not self:IsEnabled()
+		local isOutOfScope = c.outOfScope and not isEnabled(self)
 		if (c.label:IsTruncated() or isOutOfScope) and
 			(UIDROPDOWNMENU_OPEN_MENU ~= sharedDrop or sharedDrop.owner ~= self or not DropDownList1:IsVisible()) then
 			GameTooltip:SetOwner(self, "ANCHOR_NONE")
@@ -283,7 +287,7 @@ do -- Widget construction
 		p:SetHitRectInsets(2, -ws, 2, 2)
 	end
 	local function handlesLeftClicks(self, button, _ev)
-		return self:IsEnabled() and button == "LeftButton" and UIDROPDOWNMENU_OPEN_MENU == sharedDrop and
+		return isEnabled(self) and button == "LeftButton" and UIDROPDOWNMENU_OPEN_MENU == sharedDrop and
 				   sharedDrop.owner == self
 	end
 	local function onNaviEnter(self)
@@ -534,7 +538,7 @@ do -- customized widgets
 	end
 	function optionControl.OnPrimaryRelease:refresh()
 		local im = PC:GetOption("InteractionMode", OR_CurrentOptionsDomain)
-		self.text:SetText(not self.widget:IsEnabled() and self.otherwise or im == 3 and
+		self.text:SetText(not isEnabled(self.widget) and self.otherwise or im == 3 and
 							  PC:GetOption("CloseOnRelease", OR_CurrentOptionsDomain) and L "Close ring" or im == 2 and
 							  PC:GetOption("QuickActionOnRelease", OR_CurrentOptionsDomain) and currentDomainHasQA() and
 							  L "Close ring after quick action" or L "Do nothing")
@@ -583,7 +587,7 @@ do -- customized widgets
 		UIDropDownMenu_AddButton(info)
 	end
 	function optionControl.QuickAction:refresh()
-		local enabled = self.widget:IsEnabled()
+		local enabled = isEnabled(self.widget)
 		local center = enabled and PC:GetOption("CenterAction", OR_CurrentOptionsDomain)
 		local motion = enabled and PC:GetOption("MotionAction", OR_CurrentOptionsDomain)
 		self.text:SetText(
@@ -605,7 +609,7 @@ do -- customized widgets
 		UIDropDownMenu_AddButton(info)
 	end
 	function optionControl.OnLeft:refresh()
-		local enabled = self.widget:IsEnabled()
+		local enabled = isEnabled(self.widget)
 		local noClose = PC:GetOption("NoClose", OR_CurrentOptionsDomain)
 		self.text:SetText(enabled and noClose and L "Use slice" or enabled and L "Use slice and close ring" or
 							  ("|cffa0a0a0" .. L "Do nothing"))

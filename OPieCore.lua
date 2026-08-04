@@ -44,7 +44,6 @@ local configRoot, configInstance, activeProfile, PersistentStorageInfo, optionVa
 	PersistentStorage = {}
 }, nil, nil, {}, {}
 local charId, internalFreeId = ("%s-%s"):format(GetRealmName(), UnitName("player")), 424
-local TB_THRESH
 local RING_ICON = ([[Interface\AddOns\%s\gfx\opie_ring_icon]]):format(ADDON)
 
 local L
@@ -110,20 +109,6 @@ end
 local function normalizeStoredProfileIdent(ident)
 	return ident ~= "default" and ident or nil
 end
-local function getTimeBand(a, b, c, d)
-	local t, p = GetServerTime()
-	if t >= d then
-		return 2
-	elseif DEV_EARLY_WARNING or t >= b and t <= c then
-		return 1
-	elseif t <= a then
-		return 0
-	end
-	TB_THRESH = TB_THRESH or math.random(127) / 128
-	p = t > c and (t - c) / (d - c) or ((t - a) / (b - a))
-	return (t > b and 1 or 0) + (p ^ 3 > TB_THRESH and 1 or 0)
-end
-
 local registerExtAction
 do
 	local cf, df = {}, {}
@@ -184,22 +169,12 @@ do -- + Click dispatcher
 		trap:SetAllPoints()
 		trap:Hide()
 		OR_SecCore:SetFrameRef("motion0", trap)
-		OR_SecCore:WrapScript(trap, "OnEnter", "return owner:Run(ORL_SetMotionTrapArmed, false, true)")
-		if trap.SetMouseClickEnabled then
-			trap:SetMouseClickEnabled(false)
-		end
-		for i = 1, 6 do
+		for i = 1, 2 do
 			local f = CreateFrame("Frame", nil, trap, "SecureFrameTemplate")
-			if i < 3 then
-				f:SetSize(1 / 8, 1 / 8)
-				f:SetFrameLevel(9001)
-				f:EnableMouse(true)
-			else
-				OR_SecCore:WrapScript(f, "OnEnter", "return owner:Run(ORL_SetMotionTrapArmed, false, true)")
-			end
-			if f.SetMouseClickEnabled then
-				f:SetMouseClickEnabled(false)
-			end
+			f:SetSize(1 / 8, 1 / 8)
+			f:SetFrameLevel(9001)
+			f:EnableMouse(true)
+			OR_SecCore:WrapScript(f, "OnLeave", "return owner:Run(ORL_SetMotionTrapArmed, false, true)")
 			OR_SecCore:SetFrameRef("motion" .. i, f)
 		end
 	end
@@ -227,7 +202,7 @@ do -- + Click dispatcher
 		SCREEN, CENTERED_CURSOR_YPOS, MOTION_TRAP = self:GetFrameRef("screen"), 0.6, newtable()
 		SCREEN:SetAllPoints()
 		SCREEN:Hide()
-		for i=0,6 do
+		for i=0,2 do
 			MOTION_TRAP[i] = self:GetFrameRef("motion" .. i)
 		end
 		pmode_RotationModeMap = newtable() do
@@ -246,7 +221,7 @@ do -- + Click dispatcher
 			if bindOverrides[bind] then bindOverrides[ bindOverrides[bind] ] = nil end
 			if bind then
 				overProxy:SetBindingClick(true, bind, self:GetFrameRef("proxy" .. id), "ro" .. id)
-				bindOverrides[bind] = ring
+				bindOverrides[bind] = id
 			end
 			bindOverrides[id] = bind
 		]==]
@@ -262,21 +237,13 @@ do -- + Click dispatcher
 				return
 			end
 			local x, y = SCREEN:GetMousePosition()
-			local m, w, h = 0.125, SCREEN:GetWidth(), SCREEN:GetHeight()
+			local w, h = SCREEN:GetWidth(), SCREEN:GetHeight()
 			x, y = x*w, y*h
-			for i=1,6 do
+			for i=1,2 do
 				MOTION_TRAP[i]:ClearAllPoints()
 			end
 			MOTION_TRAP[1]:SetPoint("CENTER", SCREEN, "BOTTOM", 0, h * CENTERED_CURSOR_YPOS)
 			MOTION_TRAP[2]:SetPoint("CENTER", SCREEN, "BOTTOMLEFT", x, y)
-			MOTION_TRAP[3]:SetPoint("TOPLEFT")
-			MOTION_TRAP[3]:SetPoint("BOTTOMRIGHT", SCREEN, "BOTTOMLEFT", x-m, 0)
-			MOTION_TRAP[4]:SetPoint("TOPLEFT")
-			MOTION_TRAP[4]:SetPoint("BOTTOMRIGHT", SCREEN, "BOTTOMRIGHT", 0, y+m)
-			MOTION_TRAP[5]:SetPoint("TOPLEFT", SCREEN, "TOPLEFT", x+m, 0)
-			MOTION_TRAP[5]:SetPoint("BOTTOMRIGHT")
-			MOTION_TRAP[6]:SetPoint("TOPLEFT", SCREEN, "BOTTOMLEFT", 0, y-m)
-			MOTION_TRAP[6]:SetPoint("BOTTOMRIGHT")
 			MOTION_TRAP[0]:Show()
 			AI_MotionArmed, AI_MotionArmedFC = true, armFC == true
 		]==]
@@ -353,7 +320,7 @@ do -- + Click dispatcher
 			sb[0], sb[-1], sb[-2], sb[-3], sb[-4], sb[-5] = ...
 			for j=0, 1 do
 				for i, b in pairs(j == 0 and sb or
-								  j >  0 and activeRing.SliceBinding2 or emptyTable) do
+								  j >  0 and activeRing.SliceBinding or emptyTable) do
 					local bk = b and b:match("[^-]*.$")
 					local uk = usedKeys[bk]
 					if uk then
@@ -531,7 +498,7 @@ do -- + Click dispatcher
 				end
 				fastClick = not AI_NoPointer and fastClick ~= 0 and fastClick or nil
 				if fastClick then
-					fastClickCA = fastClick and ring.CenterAction
+					fastClickCA = fastClick and activeRing.CenterAction
 					local armMotionFC = POL_SWICHED_FAST_ACTION_MOTION and fastClick and activeRing.MotionAction and true
 					local needMotionTrap = armMotionFC or AI_LeftAction or AI_MotionArmed
 					owner:Run(ORL_SetMotionTrapArmed, needMotionTrap, armMotionFC)
@@ -604,9 +571,7 @@ do -- + Click dispatcher
 				local w, p, s = ORL_OverSAB or self, AI_ClickStackIndex + 1
 				s = AI_ClickStack[p] or newtable()
 				local mt, checkExecID, notifyToken = AB:RunAttribute("UseAction", action, modLockState)
-				w:SetAttribute("pressAndHoldAction", 1)
 				w:SetAttribute("type", "macro")
-				w:SetAttribute("typerelease", "macro")
 				w:SetAttribute("macrotext", mt)
 				s[1], s[2], s[3] = checkExecID and AB:GetAttribute("execID") or -2, RW:GetAttribute("execPending"), notifyToken
 				AI_ClickStack[p], AI_ClickStackIndex = s, p
@@ -1124,12 +1089,6 @@ do
 		end
 	end
 end
-function OR_SecCore:CheckCVars()
-	local ccy = tonumber(not InCombatLockdown() and GetCVar("CursorCenteredYPos"))
-	if ccy and ccy ~= coreEnvW.CENTERED_CURSOR_YPOS then
-		coreEnvW.CENTERED_CURSOR_YPOS = ccy
-	end
-end
 function OR_SecCore:NotifyState(state, _ringName, collection, ...)
 	if state == "open" then
 		local fastClick, fastOpen, ms = ...
@@ -1143,12 +1102,12 @@ function OR_SecCore:NotifyState(state, _ringName, collection, ...)
 			return
 		end
 		MouselookStop()
-		self:CheckCVars()
 	elseif state == "switch" then
-		OR_ActiveCollectionID, OR_ActiveSliceCount = collection, #coreEnvW.openCollection
+		local fastClick, _fastOpen, ms = ...
+		OR_ActiveCollectionID, OR_ActiveSliceCount, OR_ModifierLockState = collection, #coreEnvW.openCollection, ms
 		markSliceBindings(OR_ActiveSliceCount)
 		if ORI then
-			securecall(ORI.Show, ORI, collection, ..., "inplace-switch", self)
+			securecall(ORI.Show, ORI, collection, fastClick, "inplace-switch", self)
 		end
 	elseif state == "close" then
 		if ORI then
@@ -1203,9 +1162,6 @@ end
 function EV:PLAYER_REGEN_ENABLED()
 	OR_PerfomDelayedSync()
 end
-function EV:PLAYER_REGEN_DISABLED()
-	OR_SecCore:CheckCVars()
-end
 local function OR_NotifyOptions()
 	for option, func in pairs(optionValidators) do
 		if func then
@@ -1242,8 +1198,6 @@ local function OR_UpgradeOptions(pv, isRingOptions, _oldRev)
 		end
 		if opt == "ClickActivation" and type(v) == "boolean" then
 			nv[domain .. "InteractionMode"], pv[k] = pv[domain .. "InteractionMode"] or v and 2 or nil, nil -- DEPRECATED[2406/Z7]
-		elseif opt == "PSSwitchOnOpen" and type(v) == "boolean" then
-			nv[domain .. "PSOpenSwitchMode"], pv[k] = pv[domain .. "PSOpenSwitchMode"] or v and 1 or 0, nil -- DEPRECATED[2405/Z6]
 		end
 	end
 	for k, v in pairs(nv) do
@@ -1254,8 +1208,7 @@ local function OR_UpgradeConfig()
 	if not OR_UpgradeConfig then
 		return
 	end
-	local tb, svRev = configRoot._TimeBand, tonumber(configRoot._StoreVersion) or 0
-	TB_THRESH = type(tb) == "number" and tb < 1 and tb >= 0 and tb or TB_THRESH or nil
+	local svRev = tonumber(configRoot._StoreVersion) or 0
 	local gameVersion, opieVersion = GetBuildInfo(), ("%s (%d.%d)"):format(api:GetVersion())
 
 	if type(OPie_SavedDataPC) == "table" and type(OPie_SavedDataPC.ProfileStorage) == "table" then
@@ -1291,7 +1244,7 @@ local function OR_UpgradeConfig()
 	end
 
 	configRoot._GameVersion, configRoot._OPieVersion, configRoot._GameLocale = gameVersion, opieVersion, GetLocale()
-	configRoot._StoreVersion, configRoot._StoreVersion2 = svRev >= SVREV and svRev or SVREV, SVREV
+	configRoot._StoreVersion = svRev >= SVREV and svRev or SVREV
 	OR_UpgradeConfig = nil
 	return true
 end
@@ -1374,7 +1327,6 @@ function EV:ADDON_LOADED(addon)
 		OR_InitConfigState()
 		sfRingsAll, sfGlobalOptions = true, true
 		OR_PerfomDelayedSync()
-		DisableAddOn("OPie_Classic")
 		return "remove"
 	end
 end
@@ -1416,7 +1368,6 @@ function EV:PLAYER_LOGOUT()
 	local pc, pcp = {}, {}
 	OPie_SavedData = configRoot
 	OR_NotifyPVars("LOGOUT")
-	configRoot._TimeBand = TB_THRESH
 	configRoot.CenterActions = OR_PullQuickActions()
 	OR_SecProfilePull()
 	for k, v in pairs(configInstance) do
@@ -1440,7 +1391,7 @@ function EV:PLAYER_LOGOUT()
 	local FM = AB and AB:compatible("FlagMast", 1)
 	pc.FlagState = FM and FM:GetState() or nil
 	OPie_SavedDataPC = next(pc) ~= nil and pc or nil
-	pc._GameVersion, pc._StoreVersion, pc._StoreVersion2 = configRoot._GameVersion, configRoot._StoreVersion, SVREV
+	pc._GameVersion, pc._StoreVersion = configRoot._GameVersion, configRoot._StoreVersion
 end
 function EV.ACTIVE_TALENT_GROUP_CHANGED()
 	local newProfile = getProfileForSpec()
@@ -1757,42 +1708,30 @@ function private:IsOpenRingSliceBinding(id, action)
 end
 function private:GetCurrentInputs()
 	if coreEnvW.AI_NoPointer then
-		return "nopoint", nil, 0, false, 0
+		return "nopoint", nil, 0, false
 	end
-	local aframe, imode, cx, cy = OR_SecCore, "cursor", GetCursorPosition()
+	local aframe, cx, cy = OR_SecCore, GetCursorPosition()
 	local scale, l, b, w, h = aframe:GetEffectiveScale(), aframe:GetRect()
 	local dx, dy = (cx / scale) - (l + w / 2), (cy / scale) - (b + h / 2)
 	local radius2 = dx * dx + dy * dy
 	local isActiveRadius, isCenterRadius = radius2 >= 1600, radius2 <= 400
 
-	local stl = 0
-
 	local aidx, qidx = coreEnvW.fastClick, nil
 	if aidx then
 		local ar = coreEnvW.activeRing
-		if ar.MotionAction and coreEnvW.AI_MotionArmedFC and imode ~= "stick" then
+		if ar.MotionAction and coreEnvW.AI_MotionArmedFC then
 			qidx = aidx
 		elseif ar.CenterAction and isCenterRadius then
 			qidx = aidx
 		end
 	end
-	return imode, qidx, atan2(dy, dx) % 360, isActiveRadius, stl
-end
-function private:FutureDeprecationError(msg, depth, a, b, c, d)
-	local sev = getTimeBand(a, b, c, d)
-	if sev == 2 then
-		error(msg, 1 + (depth or 1))((0)[0])
-	elseif sev == 1 then
-		securecall(error, msg, 2 + (depth or 1))
-	end
+	return "cursor", qidx, atan2(dy, dx) % 360, isActiveRadius
 end
 function private:RegisterExtAction(ident, createFunc, describeFunc)
 	assert(type(ident) == "string" and type(createFunc) == "function" and type(describeFunc) == "function",
 		'Syntax: api:RegisterExtAction("ident", createFunc, describeFunc)', 2)
 	return registerExtAction(ident, createFunc, describeFunc)
 end
-private.GetPartialHint = AB.GetPartialHint
-private.GetPartialHintRaw = AB.GetPartialHintRaw
 
 -- Public API
 function api:SetRing(name, actionId, props)

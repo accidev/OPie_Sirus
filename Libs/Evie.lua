@@ -69,15 +69,5 @@ function easy_mt:__newindex(e, f)
 end
 
 frame:SetScript("OnEvent", Raise)
-local _ctAfter = C_Timer and C_Timer.After or function(sec, fn)
-	local f, e = CreateFrame("Frame"), 0
-	f:SetScript("OnUpdate", function(self, dt)
-		e = e + dt
-		if e >= sec then
-			self:SetScript("OnUpdate", nil)
-			fn()
-		end
-	end)
-end
-easy_mt.__call, easy_mt.__index, Evie.raw, Evie.After = Raise, Evie, Evie, _ctAfter
+easy_mt.__call, easy_mt.__index, Evie.raw = Raise, Evie, Evie
 T.Evie, Evie.RegisterEvent, Evie.UnregisterEvent = easy, Register, Unregister

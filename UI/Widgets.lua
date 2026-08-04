@@ -133,7 +133,7 @@ do -- OPie:RadioSet
 	local function CreateRadioSet(name, parent, outerTemplate, id)
 		local co, d = CreateFrame("Frame", name, parent, outerTemplate, id)
 		d = newWidgetData(co, RadioSetData, RadioSetProps)
-		d.segments, d.segmentID = {}, {}
+		d.segments = {}
 		co:SetHeight(30)
 		return co
 	end
@@ -154,7 +154,7 @@ do -- OPie:OptionsSlider
 		d.HiThumb:Show()
 		local v, f = d.self:GetValue(), d.tipValueFormatter
 		if type(f) == "function" then
-			v = v(f)
+			v = f(v)
 		elseif f then
 			v = string.format(f, v)
 		end
@@ -191,7 +191,7 @@ do -- OPie:OptionsSlider
 			'Syntax: OptionsSlider:SetTipValueFormat("fmt")')
 		d.tipValueFormatter = fmt
 		if GameTooltip:IsOwned(d.self) then
-			Thumb_OnEnter(d.Thumb)
+			Thumb_OnEnter(d.self)
 		end
 	end
 

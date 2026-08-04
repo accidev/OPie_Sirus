@@ -6,7 +6,6 @@ end
 local PC, EV, XU, GameTooltip, L = T.OPieCore, T.Evie, T.exUI, T.NotGameTooltip or GameTooltip, T.L
 local api, iapi, configCache, vis = {}, {}, {}, {}
 local max, min, abs, floor, sin, cos = math.max, math.min, math.abs, math.floor, sin, cos
-local GetPartialHintRaw = PC.GetPartialHintRaw
 local MIN_ANIMATION_FPS, LOCKED_FRAMERATE = 20, 60
 do
 	local ticks = 0
@@ -315,15 +314,10 @@ do
 		SetCooldown = 0,
 		SetCooldownTextShown = "supportsCooldownNumbers",
 		SetShortLabel = "supportsShortLabels",
-		SetCooldownDuration = nil,
-		SetCooldownPH = "supportsCooldownPH",
 		SetEquipState = 0,
 		SetHighlighted = 0,
 		SetActive = 0,
 		SetOuterGlow = 0
-	}
-	local SkipMethodOption = {
-		SetCooldownDuration = "supportsCooldownPH"
 	}
 	function ValidateIndicator(apiLevel, reqAPILevel, info)
 		if apiLevel < REQ_API_LEVEL or (reqAPILevel or apiLevel) > CURRENT_API_LEVEL then
@@ -331,9 +325,8 @@ do
 		end
 		local f = info.CreateIndicator(nil, mainFrame, 48)
 		for k, v in pairs(RequiredIndicatorMethods) do
-			local tv, ao = type(v), SkipMethodOption[k]
-			if type(f[k]) ~= "function" and ((tv == "number" and apiLevel >= v) or (tv == "string" and info[v])) and
-				not (ao and info[ao]) then
+			local tv = type(v)
+			if type(f[k]) ~= "function" and ((tv == "number" and apiLevel >= v) or (tv == "string" and info[v])) then
 				return false, ("Expected a function for indicator key %q, got %s."):format(k, type(f[k]))
 			end
 		end
@@ -416,18 +409,6 @@ end
 local function GetModifierKeyState()
 	return (IsAltKeyDown() and 1 or 0) + (IsControlKeyDown() and 2 or 0) + (IsShiftKeyDown() and 4 or 0) +
 			   (IsMetaKeyDown() and 8 or 0)
-end
-local IsControllerBinding
-do
-	local mem = {}
-	function IsControllerBinding(b)
-		local r = mem[b]
-		if r == nil and b and b ~= "" then
-			r = b:match("PAD") ~= nil
-			mem[b] = r
-		end
-		return r == true
-	end
 end
 local function IsSliceBindingConflicted(slice, bind, modState)
 	local bindKey, bindMod = bind and bind:match("[^-]*.?$"), modState
@@ -538,16 +519,12 @@ local function updateCentralElements(_self, si, _, tok, usable, state, icon, cap
 	end
 
 	local sm = state and (state % 4 > 1) and 0.625 or 1
-	local isPartiallyHinted = state and state % 1048576 >= 524288
-	local cdHintID = isPartiallyHinted and cd == nil and cd2
 	if vis.rotPeriod ~= sm then
 		vis.rotPeriod = sm
 		setRingRotationPeriod(configCache.XTRotationPeriod * sm)
 	end
 	local sUsable = usable or (state and usable ~= false) or false
-	local cdDuration = sUsable and cdHintID and GetPartialHintRaw(cdHintID, "cooldownDuration")
-	local glowAlpha =
-		cdDuration and C_CurveUtil.EvaluateColorValueFromBoolean(cdDuration:IsZero(), 0.75, 0) or sUsable and 0.75 or 0
+	local glowAlpha = sUsable and 0.75 or 0
 	local GLOW_FADE_TIME, gTarget, gEnd = 0.3, vis.glowTarget, vis.glowEnd
 	if gTarget ~= glowAlpha then
 		gTarget, gEnd = glowAlpha, time + GLOW_FADE_TIME - (gEnd and gEnd > time and (gEnd - time) or 0)
@@ -577,9 +554,6 @@ local function updateSlice(self, originAngle, selected, tok, usable, state, icon
 	local isInContainer, isInInventory, isQuestStartItem = state % 256 >= 128, state % 512 >= 256,
 		tokenQuest[tok] or (state % 64 >= 32)
 	local isDisenchanting = state % 262144 >= 131072
-	local isPartiallyHinted = state % 1048576 >= 524288
-	local cdHintID, holdCount = isPartiallyHinted and cd == nil and cd2,
-		isPartiallyHinted and state % 2097152 >= 1048576
 	local onCooldown, noMana, noRange = cd and cd > 0, state % 16 >= 8, state % 32 >= 16
 	local usableCharge = usable or isRecharge
 	cd2 = cd and cd2 or nil
@@ -617,19 +591,8 @@ local function updateSlice(self, originAngle, selected, tok, usable, state, icon
 	end
 	local hideCount = configCache.ShowOneCount and 0 or 1
 	local showCount = (count or 0) > hideCount
-	self:SetCount(showCount and count, holdCount)
-	if not (cdHintID and not cd) then
-		self:SetCooldown(cd, cd2, usableCharge)
-	elseif ActiveIndicatorFactory.supportsCooldownPH then
-		self:SetCooldownPH(cdHintID, GetPartialHintRaw, holdCount)
-	elseif ActiveIndicatorFactory.apiLevel >= 4 then
-		local duration = GetPartialHintRaw(cdHintID, isRecharge and "chargeDuration" or "cooldownDuration")
-		if duration then
-			self:SetCooldownDuration(duration, isRecharge)
-		else
-			self:SetCooldown(0, 0, usableCharge)
-		end
-	end
+	self:SetCount(showCount and count)
+	self:SetCooldown(cd, cd2, usableCharge)
 	self:SetEquipState(isInContainer, isInInventory)
 	self:SetActive(active)
 	self:SetHighlighted(selected and not faded)
@@ -671,12 +634,6 @@ local function updateSliceBindings(imode, curModState)
 			end
 			vis.sliceBindConflict[i] = (c1 and c2 and '"|cffffffff' .. c1 .. '|r", "|cffffffff' .. c2 .. '|r"') or
 										   (c1 or c2) and ('"|cffffffff' .. (c1 or c2) .. '|r"') or nil
-			if showSliceBinds and sliceBind and sliceBind2 then
-				c1, c2 = IsControllerBinding(sliceBind), IsControllerBinding(sliceBind2)
-				if c1 ~= c2 and (imode == "stick") == c2 then
-					sliceBind = sliceBind2
-				end
-			end
 		else
 			vis.sliceBindConflict[i] = nil
 		end
@@ -698,14 +655,11 @@ local function OnUpdate_CheckAlpha(self, count)
 end
 local function OnUpdate_Main(self, elapsed)
 	local count, offset, lastBindingMode = vis.count, vis.offset, configCache.lastBindingMode
-	local imode, qaid, angle, isActiveRadius, stl = PC:GetCurrentInputs()
+	local imode, qaid, angle, isActiveRadius = PC:GetCurrentInputs()
 	local radius, miScaleAdd, frameRate = vis.radius, configCache.MIScaleAdd, LOCKED_FRAMERATE or GetFramerate()
 
 	if qaid and count > 0 then
 		angle = (90 - offset - (qaid - 1) * 360 / count) % 360
-	elseif imode == "stick" then
-		angle = stl < 0.25 and vis.lastConAngle or angle
-		vis.lastConAngle = angle
 	end
 
 	local oangle = qaid and angle or vis.angle or angle
@@ -822,7 +776,7 @@ function iapi:Show(_, _, fastOpen)
 	local baseSize, scale, radius = configCache.MIReserveSize, max(0.1, configCache.RingScale)
 	radius = calculateRingRadius(count or 3, baseSize, baseSize, configCache.MIMinRadius, 90 - (offset or 0))
 	vis.count, vis.offset, vis.radius = count, offset, radius
-	vis.oldSlice, vis.angle, vis.omState, vis.oldIsGlowing, vis.rotPeriod, vis.lastConAngle, vis.oldEA = -1
+	vis.oldSlice, vis.angle, vis.omState, vis.rotPeriod, vis.oldEA, vis.glowTarget, vis.glowEnd = -1
 	GhostIndication:Reset()
 	SwitchIndicatorFactory(configCache.IndicatorFactory)
 	centerPointer:SetShown(configCache.InteractionMode ~= 3)
@@ -899,8 +853,6 @@ function api:SetIconDefaultColor(icon, r, g, b)
 	setIconColorOverride(icon, r, g, b)
 end
 
-api.GetPartialHint = PC.GetPartialHint -- ... <-- (_, hintID, aspect)
-
 function api:RegisterIndicatorConstructor(key, info)
 	assert(type(key) == "string" and type(info) == "table",
 		'Syntax: OPieUI:RegisterIndicatorConstructor("key", infoTable)', 2)
@@ -931,7 +883,6 @@ function api:RegisterIndicatorConstructor(key, info)
 		ghostPool = {},
 		supportsCooldownNumbers = not not info.supportsCooldownNumbers,
 		supportsShortLabels = not not info.supportsShortLabels,
-		supportsCooldownPH = not not info.supportsCooldownPH,
 		onParentAlphaChanged = onPAC,
 		err = err
 	}

@@ -509,9 +509,9 @@ core:SetAttribute("PokeConditional", [=[-- Kindred:PokeConditional("name")
 core:SetAttribute("RegisterBindingDriver",
 	[=[-- Kindred:RegisterBindingDriver(*target*, "button", "options", priority[, *notify*])
 	local target, notify, button, options, priority = self:GetFrameRef("RegisterBindingDriver-target"), self:GetFrameRef("RegisterBindingDriver-notify"), ...
-	self:SetAttribute("frameref-RegisterStateDriver-target", nil)
-	self:SetAttribute("frameref-RegisterStateDriver-notify", nil)
-	if not target then return owner:CallMethod("throw", 'Set the "RegisterStateDriver-target" frameref before calling RegisterStateDriver.') end
+	self:SetAttribute("frameref-RegisterBindingDriver-target", nil)
+	self:SetAttribute("frameref-RegisterBindingDriver-notify", nil)
+	if not target then return owner:CallMethod("throw", 'Set the "RegisterBindingDriver-target" frameref before calling RegisterBindingDriver.') end
 	if type(options) ~= "string" then return owner:CallMethod("throw", 'Kindred:RegisterBindingDriver: options argument must be a string.') end
 	if options == "" and not (bindingDrivers[target] and bindingDrivers[target][button]) then return end
 	bindingDrivers[target] = bindingDrivers[target] or newtable()

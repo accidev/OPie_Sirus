@@ -175,11 +175,9 @@ do
 			id = id + 0
 			sn, sr = GetSpellInfo(id), select(2, GetSpellInfo(id))
 			ar = sn and select(2, GetSpellInfo(sn))
-			local isCastable, castFlag = RW:IsSpellCastable(id, noEscapes)
+			local isCastable = RW:IsSpellCastable(id, noEscapes)
 			if isCastable then
-				if castFlag == "forced-id-cast" and (ctype == 1 or ctype == 3) then
-					sn = "spell:" .. id
-				elseif ctype == 3 and sn and sn:match(",") then
+				if ctype == 3 and sn and sn:match(",") then
 					sn = "spell:" .. id
 				elseif sr and sr ~= "" and tk == "spellr" then
 					sn = sn .. "(" .. sr .. ")"
@@ -270,8 +268,6 @@ do
 			return gmPref, fmPref, drPref
 		end
 	end
-	local pingTextMap, pingTokenMap = {}, {}
-	-- PING_TYPE_* отсутствуют в WotLK (DF+), таблицы остаются пустыми
 	toMacroText = genParser(function(ctype, value)
 		local varPrefix = parseVarPrefix(value, ctype)
 		local prefix, tw, tkey, tval = value:match("^%s*(!?){{((%a+):([%a%d/]+))}}%s*$", #varPrefix + 1)
@@ -279,8 +275,6 @@ do
 			return restoreVarPrefix(varPrefix, replaceSpellID(ctype, tval, prefix, tkey))
 		elseif tkey == "mount" then
 			return restoreVarPrefix(varPrefix, replaceMountTag(ctype, tval, prefix))
-		elseif tkey == "ping" and ctype == 4 then
-			return restoreVarPrefix(varPrefix, pingTokenMap[tval] or value)
 		elseif extTokenText[tw] ~= nil then
 			return restoreVarPrefix(varPrefix, extTokenText[tw] or nil)
 		elseif value:match('^%s*!?|Hiptok|h|h%s*$') then
@@ -307,12 +301,7 @@ do
 			repeat
 				local lowname = name:lower()
 				local sid, stok, peek, cnpos = spells[lowname], specialTokens[lowname] or extAbilityToken[lowname]
-				if ctype == 4 then
-					name = pingTextMap[lowname]
-					if name then
-						return restoreVarPrefix(varPrefix, pre .. "{{ping:" .. name .. "}}" .. tws)
-					end
-				elseif sid and noEscapes and RW:IsCastEscape(lowname, true) then
+				if sid and noEscapes and RW:IsCastEscape(lowname, true) then
 					-- Don't tokenize escapes in contexts they wont't work in
 				elseif sid then
 					local rname = name:gsub("%s*%([^)]+%)$", "")
@@ -443,11 +432,6 @@ do
 					end
 				elseif token == "mount" then
 					return mountTokens[targ]
-				elseif token == "ping" then
-					local tname = pingTokenMap[targ]
-					if tname then
-						return "|cff71d5ff|Hilt" .. token .. ":" .. targ .. "|h" .. tname .. "|h|r"
-					end
 				elseif extTokenText[tw] then
 					return "|cff71d5ff|Hilt" .. token .. ":" .. targ .. "|h" .. extTokenText[tw] .. "|h|r"
 				end

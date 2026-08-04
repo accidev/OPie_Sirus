@@ -15,18 +15,6 @@ do
 				return 0, 0, 0, 0
 			end
 		end
-		if not idx.SetTexelSnappingBias then
-			idx.SetTexelSnappingBias = function()
-			end
-		end
-		if not idx.SetSnapToPixelGrid then
-			idx.SetSnapToPixelGrid = function()
-			end
-		end
-		if not idx.SetVertexOffset then
-			idx.SetVertexOffset = function()
-			end
-		end
 	end
 	f, tx, mt, idx = nil, nil, nil, nil
 end
@@ -226,16 +214,6 @@ if not C_PetJournal.GetPetCooldownByGUID then
 		return 0, 0, 1
 	end
 end
-if not C_PetJournal.GetPetInfoBySpeciesID then
-	C_PetJournal.GetPetInfoBySpeciesID = function()
-		return nil
-	end
-end
-if not C_PetJournal.FindPetIDByName then
-	C_PetJournal.FindPetIDByName = function()
-		return nil
-	end
-end
 
 if not C_ToyBox then
 	C_ToyBox = {}
@@ -319,10 +297,19 @@ if not C_EquipmentSet then
 			end
 		end,
 		UseEquipmentSet = function(id)
-			if UseEquipmentSet then
-				UseEquipmentSet(id)
+			local use, name = UseEquipmentSet
+			for i = 1, iterSets() do
+				local n, _, sid = GetEquipmentSetInfo(i)
+				if sid == id then
+					name = n
+					break
+				end
 			end
-			return true
+			if use and name then
+				use(name)
+				return true
+			end
+			return false
 		end
 	}
 end
@@ -363,13 +350,6 @@ if not IsMetaKeyDown then
 	end
 end
 
-if not C_CurveUtil then
-	C_CurveUtil = {
-		EvaluateColorValueFromBoolean = function(b, v1, v2)
-			return b and v1 or v2
-		end
-	}
-end
 
 if RAID_CLASS_COLORS then
 	for _, c in pairs(RAID_CLASS_COLORS) do

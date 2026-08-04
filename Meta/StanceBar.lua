@@ -16,9 +16,6 @@ local function SetStanceBarVisibility(_, hidden, ringID)
 		return
 	end
 	frame:SetParent(hidden and keeper or parent)
-	if hidden == false and frame:IsShown() then
-		frame:Show()
-	end
 	pendingValue = nil
 end
 

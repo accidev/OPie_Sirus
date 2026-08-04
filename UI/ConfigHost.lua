@@ -6,7 +6,10 @@ do -- /opie
 	local slashExtensions = {}
 	local function addSuffix(func, word, ...)
 		if word then
-			slashExtensions[word:lower()] = func
+			local key = word:lower()
+			if slashExtensions[key] == nil then
+				slashExtensions[key] = func
+			end
 			addSuffix(func, ...)
 		end
 	end
@@ -189,24 +192,12 @@ do -- config.bind
 		RALT = 1,
 		RCTRL = 1,
 		RSHIFT = 1,
-		RMETA = 1,
-		PADRSTICKUP = 1,
-		PADRSTICKDOWN = 1,
-		PADRSTICKLEFT = 1,
-		PADRSTICKRIGHT = 1,
-		PADLSTICKUP = 1,
-		PADLSTICKDOWN = 1,
-		PADLSTICKLEFT = 1,
-		PADLSTICKRIGHT = 1
+		RMETA = 1
 	}
 	local function SetBind(self, bind)
 		if bind == "ESCAPE" then
 			return Deactivate(self)
 		elseif unbindableKeys[bind] then
-			return
-		elseif bind and bind:match("PAD") and
-			(bind == GetCVar("GamePadEmulateAlt") or bind == GetCVar("GamePadEmulateCtrl") or bind ==
-				GetCVar("GamePadEmulateShift")) then
 			return
 		end
 		Deactivate(self)

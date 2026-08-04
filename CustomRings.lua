@@ -545,7 +545,7 @@ local function RK_SerializeDescription(props, bp)
 	end
 	for _, slice in ipairs(props) do
 		if stim then
-			local bs = props[stim[slice.sliceToken]]
+			local bs = bp[stim[slice.sliceToken]]
 			slice.vm = bs and securecall(BUP.DiffSlice, slice, bs) or nil
 		end
 		if slice[1] == "spell" or slice[1] == "imptext" then

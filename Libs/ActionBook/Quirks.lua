@@ -3,11 +3,8 @@ if T.SkipLocalActionBook then
 	return
 end
 
-local EV, WR, AB, KR, RW, IM = T.Evie, T.Ware, T.ActionBook:compatible(2, 38),
-	T.ActionBook:compatible("Kindred", 1, 26), T.ActionBook:compatible("Rewire", 1, 27),
-	T.ActionBook:compatible("Imp", 1, 11)
-assert(EV and WR and AB and KR and RW and IM and 1, "Incompatible library bundle")
-local playerClass, _, playerRace = UnitClassBase("player"), UnitRace("player")
+local EV, KR = T.Evie, T.ActionBook:compatible("Kindred", 1, 26)
+assert(EV and KR and 1, "Incompatible library bundle")
 
 securecall(function() -- spec conditional sync
 	local function syncSpec()
@@ -28,6 +25,4 @@ securecall(function() -- spec conditional sync
 	end
 	EV.PLAYER_LOGIN = syncSpec
 	EV.ACTIVE_TALENT_GROUP_CHANGED = syncSpec
-	EV.PLAYER_TALENT_UPDATE_EX = syncSpec
-	EV.PLAYER_TALENT_ACTIVE_GROUP_REFRESH = syncSpec
 end)

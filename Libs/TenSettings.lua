@@ -340,6 +340,7 @@ do -- TenSettingsFrame
 			end)
 			dragHandle:SetScript("OnDragStop", function()
 				TenSettingsFrame:StopMovingOrSizing()
+				I.settingsFrameMoved = true
 			end)
 		end
 		do -- resize grip (bottom-right corner)
@@ -357,6 +358,7 @@ do -- TenSettingsFrame
 			end)
 			resizeGrip:SetScript("OnMouseUp", function()
 				TenSettingsFrame:StopMovingOrSizing()
+				I.settingsFrameMoved = true
 			end)
 		end
 	end
@@ -528,16 +530,6 @@ do -- TenSettingsFrame
 		end
 		return tab
 	end
-	local function container_onCanvasShow(self)
-		local ci = containers[self]
-		local cf = ci.f
-		if cf:GetParent() ~= self then
-			cf:ClearAllPoints()
-			cf:SetParent(self)
-			cf:SetAllPoints()
-			cf:Show()
-		end
-	end
 	local function container_new(name, rootPanel, opts)
 		local cf = CreateFrame("Frame")
 		do
@@ -575,11 +567,7 @@ do -- TenSettingsFrame
 		t = CreateFrame("Frame", nil, cf)
 		t:SetPoint("TOPLEFT", RAIL_WIDTH + 1, CONTAINER_CONTENT_TOP_YOFFSET)
 		t:SetPoint("BOTTOMRIGHT", 0, 0)
-		t, ci.View = CreateFrame("Frame"), t
-		t:Hide()
-		t:SetScript("OnShow", container_onCanvasShow)
-		t.OnCommit, t.OnDefault, t.OnRefresh, t.OnCancel = cf.OnCommit, cf.OnDefault, cf.OnRefresh, cf.OnCancel
-		containers[t] = ci
+		ci.View = t
 		if type(opts) == "table" then
 			ci.forceRootVersion = opts.forceRootVersion
 			ci.rootTabText = opts.tabText
@@ -633,7 +621,7 @@ do -- TenSettingsFrame
 		currentSettingsTenant = newTenant
 		securecall(newTenant.OnRefresh, newTenant)
 		newTenant:Show()
-		if not TenSettingsFrame:IsShown() then
+		if not (TenSettingsFrame:IsShown() or I.settingsFrameMoved) then
 			TenSettingsFrame:ClearAllPoints()
 			TenSettingsFrame:SetPoint("CENTER", 0, 50)
 		end

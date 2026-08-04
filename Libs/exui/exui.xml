@@ -1,6 +1,5 @@
 <Ui>
 	<Script file="exui.lua" />
-	<Script file="Backdrop.lua" />
 	<Script file="ScrollBar.lua" />
 	<Script file="ScrollableDropDownList.lua" />
 	<Script file="LineInput.lua" />

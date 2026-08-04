@@ -25,7 +25,6 @@ do
 			bn, bni = "RW!" .. bni, bni + 1
 		until GetClickFrame(bn) == nil
 		local bw = CreateFrame("Button", bn, core, "SecureActionButtonTemplate")
-		bw:SetAttribute("pressAndHoldAction", 1)
 		core:WrapScript(bw, "OnClick", [=[-- Rewire:OnClick_Pre
 			if ns == 0 then return false end
 			idle[self], numIdle, numActive, ns = nil, numIdle - 1, numActive + 1, ns - 1
@@ -146,23 +145,6 @@ do
 			return true
 		]==]
 	]=])
-	do -- sync PY.dangerMode
-		local noPendingSync = 1
-		local function checkDangerMode(e)
-			local reMode = coreEnv.PY.dangerMode
-			if (not AreDangerousScriptsAllowed()) == reMode then
-			elseif not InCombatLockdown() then
-				coreEnvW.PY.dangerMode = not reMode
-			elseif noPendingSync then
-				noPendingSync = nil
-				EV.PLAYER_REGEN_ENABLED = checkDangerMode
-			end
-			if e == "PLAYER_REGEN_ENABLED" then
-				noPendingSync = 1
-				return "remove"
-			end
-		end
-	end
 	function core:quietCleanup()
 		for i = 1, #coreExecCleanup do
 			securecall(coreExecCleanup[i])
@@ -397,7 +379,7 @@ core:SetAttribute("RunSlashCmd", [=[-- Rewire:Internal_RunSlashCmd
 		end
 	elseif slash == "#unmute" and mutedAbove > -1 then
 		for i=#execQueue,mutedAbove+1,-1 do
-			if m == MACRO_TOKEN then
+			if execQueue[i] == MACRO_TOKEN then
 				return
 			end
 		end
@@ -1235,7 +1217,7 @@ local function init()
 		CAST = 1,
 		STOPMACRO = 1
 	}
-	for _, k in pairs(hash_ChatTypeInfoList) do
+	for k in pairs(type(ChatTypeInfo) == "table" and ChatTypeInfo or hash_ChatTypeInfoList) do
 		local cf = ik[k] == nil and getCommandKeyFlags(k) or 0
 		ik[k] = 1
 		if cf ~= 0 then

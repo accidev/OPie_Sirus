@@ -6,15 +6,15 @@ assert(ORI and EV and L and PC and XU and config and AB and KR, "Incompatible li
 local GameTooltip = T.NotGameTooltip or GameTooltip
 local TS, GFX = T.TenSettings, ([[Interface\AddOns\%s\gfx\]]):format(ADDON)
 
-local exclude, questItems = PC:RegisterPVar("AutoQuestExclude", {}), {}
-local IsQuestItem, IsQuestItemF, disItems
+local exclude = PC:RegisterPVar("AutoQuestExclude", {})
+local IsQuestItem
 local function getContainerItemQuestInfo(bag, slot)
 	if bag and slot then
 		return GetContainerItemQuestInfo(bag, slot)
 	end
 end
 do
-	local include, filtered
+	local include
 	do
 		local function have1()
 			return true, false, false, 4
@@ -34,47 +34,19 @@ do
 			[49278] = true,
 			[37586] = have1 -- handful of treats [hallow's end]
 		}
-		filtered = {}
-		for i in ("33634 35797 37888 37860 37859 37815 46847 47030 39213 42986 49278"):gmatch("%d+") do
-			include[i + 0] = true
-		end
 	end
-	disItems = {}
-	setmetatable(exclude, {
-		__index = {}
-	})
 	function IsQuestItem(iid, bag, slot)
 		if exclude[iid] or not iid then
 			return false
-		elseif disItems[iid] then
-			return true, false, disItems[iid]
 		end
-		local tinc, rcat
-		local inc, ff, isQuest, startQuestId, isQuestActive = include[iid], filtered[iid],
-			getContainerItemQuestInfo(bag, slot)
+		local rcat
+		local inc, isQuest, startQuestId, isQuestActive = include[iid], getContainerItemQuestInfo(bag, slot)
 		isQuest = iid and ((isQuest and GetItemSpell(iid)) or (inc == true) or
 					  (startQuestId and not isQuestActive and not C_QuestLog.IsQuestFlaggedCompleted(startQuestId)))
-		if ff then
-			isQuest, startQuestId, isQuestActive, rcat = ff(iid)
-		end
-		tinc = inc and not isQuest and type(inc)
-		if tinc == "function" then
+		if inc and not isQuest and type(inc) == "function" then
 			isQuest, startQuestId, isQuestActive, rcat = inc(iid)
-		elseif tinc then
-			isQuest = not ff or isQuest
-			for i = tinc == "number" and 1 or #inc, 1, -1 do
-				local qid, wq = tinc == "number" and inc or inc[i]
-				wq, qid = qid < 0, qid < 0 and -qid or qid
-				if C_QuestLog.IsQuestFlaggedCompleted(qid) or wq and not C_QuestLog.IsOnQuest(qid) then
-					return false
-				end
-			end
 		end
 		return isQuest, startQuestId and not isQuestActive, rcat
-	end
-	function IsQuestItemF(iid)
-		local ff = filtered[iid]
-		return ff == nil or ff(iid)
 	end
 end
 local colId, current, changed, pendingChanges
@@ -121,22 +93,6 @@ do
 		table.sort(collection, cmpEntry)
 	end
 end
-local function scanQuests(i)
-	for i = i or 1, GetNumQuestLogEntries() do
-		local _, _, _, _, isHeader, isCollapsed, isComplete, _, qid = GetQuestLogTitle(i)
-		if isHeader and isCollapsed then
-			ExpandQuestHeader(i)
-			return scanQuests(i + 1), CollapseQuestHeader(i)
-		elseif questItems[qid] and not isComplete then
-			for _, iid in ipairs(questItems[qid]) do
-				if not exclude[iid] and IsQuestItemF(iid) then
-					addSlice("OPbQIi" .. iid, 2, "item", iid)
-					break
-				end
-			end
-		end
-	end
-end
 local function syncRing(_, event, upId)
 	if event ~= "internal.collection.preopen" or upId ~= colId then
 		return
@@ -150,8 +106,7 @@ local function syncRing(_, event, upId)
 			local iid = giid(bag, slot)
 			local include, startsQuestMark, qiCat = IsQuestItem(iid, bag, slot)
 			if include then
-				local tok = addSlice("OPbQIi" .. iid, qiCat or 2, disItems and disItems[iid] and "disenchant" or "item",
-					iid)
+				local tok = addSlice("OPbQIi" .. iid, qiCat or 2, "item", iid)
 				ORI:SetQuestHint(tok, startsQuestMark)
 			end
 		end
@@ -162,8 +117,6 @@ local function syncRing(_, event, upId)
 			inring[tok] = current
 		end
 	end
-	scanQuests()
-
 	local freePos, oldCount = 1, #collection
 	for i = freePos, oldCount do
 		local v = collection[i]

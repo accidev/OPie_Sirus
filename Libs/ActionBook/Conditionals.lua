@@ -249,87 +249,14 @@ securecall(function() -- self(de)buff:name, own(de)buff:name, (de)buff:name, cle
 	end)
 end)
 securecall(function() -- combo:count
-	local power, powerMap = 4, {
-		[265] = 7,
-		[267] = 14,
-		[258] = 13,
-		PALADIN = 9,
-		MONK = 12
-	}
-	local defaultPower = powerMap[playerClass] or 4
 	KR:SetNonSecureConditional("combo", function(_name, args)
-		local pow = power == 4 and GetComboPoints("player", "target") or UnitPower("player", power)
-		return pow >= (tonumber(args) or 1)
+		return GetComboPoints("player", "target") >= (tonumber(args) or 1)
 	end)
-	local function syncComboPower()
-		power = defaultPower
-	end
-	EV.ACTIVE_TALENT_GROUP_CHANGED, EV.PLAYER_ENTERING_WORLD = syncComboPower, syncComboPower
 end)
 securecall(function() -- near:oid/cid
-	local argCache, nearValue, nearGroup, holdGroup, holdExpire = {}
-	local GROUP_HOLD_TIME = {
-		["tww-herb-overload"] = 5,
-		["tww-mine-overload"] = 5,
-		["mid-herb-overload"] = 5,
-		["mid-mine-overload"] = 5
-	}
-	local typePrefix, groups = {
-		GameObject = "o",
-		Creature = "c"
-	}, {}
-	for k, v in pairs({
-		["herb-overload"] = "o375245/o381199/o381213/o356536/o381202/o381210/o381196/o381205/o375242/o375244/o381214/o381201/o381200/o381212/o375246/o381198/o381203/o381197/o381211/o375243/o381204/o390141/o390140/o390142/o390139/o398761/o398760/o398759/o398762/o398767/o398764/o398765/o398766/o407696/o407688/o407698/o407693",
-		["mine-overload"] = "o381516/o375235/o375234/o381515/o381517/o375238/o375239/o381518/o381519/o375240/o390137/o390138/o407669/o407668",
-		["tww-herb-overload"] = "o414327/o414329/o414326/o414328/o414325/o414337/o414339/o454053/o454008/o414338/o454084/o414336/o414335/o454066/o454079/o454069/o454074/o423363/o454082/o454067/o423368/o454077/o423364/o423366/o423367/o454072/o454064/o454006/o454050/o414332/o414331/o414330",
-		["tww-mine-overload"] = "o413886/o413895/o413905/o430351/o430335/o430352/o413900/o413883/o413890/o413902/o413892/o413884",
-		["mid-herb-overload"] = "o516967/o516966/o516965/o516964/o516963//o516979/o516980/o516981/o516982/o516983//o516973/o516974/o516975/o516976/o516977//o516968/o516969/o516970/o516971/o516972",
-		["mid-mine-overload"] = "o523284/o523294/o523303//o523287/o523293/o523301//o523285/o523291/o523299//o523286/o523292/o523300"
-	}) do
-		for e in v:gmatch("[^/]+") do
-			groups[e] = k
-		end
-	end
-	local function checkNearHoldExpire()
-		if holdGroup and holdExpire < GetTime() then
-			holdGroup, holdExpire = nil
-			KR:PokeConditional("near")
-		end
-	end
-	KR:SetNonSecureConditional("near", function(_name, args)
-		checkNearHoldExpire()
-		if args == nil then
-			return nearValue ~= nil
-		end
-		local ca = argCache[args]
-		if ca == nil then
-			ca = {}
-			for v in args:gmatch("[^%s/][^/]*") do
-				ca[v:match("^(.-)%s*$")] = 1
-			end
-			argCache[args] = ca
-		end
-		return (ca[nearValue] or ca[nearGroup] or ca[holdGroup]) ~= nil
+	KR:SetNonSecureConditional("near", function()
+		return false
 	end)
-	function EV:PLAYER_SOFT_INTERACT_CHANGED(_, guid)
-		local ct, oid
-		if guid and not InCombatLockdown() then
-			ct, oid = guid:match("^(%a+)%-[-%d]+%-(%d+)%-[^-]+$")
-			ct = typePrefix[ct]
-			oid = ct and ct .. oid or nil
-		end
-		if oid ~= nearValue then
-			local ht = not oid and GROUP_HOLD_TIME[nearGroup]
-			if ht then
-				holdGroup, holdExpire = nearGroup, GetTime() + ht
-				EV.After(ht + 1 / 128, checkNearHoldExpire)
-			elseif oid then
-				holdGroup, holdExpire = nil
-			end
-			nearValue, nearGroup = oid, groups[oid]
-			KR:PokeConditional("near")
-		end
-	end
 end)
 securecall(function() -- race:token
 	local map, _, raceToken = {
@@ -437,7 +364,6 @@ securecall(function() -- pet:stable id; havepet:stable id
 		return
 	end
 	local pt, noPendingSync = {}, true
-	local specTokenSuf = {}
 	local function syncPet(e)
 		if InCombatLockdown() then
 			if noPendingSync then
@@ -450,12 +376,10 @@ securecall(function() -- pet:stable id; havepet:stable id
 		end
 		local o, hpo
 		for i = 1, NUM_PET_STABLE_SLOTS or 5 do
-			local _, n, _, r, spN, spID = GetStablePetInfo(i)
+			local _, n, _, r = GetStablePetInfo(i)
 			if n and r then
-				local stk = specTokenSuf[spID or spN]
 				local k = n == r and n or (n .. "/" .. r)
-				pt[k] = (pt[k] or ("[pet:" .. n .. (n ~= r and ",pet:" .. r .. "] " or "] ") .. k)) .. "/" .. i ..
-							(stk or "")
+				pt[k] = (pt[k] or ("[pet:" .. n .. (n ~= r and ",pet:" .. r .. "] " or "] ") .. k)) .. "/" .. i
 				hpo = (hpo and hpo .. "/" .. i or i)
 			end
 		end
@@ -670,7 +594,6 @@ securecall(function() -- uslot:(slot token)
 		noPendingSync = nil
 		return e ~= "PLAYER_EQUIPMENT_CHANGED" and "remove"
 	end
-	EV.PLAYER_REGEN_DISABLED = syncActiveSlotsIfPending
 	EV.PLAYER_REGEN_ENABLED = syncActiveSlotsIfPending
 	EV.PLAYER_EQUIPMENT_CHANGED = cueActiveSlotsSync
 	EV.PLAYER_ENTERING_WORLD = cueActiveSlotsSync
@@ -678,11 +601,7 @@ end)
 securecall(function() -- encount:(e-{id}/token)
 	KR:SetStateConditionalValue("encount", false)
 	KR:SetAliasConditional("encounter", "encount")
-	local CV_ENCOUNT_STATE, state, enTokens = "actionbook-encount-state", nil, {
-		[3135] = "dimensius/ff-mount",
-		[2837] = "shadowcrown/ff-mount",
-		[2839] = "rashanan/ff-mount"
-	}
+	local CV_ENCOUNT_STATE, state = "actionbook-encount-state", nil
 	local function setEncounterState(newstate)
 		state = newstate
 		KR:SetStateConditionalValue("encount", state)
@@ -690,7 +609,7 @@ securecall(function() -- encount:(e-{id}/token)
 	end
 	function EV:ENCOUNTER_START(eid)
 		if eid and not InCombatLockdown() then
-			setEncounterState(enTokens[eid] and enTokens[eid] .. "/e-" .. eid or ("e-" .. eid))
+			setEncounterState("e-" .. eid)
 		end
 	end
 	function EV:PLAYER_REGEN_ENABLED()

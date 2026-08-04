@@ -125,8 +125,8 @@ function ringBindings:altClick() -- self is the binding button
 end
 function ringBindings:shiftClick()
 	local name, key, macro = PC:GetRingInfo(ringBindings.map[math.abs(self:GetID())])
-	TS:ShowPromptOverlay(frame, name or key, (L "The following macro command opens this ring:"):format(
-		"|cffFFD029" .. (name or key) .. "|r"), false, false, nil, 0.90, nil, macro)
+	TS:ShowPromptOverlay(frame, name or key, L "The following macro command opens this ring:", false, false, nil, 0.90,
+		nil, macro)
 end
 
 local subBindings = {

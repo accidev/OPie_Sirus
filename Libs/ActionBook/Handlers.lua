@@ -48,10 +48,17 @@ local function newWidgetName(prefix)
 	until GetClickFrame(bn) == nil
 	return bn
 end
+local function requestItemData(iid)
+	local rq = C_Item and C_Item.RequestLoadItemDataByID
+	local cached = C_Item and C_Item.IsItemDataCachedByID
+	if rq and type(iid) == "number" and not (cached and cached(iid)) then
+		securecall(rq, iid)
+	end
+end
 local getCachedItemName, peekCachedItemName
 do
 	local itemNames = {}
-	function EV:GET_ITEM_INFO_RECEIVED(iid, ok)
+	function EV:ITEM_DATA_LOAD_RESULT(iid, ok)
 		if itemNames[iid] == false and ok then
 			itemNames[iid] = GetItemInfo(iid) or false
 		end
@@ -61,6 +68,9 @@ do
 		if iid then
 			local c, f = itemNames[iid], GetItemInfo(iid)
 			itemNames[iid] = f or c or false
+			if not f then
+				requestItemData(iid)
+			end
 			return f or c or nil
 		end
 	end
@@ -258,9 +268,7 @@ securecall(function() -- spell: spell ID + mount spell ID
 			end
 			return
 		end
-		if rwCastType == "forced-id-cast" then
-			action = id
-		elseif rwCastType == "rewire-escape" then
+		if rwCastType == "rewire-escape" then
 			return AB:GetActionSlot("macrotext", SLASH_CAST1 .. " " .. GetSpellInfo(id))
 		else
 			local s0, r0 = GetSpellInfo(id), GetSpellSubtext(id)
@@ -273,7 +281,8 @@ securecall(function() -- spell: spell ID + mount spell ID
 				end
 			else
 				local r1 = GetSpellSubtext(s0)
-				action = (r0 and r1 ~= r0 and FindSpellBookSlotBySpellID(id)) and (s0 .. "(" .. r0 .. ")") or s0
+				action = (flags == 16 and r0 and r1 ~= r0 and FindSpellBookSlotBySpellID(id)) and
+							 (s0 .. "(" .. r0 .. ")") or s0
 			end
 		end
 
@@ -288,12 +297,10 @@ securecall(function() -- spell: spell ID + mount spell ID
 		end
 		return actionMap[action]
 	end
-	local function describeSpell(q, id, flags)
+	local function describeSpell(q, id, _flags)
 		local name2, icon2, rank, name, _, icon = nil, nil, GetSpellSubtext(id), GetSpellInfo(id)
 		local _, castType = RW:IsSpellCastable(id)
-		if castType == "rune-ability-spell" then
-			_, icon2 = GetSpellTexture(id)
-		elseif name and castType ~= "forced-id-cast" and castType ~= "rewire-escape" then
+		if name and castType ~= "rewire-escape" then
 			local qRank = (q == "list-query") and rank or nil
 			rank, name2, _, icon2 = GetSpellSubtext(name, rank), GetSpellInfo(name, qRank)
 		end
@@ -748,7 +755,7 @@ securecall(function() -- macro: name
 	AB:RegisterActionType("macro", createNamedMacro, describeMacro, 2)
 end)
 securecall(function() -- battlepet: pet ID, species ID
-	local petAction, special = {}, {}
+	local petAction = {}
 	local BPET_ATYPE_NAME, SummonCompanion = COMPANIONS
 	local SetBattlePetByID = callMethod.SetCompanionPet
 	function SummonCompanion(guid)
@@ -760,34 +767,25 @@ securecall(function() -- battlepet: pet ID, species ID
 		end
 	end
 	local function battlepetHint(pid)
-		local sid, cn, _, _, _, _, _, n, tex = C_PetJournal.GetPetInfoByPetID(pid)
+		local n, _, tex = C_PetJournal.GetPetInfoByPetID(pid)
 		local cdLeft, cdLength, cdEnabled = toCooldown(GetTime(), C_PetJournal.GetPetCooldownByGUID(pid))
 		local state = (C_PetJournal.IsCurrentlySummoned(pid) and 1 or 0) + (cdEnabled == 0 and 2048 or 0)
-		return sid and cdLeft == 0 and C_PetJournal.PetIsSummonable(pid), state, tex, cn or n or "", 0, cdLeft,
+		return n and cdLeft == 0 and C_PetJournal.PetIsSummonable(pid), state, tex, n or "", 0, cdLeft,
 			cdLength, SetBattlePetByID, pid
 	end
 	local GetBattlePetInfo
-	do -- (petID[, speciesID])
-		local function checkInfoReturn(pid, spid, ok, ...)
+	do -- (petID)
+		local function checkInfoReturn(pid, ok, ...)
 			if ok and ... then
 				return pid, ...
-			elseif spid then
-				local sn = C_PetJournal.GetPetInfoBySpeciesID(spid)
-				local _, pid = C_PetJournal.FindPetIDByName(sn ~= "" and sn or "---")
-				if pid then
-					return GetBattlePetInfo(pid)
-				end
 			end
 		end
-		function GetBattlePetInfo(pid, spid)
-			return checkInfoReturn(pid, spid, pcall(C_PetJournal.GetPetInfoByPetID, pid))
+		function GetBattlePetInfo(pid)
+			return checkInfoReturn(pid, pcall(C_PetJournal.GetPetInfoByPetID, pid))
 		end
 	end
-	local function createBattlePet(pid, spid)
-		if special[pid] then
-			return petAction[pid]
-		end
-		local rpid = GetBattlePetInfo(pid, spid)
+	local function createBattlePet(pid)
+		local rpid = GetBattlePetInfo(pid)
 		if not rpid then
 			return
 		end
@@ -797,30 +795,14 @@ securecall(function() -- battlepet: pet ID, species ID
 		end
 		return petAction[pk]
 	end
-	local function describeBattlePet(pid, spid)
-		if special[pid] then
-			return special[pid]()
-		end
-		local rpid, _, cn, lvl, _, _, _, _, n, tex = GetBattlePetInfo(pid, spid)
+	local function describeBattlePet(pid)
+		local rpid, n, _, tex = GetBattlePetInfo(pid)
 		if not rpid then
 			return BPET_ATYPE_NAME, "?"
 		end
-		if (cn or n) and ((lvl or 0) > 1) then
-			cn = "[" .. lvl .. "] " .. (cn or n)
-		end
-		return BPET_ATYPE_NAME, cn or n or ("#" .. tostring(rpid)), tex, nil, SetBattlePetByID, rpid
+		return BPET_ATYPE_NAME, n or ("#" .. tostring(rpid)), tex, nil, SetBattlePetByID, rpid
 	end
 	AB:RegisterActionType("battlepet", createBattlePet, describeBattlePet, 2)
-	if type(SLASH_SUMMON_BATTLE_PET1) == "string" then
-		RW:SetCommandHint(SLASH_SUMMON_BATTLE_PET1, 60, function(_, _, clause)
-			if clause and clause ~= "" then
-				local _, petID = C_PetJournal.FindPetIDByName(clause:trim())
-				if petID then
-					return true, battlepetHint(petID)
-				end
-			end
-		end)
-	end
 end)
 securecall(function() -- equipmentset: equipment sets by name
 	local setMap = {}
@@ -850,13 +832,8 @@ securecall(function() -- equipmentset: equipment sets by name
 		AB:NotifyObservers("equipmentset")
 	end
 	local function equipSetActionSpec(name)
-		return "attribute", "type", "equipmentset", "equipmentset", name
-	end
-	local function equipSetActionSpec_SLASH(name)
-		-- [3.4.2] [4.4.1] /equipset exists but the SABT action type does not
 		return "macrotext", SLASH_EQUIP_SET1 .. " " .. name
 	end
-	equipSetActionSpec = equipSetActionSpec_SLASH
 	local function createEquipSet(name)
 		local sid = type(name) == "string" and C_EquipmentSet.GetEquipmentSetID(name)
 		if not sid then
@@ -1166,11 +1143,10 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		return f == nil and PlayerHasToy(id)
 	end
 	function toyHint(iid, _modState, target)
-		local state, count, hasUsableCharge, now = 0, 0, false, GetTime()
+		local state, now = 0, GetTime()
 		local _, _, name, icon = C_ToyBox.GetToyInfo(iid)
 		local cdLeft, cdLength, cdEnabled = toCooldown(now, GetItemCooldown(iid))
 		local ignUse, usable = IGNORE_TOY_USABILITY[iid]
-		local _, sid = GetItemSpell(iid)
 		if not playerHasToy(iid) then
 			usable = false
 		elseif ignUse == nil then
@@ -1184,10 +1160,10 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		inRange, hasRange = inRange ~= 0, inRange ~= nil
 		state = state + (inRange and 0 or 16) + (hasRange and 512 or 0) + (cdEnabled == 0 and 2048 or 0)
 		icon = icon or select(10, GetItemInfo(iid))
-		usable = name and (hasUsableCharge or cdLeft == 0) and inRange and usable or false
-		return usable, state, icon, name, count, cdLeft, cdLength, callMethod.SetItemByID, iid
+		usable = name and cdLeft == 0 and inRange and usable or false
+		return usable, state, icon, name, 0, cdLeft, cdLength, callMethod.SetItemByID, iid
 	end
-	function EV:GET_ITEM_INFO_RECEIVED(iid, ok)
+	function EV:ITEM_DATA_LOAD_RESULT(iid, ok)
 		if not (ok and uq[iid]) then
 			return
 		end
@@ -1219,6 +1195,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		if isUsable == nil then
 			isUsable, uq[id] = lastUsability[id], 1
 			GetItemInfo(id)
+			requestItemData(id)
 		elseif not ignUse then
 			lastUsability[id] = isUsable
 		end
@@ -1226,7 +1203,7 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 			mid = nil
 		elseif mid == nil then
 			mid = AB:CreateActionSlot(toyHint, id,
-				wrapCondition(forceShow and 1 or ignUse, "attribute", "type", "toy", "toy", id))
+				wrapCondition(forceShow and 1 or ignUse, "attribute", "type", "item", "item", "item:" .. id))
 			map[qid] = mid
 		end
 		return mid
@@ -1242,16 +1219,6 @@ securecall(function() -- toy: item ID, flags[FORCE_SHOW]
 		return L "Toy", name, tex or select(10, GetItemInfo(id)), nil, callMethod.SetItemByID, id, nil, actionFlags
 	end
 	AB:RegisterActionType("toy", createToy, describeToy, 2)
-	if type(SLASH_USE_TOY1) == "string" then
-		RW:SetCommandHint(SLASH_USE_TOY1, 60, function(_, _, clause, target)
-			if clause and clause ~= "" then
-				local iid = tonumber(clause)
-				if iid then
-					return true, toyHint(iid, nil, target)
-				end
-			end
-		end)
-	end
 	function AB.HUM:SetPlayerHasToyOverride(id, filter)
 		local tf = type(filter)
 		if not (type(id) == "number" and (tf == "nil" or tf == "boolean" or tf == "function")) then
@@ -1268,7 +1235,6 @@ securecall(function() -- disenchant: iid
 	do
 		local wn = newWidgetName("AB:I!")
 		local w = CreateFrame("Button", wn, nil, "SecureActionButtonTemplate")
-		w:SetAttribute("pressAndHoldAction", 1)
 		w:Hide()
 		SecureHandlerWrapScript(w, "OnClick", w, [[return nil, 'post']], [[self:SetAttribute("target-item", nil)]])
 		local er = {
@@ -1308,13 +1274,13 @@ securecall(function() -- disenchant: iid
 			cdLength or 0, disenchantTip, ident
 	end
 	local function createDisenchant(iid)
-		if not (IsSpellKnown(DISENCHANT_SID) and type(iid) == "number" and GetItemCount(iid) > 0) then
+		if not (DISENCHANT_SN and IsSpellKnown(DISENCHANT_SID) and type(iid) == "number" and GetItemCount(iid) > 0) then
 			return
 		end
 		local mid = map[iid]
 		if not mid then
-			local macrotext = ("%s\n%s [@none] spell:%d\n%s item:%d\n%1$s"):format(SLASH_STOPSPELLTARGET1, SLASH_CAST1,
-				DISENCHANT_SID, SLASH_SPELL_TARGET_ITEM1, iid)
+			local macrotext = ("%s [@none] %s\n%s item:%d"):format(SLASH_CAST1, DISENCHANT_SN, SLASH_SPELL_TARGET_ITEM1,
+				iid)
 			mid = AB:CreateActionSlot(disenchantHint, iid, "retext", macrotext)
 			map[iid] = mid
 		end
@@ -1330,13 +1296,11 @@ securecall(function() -- disenchant: iid
 	AB:RegisterActionType("disenchant", createDisenchant, describeDisenchant, 1)
 end)
 securecall(function() -- uipanel: token
-	local CLICK, pyCLICK, widgetClickCommand, closeButton = SLASH_CLICK1 .. " "
+	local CLICK, widgetClickCommand, closeButton = SLASH_CLICK1 .. " "
 	do
 		local pyName = newWidgetName("AB:PY!")
 		local py = CreateFrame("Button", pyName, nil, "SecureActionButtonTemplate")
 		py:SetAttribute("type", "click")
-		py:SetAttribute("pressAndHoldAction", 1)
-		pyCLICK = CLICK .. pyName .. " "
 		function widgetClickCommand(k, w)
 			if w == nil then
 				return ""
@@ -1472,8 +1436,7 @@ securecall(function() -- uipanel: token
 			icon = "Interface/Icons/INV_Misc_Note_06",
 			gn = "MacroFrame",
 			tmt = SLASH_MACRO1,
-			cw = closeButton(MacroFrame),
-			postmt = pyCLICK .. "csp 1\n" .. pyCLICK .. "cgm 1"
+			cw = closeButton(MacroFrame)
 		},
 		gamemenu = {
 			L "Game Menu",
@@ -1507,7 +1470,6 @@ securecall(function() -- uipanel: token
 		local cmdDuckPrefix = cmdPrefix .. "csp 1\n" .. clickEx .. "cgm 1\n" .. clickEx
 		local ex = CreateFrame("Button", exName, nil, "SecureActionButtonTemplate")
 		ex:SetAttribute("type", "macro")
-		ex:SetAttribute("pressAndHoldAction", 1)
 		local function isEnabled(w)
 			local e = w:IsEnabled()
 			return not not (e and e ~= 0)

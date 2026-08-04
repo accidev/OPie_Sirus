@@ -88,9 +88,6 @@ end
 
 local actionCallbacks, core = {}, CreateFrame("Frame", nil, nil, "SecureHandlerBaseTemplate")
 local sabtHost = CreateFrame("Frame", nil, nil, "SecureFrameTemplate")
-do
-	sabtHost:SetAttribute("pressAndHoldAction", 1)
-end
 local coreEnvW, coreEnv = WR.GetRestrictedEnvironment(core)
 do
 	local re, newtable = coreEnvW, WR.newtable
@@ -105,7 +102,7 @@ do
 	re.paNextID, re.paSlot, re.paLock, re.paCount = 36000, newtable, newtable, 0
 	re.cndLockNext, re.cndLockMap, re.cndLockRes, re.cndLockCount = 36000, newtable, newtable, 0
 	re.pendingNotify, re.nextNotifyId = newtable, 45000
-	re.SH, re.KR, re.sabtHost = sabtHost, ext.Kindred:compatible(1, 0):seclib(), sabtHost
+	re.KR, re.sabtHost = ext.Kindred:compatible(1, 0):seclib(), sabtHost
 	core:SetAttribute("execID", 1e3)
 	local function uniqueName(s)
 		local bni, bn = 1
@@ -166,7 +163,6 @@ do
 	for s in ("0123456789QWERTYUIOP"):gmatch(".") do
 		local bn = uniqueName(s)
 		local b = CreateFrame("Button", bn, sabtHost, "SecureActionButtonTemplate")
-		b:SetAttribute("pressAndHoldAction", 1)
 		core:WrapScript(b, "OnClick", RUNNER_ONCLICK_PRE, RUNNER_ONCLICK_POST)
 		re.idle[b] = bn
 	end
@@ -712,50 +708,6 @@ do
 		return hf, hh
 	end
 end
-local getPartialHint, registerPartialHints, hintAspects
-do
-	local BASE_SUFFIX = math.random(16777216)
-	hintAspects = {"cooldownInfo", "cooldownDuration", "chargeInfo", "chargeDuration", "count"}
-	local allocSuffix
-	do
-		local SHUFFLE_SIZE = 8
-		local ofs, count, remain, pool = -1, 1, SHUFFLE_SIZE, {}
-		for i = 1, SHUFFLE_SIZE do
-			pool[i] = i
-		end
-		local function peek(n, c)
-			while n >= c do
-				n, c = n - c, c + c
-			end
-			return (1 + n + n) / (c + c), n, c
-		end
-		function allocSuffix()
-			if remain == 0 then
-				remain, ofs, count = peek(SHUFFLE_SIZE + ofs, count)
-				remain = SHUFFLE_SIZE
-			end
-			local r = math.random(remain)
-			local v = pool[r]
-			pool[r], pool[remain], remain = pool[remain], v, remain - 1
-			return (peek(ofs + v, count))
-		end
-	end
-	local sufHintFuncs = {}
-	function getPartialHint(hintID, aspect)
-		local suf = hintID % 1
-		local ft = sufHintFuncs[suf]
-		local f = ft and ft[aspect]
-		if f then
-			return securecall(f, hintID - BASE_SUFFIX - suf)
-		end
-	end
-	function registerPartialHints(ht)
-		local suf = allocSuffix()
-		sufHintFuncs[suf] = ht
-		return BASE_SUFFIX + suf
-	end
-end
-
 do -- AB:CreateToken()
 	local seq, dict, dictLength, prefix = 262143, "qwer1tyui2opas3dfgh4jklz5xcvb6nmQWE7RTYU8IOPA9SDFG0HJKL=ZXCV/BNM", 64
 	local function encode(n)
@@ -821,23 +773,6 @@ function AB:GetSlotImplementation(id)
 	local aType = allocatedActions[id] and allocatedActionType[id]
 	local colData = coreEnv.collections[id]
 	return aType, colData and #colData or nil, colData and coreEnv.metadata['embed-' .. id]
-end
-
-function AB:GetPartialHint(hintID, aspect)
-	assert(type(hintID) == "number" and type(aspect) == "string", 'Syntax: ... = :GetPartialHint(hintID, "aspect")')
-	return getPartialHint(hintID, aspect)
-end
-function AB:ReservePartialHintSuffix(partialFuncs)
-	assert(type(partialFuncs) == "table", "Syntax: suffix = ActionBook:ReservePartialHintSuffix(partialFuncs)")
-	local t = {}
-	for i = 1, #hintAspects do
-		local k = hintAspects[i]
-		local v = partialFuncs[k]
-		if type(v) == "function" then
-			t[k] = v
-		end
-	end
-	return registerPartialHints(t)
 end
 
 function AB:RegisterActionType(actionType, create, describe, numArgs, useListDescribe)
@@ -992,6 +927,5 @@ function hum:RegisterModule(key, api)
 		coreEnvW.RW = RWsec
 	end
 end
-hum.GetPartialHintRaw = getPartialHint
 
 T.ActionBook.compatible, ext.ActionBook = AB.compatible, T.ActionBook

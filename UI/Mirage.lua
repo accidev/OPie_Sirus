@@ -146,12 +146,11 @@ do
 			return cdOnUpdate(self, 0)
 		end
 	end
-	function CreateCooldown(parent, size, overParent, gx, pd)
+	function CreateCooldown(parent, size, overParent, gx)
 		local cd = CreateFrame("Frame", nil, parent)
 		local d, w, b = setWidgetData(cd, CooldownData, {
 			self = cd,
-			parent = parent,
-			parentControl = pd
+			parent = parent
 		})
 		cd:SetScale(size / 48)
 		cd:SetAllPoints()
@@ -385,7 +384,7 @@ local function CreateIndicator(name, parent, size, nested, gx)
 	w, d.iconbg = CreateFrame("Frame", nil, cf), w
 	w:SetAllPoints()
 	w:SetFrameLevel(ef:GetFrameLevel() + 5)
-	d.cd, d.cdControl = CreateCooldown(ef, size, w, gx, d)
+	d.cd, d.cdControl = CreateCooldown(ef, size, w, gx)
 	w = d.cd:CreateFontString(nil, "OVERLAY", "GameFontNormalLargeOutline")
 	w:SetPoint("CENTER")
 	w, d.cdText = ef:CreateTexture(nil, "ARTWORK", nil, 3), w

@@ -216,7 +216,7 @@ do
 		end
 		snap:SetTextColor((ring and GameFontGreen or ChatFontNormal):GetTextColor())
 		importNested.Text:SetText((L "Import %s |4nested ring:nested rings;"):format(
-			NORMAL_FONT_COLOR_CODE .. "|t" .. bc .. "|r"))
+			NORMAL_FONT_COLOR_CODE .. bc .. "|r"))
 		return not not ring
 	end
 	local function validate()
@@ -257,7 +257,8 @@ do
 		end
 	end
 	local function submit(self)
-		if accept:IsEnabled() then
+		local e = accept:IsEnabled()
+		if e and e ~= 0 then
 			accept:Click()
 		else
 			navigate(self)
@@ -293,7 +294,6 @@ do
 		accept:SetText(L "Add Ring")
 		cancel:SetText(L "Cancel")
 		snap:SetText("")
-		snap.cachedText, snap.cachedValue = nil
 		name:SetText("")
 		accept:Disable()
 		importNested:SetChecked(false)
@@ -538,6 +538,7 @@ do
 	ringDetail.scope.label:SetPoint("TOPLEFT", ringDetail, "TOPLEFT", 10, -47)
 	ringDetail.scope.label:SetText(L "Make this ring available to:")
 	ringDetail.binding = config.createBindingButton(ringDetail)
+	ringDetail.binding.bindingName = L "Binding:"
 	ringDetail.bindingContainerFrame = panel
 	ringDetail.binding:SetPoint("TOPLEFT", 267, -68)
 	ringDetail.binding:SetWidth(247)
@@ -862,9 +863,9 @@ do
 		ctex:ClearAllPoints()
 		ctex:SetPoint("TOPLEFT", 1, -1)
 		ctex:SetPoint("BOTTOMRIGHT", -1, 1)
+		local okButton = ColorPickerFrame.Footer and ColorPickerFrame.Footer.OkayButton or ColorPickerOkayButton
 		local function update()
-			if not ColorPickerFrame:IsShown() or ColorPickerFrame.Footer and
-				ColorPickerFrame.Footer.OkayButton:GetButtonState() == "PUSHED" then
+			if not ColorPickerFrame:IsShown() or okButton and okButton:GetButtonState() == "PUSHED" then
 				api.setSliceProperty("color", ColorPickerFrame:GetColorRGB())
 			end
 		end
@@ -1484,8 +1485,8 @@ do
 			tip:AddLine((L "%s to search within current results"):format(HIGHLIGHT_FONT_COLOR_CODE ..
 																			 GetBindingText("CTRL-ENTER", "KEY_") ..
 																			 "|r"), nil, nil, nil, true)
-			tip:AddLine(
-				(L "%s to cancel"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ESCAPE", "KEY_") .. "|r"), true)
+			tip:AddLine((L "%s to cancel"):format(HIGHLIGHT_FONT_COLOR_CODE .. GetBindingText("ESCAPE", "KEY_") .. "|r"),
+				nil, nil, nil, true)
 			tip:Show()
 		end)
 		s:SetScript("OnEditFocusLost", function(s)
@@ -2275,9 +2276,6 @@ function api.setRingBinding(value)
 	end
 end
 function api.setRingProperty(name, value)
-	if skipResetErrors and not currentRing then
-		return
-	end
 	if not currentRing then
 		return
 	end
@@ -2285,7 +2283,7 @@ function api.setRingProperty(name, value)
 	if name == "limit" then
 		ringDetail.scope:text()
 		ringOrderMap[currentRingName] = value ~= nil and (value:match("[^A-Z]") and 0 or 2) or nil
-	elseif name == "internal" then
+	elseif name == "internal" and ringNames then
 		local source, dest = value and ringNames or ringNames.hidden, value and ringNames.hidden or ringNames
 		for i = 1, #source do
 			if source[i] == currentRingName then

@@ -37,21 +37,6 @@ local function isItemInteresting(tf, testIdx, bag, slot, iid)
 end
 
 do
-	local function procSpellBookEntry(add, at, knownFilter, sourceKnown, _ok, st, sid)
-		if (st == "SPELL" or st == "FUTURESPELL") and not IsPassiveSpell(sid) and not mark[sid] then
-			if (not knownFilter) == (st == "FUTURESPELL" or not sourceKnown) then
-				mark[sid] = 1
-				add(at, sid)
-			end
-		elseif st == "FLYOUT" then
-			for j = 1, select(3, GetFlyoutInfo(sid)) do
-				local asid, _osid, ik = GetFlyoutSlotInfo(sid, j)
-				if (not ik) == (not knownFilter) then
-					procSpellBookEntry(add, at, knownFilter, sourceKnown, true, ik and "SPELL" or "FUTURESPELL", asid)
-				end
-			end
-		end
-	end
 	local GENERAL_TAB = 1
 	local WRATH_SKIP_TABS = {
 		["Спутники"] = true,
@@ -119,7 +104,7 @@ do
 		end
 		return top
 	end
-	local function addSpells(add, knownFilter)
+	local function addSpells(add)
 		local asv = GetCVar("showAllSpellRanks")
 		if asv and asv ~= "1" then
 			SetCVar("showAllSpellRanks", "1")
@@ -152,9 +137,7 @@ do
 										return t2
 									end)
 								end
-								if not isSkipped then
-									add("spell", sid)
-								end
+								add("spell", sid)
 							end
 						end
 					end
@@ -241,7 +224,7 @@ do
 	end)
 	AB:AugmentCategory(L "Abilities", function(_, add)
 		wipe(mark)
-		addSpells(add, true)
+		addSpells(add)
 		wipe(mark)
 	end)
 	local _, cl = UnitClass("player")
